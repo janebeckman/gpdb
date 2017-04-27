@@ -39,9 +39,6 @@
           <li id="ik264434">Some set returning subqueries in <codeph>EXISTS</codeph> or <codeph>NOT
               EXISTS</codeph> clauses that Greenplum's parallel optimizer cannot rewrite into
             joins.</li>
-          <li id="ik264454"><codeph>UNION ALL</codeph> of joined tables with subqueries.</li>
-          <li id="ik264467">Set-returning functions in the <codeph>FROM</codeph> clause of a
-            subquery.</li>
           <li id="ik264484">Backwards scrolling cursors, including the use of <codeph>FETCH
               PRIOR</codeph>, <codeph>FETCH FIRST</codeph>, <codeph>FETCH ABOLUTE</codeph>, and
               <codeph>FETCH RELATIVE</codeph>.</li>
@@ -84,7 +81,7 @@
           <li id="ik264839"><codeph>CREATE ASSERTION</codeph> statement.</li>
           <li id="ik264840"><codeph>INTERVAL</codeph> literals are supported in Greenplum Database,
             but do not conform to the standard.</li>
-          <li id="ik264841"><codeph>GET DIAGNOSTICS</codeph> statement.</li>
+          <li id="ik264841">Some parts of <codeph>GET DIAGNOSTICS</codeph> statement.</li>
           <li id="ik264842"><codeph>GRANT INSERT</codeph> or <codeph>UPDATE</codeph> privileges on
             columns. Privileges can only be granted on tables in Greenplum Database.</li>
           <li id="ik264843"><codeph>GLOBAL TEMPORARY TABLE</codeph>s and <codeph>LOCAL TEMPORARY
@@ -605,8 +602,7 @@ NEXT 10 ROWS ONLY; </codeblock><p>Greenplum
               <entry colname="col1"><codeph>DELETE</codeph></entry>
               <entry colname="col2">YES</entry>
               <entry colname="col3"><b>Unsupported Clauses /
-                    Options:</b><p><codeph>RETURNING</codeph></p><p><b>Limitations:</b></p><p><codeph>WHERE
-                    CURRENT OF</codeph> clause is not supported in PL/pgSQL.</p></entry>
+                    Options:</b><p><codeph>RETURNING</codeph></p></entry>
             </row>
             <row>
               <entry colname="col1"><codeph>DISCARD</codeph></entry>
@@ -950,8 +946,7 @@ NEXT 10 ROWS ONLY; </codeblock><p>Greenplum
               <entry colname="col2">YES</entry>
               <entry colname="col3"><b>Unsupported
                     Clauses:</b><p><codeph>RETURNING</codeph></p><p><b>Limitations:</b></p><p><codeph>SET</codeph>
-                  not allowed for Greenplum distribution key columns.</p><p><codeph>WHERE CURRENT
-                    OF</codeph> clause is not supported in PL/pgSQL.</p></entry>
+                  not allowed for Greenplum distribution key columns.</p></entry>
             </row>
             <row>
               <entry colname="col1"><codeph>VACUUM</codeph></entry>
