@@ -81,7 +81,7 @@
           <li id="ik264839"><codeph>CREATE ASSERTION</codeph> statement.</li>
           <li id="ik264840"><codeph>INTERVAL</codeph> literals are supported in Greenplum Database,
             but do not conform to the standard.</li>
-          <li id="ik264841">Some parts of <codeph>GET DIAGNOSTICS</codeph> statement.</li>
+          <li id="ik264841"><codeph>GET DIAGNOSTICS</codeph> statement.</li>
           <li id="ik264842"><codeph>GRANT INSERT</codeph> or <codeph>UPDATE</codeph> privileges on
             columns. Privileges can only be granted on tables in Greenplum Database.</li>
           <li id="ik264843"><codeph>GLOBAL TEMPORARY TABLE</codeph>s and <codeph>LOCAL TEMPORARY
