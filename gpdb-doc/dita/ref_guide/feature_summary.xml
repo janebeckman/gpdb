@@ -247,8 +247,8 @@ NEXT 10 ROWS ONLY; </codeblock><p>Greenplum
             <row>
               <entry colname="col1"><codeph>ALTER EXTENSION</codeph></entry>
               <entry colname="col2">YES</entry>
-              <entry colname="col3">Changes the definition of a Greenplum Database extension - not
-                in PostgreSQL 8.3: based on PostgreSQL 9.6. </entry>
+              <entry colname="col3">Changes the definition of a Greenplum Database extension - based
+                on PostgreSQL 9.6. </entry>
             </row>
             <row>
               <entry colname="col1"><codeph>ALTER FILESPACE</codeph></entry>
@@ -440,8 +440,8 @@ NEXT 10 ROWS ONLY; </codeblock><p>Greenplum
             <row>
               <entry colname="col1"><codeph>CREATE EXTENSION</codeph></entry>
               <entry colname="col2">YES</entry>
-              <entry colname="col3">Loads a new extension into Greenplum Database -  not in
-                PostgreSQL 8.3: based on PostgreSQL 9.6.</entry>
+              <entry colname="col3">Loads a new extension into Greenplum Database -  based on
+                PostgreSQL 9.6.</entry>
             </row>
             <row>
               <entry colname="col1"><codeph>CREATE EXTERNAL TABLE</codeph></entry>
@@ -642,8 +642,8 @@ NEXT 10 ROWS ONLY; </codeblock><p>Greenplum
             <row>
               <entry colname="col1"><codeph>DROP EXTENSION</codeph></entry>
               <entry colname="col2">YES</entry>
-              <entry colname="col3">Removes an extension from Greenplum Database – not in PostgreSQL
-                8.3: based on PostgreSQL 9.6.</entry>
+              <entry colname="col3">Removes an extension from Greenplum Database – based on
+                PostgreSQL 9.6.</entry>
             </row>
             <row>
               <entry colname="col1"><codeph>DROP EXTERNAL TABLE</codeph></entry>
