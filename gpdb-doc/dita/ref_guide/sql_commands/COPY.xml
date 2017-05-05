@@ -9,6 +9,7 @@
       <title>Synopsis</title>
       <codeblock id="sql_command_synopsis">COPY <varname>table</varname> [(<varname>column</varname> [, ...])] FROM {'<varname>file</varname>' | STDIN}
      [ [WITH] 
+       [ON SEGMENT 'table <varname>SEG_DATA_DIR</varname>/gpseg<varname>SEGID</varname>/gpdump<varname>SEGID</varname>-<varname>segcontentid</varname> ]
        [BINARY]
        [OIDS]
        [HEADER]
@@ -64,6 +65,8 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         examination, specify the <codeph>LOG ERRORS</codeph> clause to capture error log
         information. The error information and the row is stored internally in Greenplum
         Database.</p>
+      <p>The <codeph>ON SEGMENT</codeph> parameter allows you to copy table data to files on
+        segments, then copy from those files back into the segment, when performing a backup.</p>
       <sectiondiv id="section4">
         <b>Outputs</b>
         <p>On successful completion, a <codeph>COPY</codeph> command returns a command tag of the
@@ -113,6 +116,20 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>STDOUT</pt>
           <pd>Specifies that output goes to the client application. </pd>
+        </plentry>
+        <plentry>
+          <pt>ON SEGMENT</pt>
+          <pd>Copy table data to files on segments, then copy from those files back into the
+            segment. Currently only supports COPY functionality needed to copy to and from files and
+            to support the CSV format option.</pd>
+        </plentry>
+        <plentry>
+          <pt>SEG_DATA_DIR</pt>
+          <pd>Full path of the segment data directory.</pd>
+        </plentry>
+        <plentry>
+          <pt>SEGID</pt>
+          <pd>The segment id.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
@@ -502,6 +519,10 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         isolation mode and log errors:</p>
       <codeblock>COPY sales FROM '/home/usr1/sql/sales_data' LOG ERRORS 
    SEGMENT REJECT LIMIT 10 ROWS;</codeblock>
+      <p>ON SEGMENT takes the form:</p>
+      <p>COPY <varname>table_name</varname> TO
+          '<varname>SEG_DATA_DIR</varname><varname>SEG_ID</varname>/gpdump<varname>SEG_ID</varname>_20170101010101'
+        ON SEGMENT;  </p>
     </section>
     <section id="section12">
       <title>Compatibility</title>
