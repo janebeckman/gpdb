@@ -9,7 +9,6 @@
       <title>Synopsis</title>
       <codeblock id="sql_command_synopsis">COPY <varname>table</varname> [(<varname>column</varname> [, ...])] FROM {'<varname>file</varname>' | STDIN}
      [ [WITH] 
-       [ON SEGMENT 'table <varname>SEG_DATA_DIR</varname>/gpseg<varname>SEGID</varname>/gpdump<varname>SEGID</varname>-<varname>segcontentid</varname> ]
        [BINARY]
        [OIDS]
        [HEADER]
@@ -33,7 +32,11 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         [ESCAPE [ AS ] '<varname>escape</varname>' | 'OFF']
         [CSV [QUOTE [ AS ] 'quote'] 
              [FORCE QUOTE column [, ...]] ]
-      [IGNORE EXTERNAL PARTITIONS ]</codeblock>
+      [IGNORE EXTERNAL PARTITIONS ]
+
+COPY {table} TO {'<varname>SEG_DATA_DIR</varname>/gpseg<varname>SEGID</varname>/gpdump<varname>SEGID</varname>_<varname>suffix</varname>'} ON SEGMENT
+       [CSV [QUOTE [ AS ] '<varname>quote</varname>'] 
+            [FORCE NOT NULL <varname>column</varname> [, ...]]</codeblock>
     </section>
     <section id="section3">
       <title>Description</title>
