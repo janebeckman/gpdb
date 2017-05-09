@@ -202,7 +202,7 @@
                     </plentry>
                     <plentry>
                         <pt>--no-gp-syntax</pt>
-                        <pd>Do not output Greenplum Database syntax in the <codeph>CREATE
+                        <pd>Do not output the table distribution clauses in the <codeph>CREATE
                                 TABLE</codeph> statements. </pd>
                     </plentry>
                 </parml>
