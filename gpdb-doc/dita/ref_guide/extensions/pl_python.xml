@@ -21,6 +21,9 @@
       <li id="pw21367213">
         <xref href="#topic1113" type="topic" format="dita"/>
       </li>
+      <li id="pw21367217">
+        <xref href="#topic1117" type="topic" format="dita"/>
+      </li>
       <li id="pw213672">
         <xref href="#topic11" type="topic" format="dita"/>
       </li>
@@ -522,7 +525,7 @@ $$ language plpythonu;</codeblock>
     </topic>
   </topic>
   <topic id="topic1113" xml:lang="en">
-    <title id="pw2137121113">Arrays and Composite Types</title>
+    <title id="pw2137121113">Arrays and Lists</title>
     <body>
       <p>You pass SQL array values into PL/Python functions with a Python list. Similarly, PL/Python functions return SQL array values as a Python list. In the typical PL/Python usage pattern, you will specify an array with <codeph>[]</codeph>.</p>
 
@@ -558,7 +561,15 @@ CONTEXT:  PL/Python function "return_multidim_py_type"
 (1 row) </codeblock>
 
 <p>PL/Python also accepts other Python sequences, such as tuples, as function arguments for backwards compatibility with Greenplum versions where multi-dimensional arrays were not supported. In such cases, these Python sequences are always treated as one-dimensional arrays because they are ambiguous with composite types.</p>
-<p>You must specify a composite type as a tuple, rather than a list, when it is used in a multi-dimensional array. You cannot return an array of composite types as a list because it would be ambiguous to determine whether the list represents a composite type or another array dimension. In the typical usage pattern, you will specify composite type tuples with <codeph>()</codeph>.</p>
+    </body>
+  </topic>
+
+  <topic id="topic1117" xml:lang="en">
+    <title id="pw2137121117">Composite Types</title>
+    <body>
+<p>You pass composite-type arguments to a PL/Python function using Python mappings. The element names of the mapping are the attribute names of the composite types. If an attribute has the null value, its mapping value is <codeph>None</codeph>.</p>
+<p>You can return a composite type result as a sequence type (tuple or list).
+You must specify a composite type as a tuple, rather than a list, when it is used in a multi-dimensional array. You cannot return an array of composite types as a list because it would be ambiguous to determine whether the list represents a composite type or another array dimension. In the typical usage pattern, you will specify composite type tuples with <codeph>()</codeph>.</p>
 
 <p>In the following example, you create a composite type and a PL/Python function that returns an array of the composite type:</p>
 <codeblock>CREATE TYPE type_record AS (
@@ -577,7 +588,7 @@ SELECT * FROM composite_type_as_list();
 ------------------------------------------------------------------------------------
  {{"(first,1)","(second,1)"},{"(first,2)","(second,2)"},{"(first,3)","(second,3)"}}
 (1 row) </codeblock>
-    <p>Refer to the PostgreSQL <xref href="https://www.postgresql.org/docs/8.3/static/plpython-funcs.html" scope="external" format="html">PL/Python Functions</xref> documentation for additional information on PL/Python handling of composite types.</p>
+    <p>Refer to the PostgreSQL <xref href="https://www.postgresql.org/docs/devel/static/plpython-data.html#plpython-arrays" scope="external" format="html">Arrays, Lists</xref> documentation for additional information on PL/Python handling of arrays and composite types.</p>
     </body>
   </topic>
   <topic id="topic11" xml:lang="en">
