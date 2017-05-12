@@ -229,7 +229,7 @@ SELECT xmlelement(name test, xmlattributes(func(a, b))) FROM test;</codeblock></
         appear.</p>
       <p><cmdname>xmlforest</cmdname></p>
       <p>
-        <codeblock>xmlforest(content [AS name] [, ...])</codeblock>
+        <codeblock>xmlforest(<varname>content</varname> [AS <varname>name</varname>] [, ...])</codeblock>
       </p>
       <p>The <codeph>xmlforest</codeph> expression produces an XML forest (sequence) of elements
         using the given names and content.</p>
@@ -258,7 +258,7 @@ WHERE table_schema = 'pg_catalog';
       <p>Note that XML forests are not valid XML documents if they consist of more than one element,
         so it might be useful to wrap <codeph>xmlforest</codeph> expressions in
           <codeph>xmlelement</codeph>.</p>
-      <p><cmdname>xmlpi</cmdname><codeblock>xmlpi(name target [, content])</codeblock></p>
+      <p><cmdname>xmlpi</cmdname><codeblock>xmlpi(name <varname>target</varname> [, <varname>content</varname>])</codeblock></p>
       <p>The xmlpi expression creates an XML processing instruction. The content, if present, must
         not contain the character sequence <codeph>?></codeph>.</p>
       <p>Example:<codeblock>SELECT xmlpi(name php, 'echo "hello world";');
@@ -267,6 +267,9 @@ WHERE table_schema = 'pg_catalog';
 -----------------------------
  &lt;?php echo "hello world";?></codeblock></p>
       <p><cmdname>xmlroot</cmdname></p>
+      <p>
+        <codeblock>xmlroot(<varname>xml</varname>, version <varname>text</varname> | no value [, standalone yes|no|no value])</codeblock>
+      </p>
       <p>The <codeph>xmlroot</codeph> expression alters the properties of the root node of an XML
         value. If a version is specified, it replaces the value in the root node's version
         declaration; if a standalone setting is specified, it replaces the value in the root node's
@@ -280,7 +283,7 @@ WHERE table_schema = 'pg_catalog';
  &lt;content>abc&lt;/content></codeblock></p>
       <p><cmdname>xmlagg</cmdname></p>
       <p>
-        <codeblock>xmlagg (xml)</codeblock>
+        <codeblock>xmlagg (<varname>xml</varname>)</codeblock>
       </p>
       <p>The function <codeph>xmlagg</codeph> is, unlike the other functions described here, an
         aggregate function. It concatenates the input values to the aggregate function call, much
@@ -317,7 +320,7 @@ SELECT xmlagg(x) FROM test;
         values.</p>
       <p><cmdname>IS DOCUMENT</cmdname></p>
       <p>
-        <codeblock>xml IS DOCUMENT</codeblock>
+        <codeblock><varname>xml</varname> IS DOCUMENT</codeblock>
       </p>
       <p>The expression <codeph>IS DOCUMENT</codeph> returns true if the argument XML value is a
         proper XML document, false if it is not (that is, it is a content fragment), or null if the
@@ -325,12 +328,12 @@ SELECT xmlagg(x) FROM test;
         and content fragments.</p>
       <p><cmdname>XMLEXISTS</cmdname></p>
       <p>
-        <codeblock>XMLEXISTS(text PASSING [BY REF] xml [BY REF])</codeblock>
+        <codeblock>XMLEXISTS(<varname>text</varname> PASSING [BY REF] <varname>xml</varname> [BY REF])</codeblock>
       </p>
       <p>The function <codeph>xmlexists</codeph> returns true if the XPath expression in the first
         argument returns any nodes, and false otherwise. (If either argument is null, the result is
         null.)</p>
-      <p>Example:<codeblock>SELECT xmlexists('//town[text() = ''Toronto'']' PASSING BY REF '&lt;towns>&lt;town>Toronto&lt;/town>&lt;town>Ottawa&lt;/town>&lt;/towns>');
+      <p>Example:<codeblock>SELECT xmlexists('//town[<varname>text</varname>() = ''Toronto'']' PASSING BY REF '&lt;towns>&lt;town>Toronto&lt;/town>&lt;town>Ottawa&lt;/town>&lt;/towns>');
 
  xmlexists
 ------------
@@ -345,9 +348,9 @@ SELECT xmlagg(x) FROM test;
         XQuery.</p>
       <p><cmdname>xml_is_well_formed</cmdname></p>
       <p>
-        <codeblock>xml_is_well_formed(text)
-xml_is_well_formed_document(text)
-xml_is_well_formed_content(text)</codeblock>
+        <codeblock>xml_is_well_formed(<varname>text</varname>)
+xml_is_well_formed_document(<varname>text</varname>)
+xml_is_well_formed_content(<varname>text</varname>)</codeblock>
       </p>
       <p>These functions check whether a text string is well-formed XML, returning a Boolean result.
           <codeph>xml_is_well_formed_document</codeph> checks for a well-formed document, while
@@ -401,7 +404,7 @@ SELECT xml_is_well_formed_document('&lt;pg:foo xmlns:pg="http://postgresql.org/s
     <body>
       <p>To process values of data type xml, Greenplum Database offers the functions
           <codeph>xpath</codeph> and <codeph>xpath_exists</codeph>, which evaluate XPath 1.0
-        expressions.<codeblock>xpath(xpath, xml [, nsarray])
+        expressions.<codeblock>xpath(<varname>xpath</varname>, <varname>xml</varname> [, <varname>nsarray</varname>])
 </codeblock></p>
       <p>The function <codeph>xpath</codeph> evaluates the XPath expression
             <codeph><varname>xpath</varname></codeph> (a text value) against the XML value
@@ -416,7 +419,7 @@ SELECT xml_is_well_formed_document('&lt;pg:foo xmlns:pg="http://postgresql.org/s
         URI. It is not required that aliases provided in this array be the same as those being used
         in the XML document itself (in other words, both in the XML document and in the
           <codeph>xpath</codeph> function context, aliases are local).</p>
-      <p>Example:<codeblock>SELECT xpath('/my:a/text()', '&lt;my:a xmlns:my="http://example.com">test&lt;/my:a>',
+      <p>Example:<codeblock>SELECT xpath('/my:a/<varname>text</varname>()', '&lt;my:a xmlns:my="http://example.com">test&lt;/my:a>',
              ARRAY[ARRAY['my', 'http://example.com']]);
 
  xpath  
@@ -425,21 +428,21 @@ SELECT xml_is_well_formed_document('&lt;pg:foo xmlns:pg="http://postgresql.org/s
 (1 row)
 </codeblock></p>
       <p>To deal with default (anonymous) namespaces, do something like
-        this:<codeblock>SELECT xpath('//mydefns:b/text()', '&lt;a xmlns="http://example.com">&lt;b>test&lt;/b>&lt;/a>',
+        this:<codeblock>SELECT xpath('//mydefns:b/<varname>text</varname>()', '&lt;a xmlns="http://example.com">&lt;b>test&lt;/b>&lt;/a>',
              ARRAY[ARRAY['mydefns', 'http://example.com']]);
 
  xpath
 --------
  {test}
 (1 row)
-</codeblock><codeblock>xpath_exists(xpath, xml [, nsarray])
+</codeblock><codeblock>xpath_exists(<varname>xpath</varname>, <varname>xml</varname> [, <varname>nsarray</varname>])
 </codeblock></p>
       <p>The function <codeph>xpath_exists</codeph> is a specialized form of the
           <codeph>xpath</codeph> function. Instead of returning the individual XML values that
         satisfy the XPath, this function returns a Boolean indicating whether the query was
         satisfied or not. This function is equivalent to the standard <codeph>XMLEXISTS</codeph>
         predicate, except that it also offers support for a namespace mapping argument.</p>
-      <p>Example:<codeblock>SELECT xpath_exists('/my:a/text()', '&lt;my:a xmlns:my="http://example.com">test&lt;/my:a>',
+      <p>Example:<codeblock>SELECT xpath_exists('/my:a/<varname>text</varname>()', '&lt;my:a xmlns:my="http://example.com">test&lt;/my:a>',
                      ARRAY[ARRAY['my', 'http://example.com']]);
 
  xpath_exists  
@@ -454,7 +457,7 @@ SELECT xml_is_well_formed_document('&lt;pg:foo xmlns:pg="http://postgresql.org/s
       <p>The following functions map the contents of relational tables to XML values. They can be
         thought of as XML export
         functionality:<codeblock>table_to_xml(tbl regclass, nulls boolean, tableforest boolean, targetns text)
-query_to_xml(query text, nulls boolean, tableforest boolean, targetns text)
+query_to_xml(query <varname>text</varname>, nulls boolean, tableforest boolean, targetns text)
 cursor_to_xml(cursor refcursor, count int, nulls boolean,
               tableforest boolean, targetns text)
 </codeblock></p>
@@ -514,8 +517,8 @@ cursor_to_xml(cursor refcursor, count int, nulls boolean,
         If no particular namespace is wanted, an empty string should be passed.</p>
       <p>The following functions return XML Schema documents describing the mappings performed by
         the corresponding functions
-        above:t<codeblock>able_to_xmlschema(tbl regclass, nulls boolean, tableforest boolean, targetns text)
-query_to_xmlschema(query text, nulls boolean, tableforest boolean, targetns text)
+        above:<codeblock>able_to_xmlschema(tbl regclass, nulls boolean, tableforest boolean, targetns text)
+query_to_xmlschema(query <varname>text</varname>, nulls boolean, tableforest boolean, targetns text)
 cursor_to_xmlschema(cursor refcursor, nulls boolean, tableforest boolean, targetns text)
 </codeblock></p>
       <p>It is essential that the same parameters are passed in order to obtain matching XML data
@@ -524,7 +527,7 @@ cursor_to_xmlschema(cursor refcursor, nulls boolean, tableforest boolean, target
         document (or <codeph>forest</codeph>), linked together. They can be useful where
         self-contained and self-describing results are
         desired:<codeblock>table_to_xml_and_xmlschema(tbl regclass, nulls boolean, tableforest boolean, targetns text)
-query_to_xml_and_xmlschema(query text, nulls boolean, tableforest boolean, targetns text)
+query_to_xml_and_xmlschema(query <varname>text</varname>, nulls boolean, tableforest boolean, targetns text)
 </codeblock></p>
       <p>In addition, the following functions are available to produce analogous mappings of entire
         schemas or the entire current
