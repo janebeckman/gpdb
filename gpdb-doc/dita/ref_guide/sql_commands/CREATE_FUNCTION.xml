@@ -126,9 +126,9 @@ not just external ones.</pd></plentry>
 in <xref href="https://www.postgresql.org/docs/8.3/static/runtime-config-query.html#GUC-CPU-OPERATOR-COST" scope="external" format="html">cpu_operator_cost</xref> units.
 If the function returns a set, <varname>execution_cost</varname> identifies the
 cost per returned row. If the cost is not specified, C-language and internal
-functions default to 1 unit, while 100 units is the default for functions in
-all other languages. Larger values cause the planner to try to avoid evaluating
-the function more often than necessary.</pd></plentry>
+functions default to 1 unit, while functions in other languages default to 100 
+units. The planner tries to evaluate the function less often when you specify
+larger <varname>execution_cost</varname> values.</pd></plentry>
                 <plentry>
                     <pt><varname>configuration_parameter</varname></pt>
                     <pt><varname>value</varname></pt>
@@ -171,7 +171,7 @@ use the argument types as part of the C names). </p><p>Two functions are conside
 and input argument types, ignoring any <codeph>OUT</codeph> parameters. Thus for example
 these declarations conflict:</p><codeblock>CREATE FUNCTION foo(int) ...
 CREATE FUNCTION foo(int, out text) ...</codeblock>
-<p>Functions that have different argument type lists will not be considered to conflict at
+<p>Functions that have different argument type lists are not considered to conflict at
 creation time, but if argument defaults are provided, they might conflict in use.
 For example, consider:</p><codeblock>CREATE FUNCTION foo(int) ...
 CREATE FUNCTION foo(int, int default 42) ...</codeblock>
