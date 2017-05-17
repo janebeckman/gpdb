@@ -347,6 +347,7 @@ table2-mapping
       <p>The functions described in this section operate on values of type <codeph>xml</codeph>. The
         section <xref href="#topic_zpg_jl2_wz" format="dita"/>also contains information about the
           <codeph>xml</codeph> functions and function-like expressions.</p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlcomment</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -361,6 +362,7 @@ table2-mapping
   xmlcomment
 --------------
  &lt;!--hello--></codeblock></p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlconcat</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -393,6 +395,7 @@ table2-mapping
              xmlconcat
 -----------------------------------
  &lt;?xml version="1.1"?>&lt;foo/>&lt;bar/></codeblock></p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlelement</cmdname></codeph>
       </p>
       <p><b>Synopsis:</b></p>
@@ -454,6 +457,7 @@ SELECT xmlelement(name test, xmlattributes(func(a, b))) FROM test;</codeblock></
         data types is expected to evolve in order to align the SQL and Greenplum Database data types
         with the XML schema specification, at which point a more precise description will
         appear.</p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlforest</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -486,6 +490,7 @@ WHERE table_schema = 'pg_catalog';
       <p>Note that XML forests are not valid XML documents if they consist of more than one element,
         so it might be useful to wrap <codeph>xmlforest</codeph> expressions in
           <codeph>xmlelement</codeph>.</p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlpi</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -498,6 +503,7 @@ WHERE table_schema = 'pg_catalog';
             xmlpi
 -----------------------------
  &lt;?php echo "hello world";?></codeblock></p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlroot</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -514,6 +520,7 @@ WHERE table_schema = 'pg_catalog';
 ----------------------------------------
  &lt;?xml version="1.0" standalone="yes"?>
  &lt;content>abc&lt;/content></codeblock></p>
+      <p><b>Function:</b></p>
       <p><codeph><cmdname>xmlagg</cmdname></codeph></p>
       <p>
         <codeblock>xmlagg (<varname>xml</varname>)</codeblock>
@@ -551,6 +558,7 @@ SELECT xmlagg(x) FROM test;
     <body>
       <p>The expressions described in this section check properties of <codeph>xml</codeph>
         values.</p>
+      <p><b>Expression:</b></p>
       <p><codeph><cmdname>IS DOCUMENT</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -558,8 +566,8 @@ SELECT xmlagg(x) FROM test;
       </p>
       <p>The expression <codeph>IS DOCUMENT</codeph> returns true if the argument XML value is a
         proper XML document, false if it is not (that is, it is a content fragment), or null if the
-        argument is null. See the section Working with XML Data for the difference between documents
-        and content fragments.</p>
+        argument is null.</p>
+      <p><b>Expression:</b></p>
       <p><codeph><cmdname>XMLEXISTS</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
@@ -581,6 +589,7 @@ SELECT xmlagg(x) FROM test;
         standard specifies the <codeph>xmlexists</codeph> construct to take an XQuery expression as
         first argument, but Greenplum Database currently only supports XPath, which is a subset of
         XQuery.</p>
+      <p><b>Expression:</b></p>
       <p><codeph><cmdname>xml_is_well_formed</cmdname></codeph></p>
       <p><b>Synopsis:</b></p>
       <p>
