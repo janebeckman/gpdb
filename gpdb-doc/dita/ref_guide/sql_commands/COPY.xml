@@ -128,12 +128,12 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>&lt;SEG_DATA_DIR></pt>
           <pd>Full path of the segment data directory for <codeph>ON SEGMENT</codeph> copying.
-            Brackets are required when specifying the path.</pd>
+            Brackets indicate a string literal is used when specifying the path.</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEGID></pt>
-          <pd>The ID number of the segment to be copied. Brackets are required when specifying the
-            path.</pd>
+          <pd>The ID number of the segment to be copied. Brackets indicate a string literal in
+            specifying the segment.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
