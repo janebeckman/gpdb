@@ -128,12 +128,13 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>&lt;SEG_DATA_DIR></pt>
           <pd>Full path of the segment data directory for <codeph>ON SEGMENT</codeph> copying.
-            Brackets indicate a string literal is used when specifying the path.</pd>
+            Brackets indicate a string literal is used when specifying the path. (An absolute path
+            can be used instead of <codeph>&lt;SEG_DATA_DIR></codeph>.)</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEGID></pt>
-          <pd>The ID number of the segment to be copied. Brackets indicate a string literal in
-            specifying the segment.</pd>
+          <pd>The content ID number of the segment to be copied. Brackets indicate a string literal
+            in specifying the segment.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
@@ -525,14 +526,23 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
    SEGMENT REJECT LIMIT 10 ROWS;</codeblock>
       <p>Use of the <codeph>ON SEGMENT</codeph> argument takes the form:</p>
       <p>COPY <varname>table</varname> TO
-          '&lt;<varname>SEG_DATA_DIR</varname>>&lt;<varname>SEGID</varname>>/<varname>gpdumpname</varname>&lt;<varname>SEGID</varname>>_<varname>suffix</varname>'
+          '&lt;<varname>SEG_DATA_DIR</varname>>/<varname>gpdumpname</varname>&lt;<varname>SEGID</varname>>_<varname>suffix</varname>'
         ON SEGMENT; </p>
+      <p>The <codeph>&lt;SEGID></codeph> is required. However, you can substitute an absolute path
+        for <codeph>&lt;SEG_DATA_DIR></codeph>. </p>
       <p>You must pass in the string literal "&lt;SEG_DATA_DIR>" or "&lt;SEGID>" to COPY, then COPY
         will fill in the appropriate values when the operation is run.</p>
-      <p>For
-        example:<codeblock>COPY public.foo TO '&lt;/home/usr1/data/gpseg>&lt;0>/gpbackup_&lt;0>.txt' ON SEGMENT;</codeblock></p>
-      <p>This statement copies the data in <codeph>public.foo</codeph> on segment 0 to the file
-          <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph>. </p>
+      <p>For example, if segment 0 has its segment data directory located at <codeph>/home/
+          usr1/data/gpseg0</codeph>, then the
+        statement:<codeblock>COPY public.foo TO '&lt;/home/usr1/data/gpseg>&lt;0>/gpbackup_&lt;0>.txt' ON SEGMENT;</codeblock></p>
+      <p>copies the data in <codeph>public.foo</codeph> on segment 0 to the file
+          <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
+        in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
+        for each segment.</p>
+      <p>If an absolute path is specified, instead of  <codeph>&lt;SEG_DATA_DIR></codeph>, such as
+        in the statement
+        <codeblock>COPY public.foo TO '/tmp/foo/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
+      <p>files would be placed in <codeph>/tmp/foo</codeph> on every segment.</p>
     </section>
     <section id="section12">
       <title>Compatibility</title>
