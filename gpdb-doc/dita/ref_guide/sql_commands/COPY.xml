@@ -128,7 +128,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>&lt;SEG_DATA_DIR></pt>
           <pd>Full path of the segment data directory for <codeph>ON SEGMENT</codeph> copying.
-            Brackets indicate a string literal is used when specifying the path. (An absolute path
+            Brackets are part of the string literal used when specifying the path. (An absolute path
             can be used instead of <codeph>&lt;SEG_DATA_DIR></codeph>.)</pd>
         </plentry>
         <plentry>
@@ -539,14 +539,15 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
           <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
         in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
         for each segment.</p>
-      <p>For example if you have <codeph>mytable</codeph> with the segments and mirror segments like
+      <p>For example, if you have <codeph>mytable</codeph> with the segments and mirror segments
+        like
         this:<codeblock>0 | 1 |/home/usr1/data1/gpsegdir0
 0 | 3 /home/usr1/data_mirror1/gpsegdir0 
 1 | 4 /home/usr1/data2/gpsegdir1
 1 | 2 /home/usr1/data_mirror2/gpsegdir1 
 </codeblock>the
-          <codeph>COPY</codeph> would result in the following
-        backup:<codeblock>/home/usr1/data1/gpseg0/gpbackup0.txt
+          <codeph>COPY</codeph> would result in the following backup
+        files:<codeblock>/home/usr1/data1/gpseg0/gpbackup0.txt
 /home/usr1/data2/gpseg1/gpbackup1.txt</codeblock></p>
       <p>If an absolute path is specified, instead of <codeph>&lt;SEG_DATA_DIR></codeph>, such as in
         the statement
