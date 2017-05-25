@@ -175,6 +175,8 @@ con6 /gpdata/*/pg_log/gpdb*.csv' &gt; seglog.out
                     all logs from the listed segment hosts in a Greenplum Database cluster:</p>
                 <p>
                     <codeblock>$ gpsupport collect logs segs sdw1,sdw2,sdw3-1</codeblock>
+                    <note>The <codeph>gpsupport</codeph> utility is deprecated and will be removed
+                        in a future release.</note>
                 </p>
                 <p>The <codeph>gpsupport</codeph> utility can also collect other information such as
                     core files, previously run queries, and database schema information. The utility
