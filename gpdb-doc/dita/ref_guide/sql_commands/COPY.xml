@@ -532,13 +532,22 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         for <codeph>&lt;SEG_DATA_DIR></codeph>. </p>
       <p>You must pass in the string literal "&lt;SEG_DATA_DIR>" or "&lt;SEGID>" to COPY, then COPY
         will fill in the appropriate values when the operation is run.</p>
-      <p>For example, if segment 0 has its segment data directory located at <codeph>/home/
-          usr1/data/gpseg0</codeph>, then the
+      <p>For example, if segment 0 has its segment data directory located at
+          <codeph>/home/usr1/data/gpseg0</codeph>, then the
         statement:<codeblock>COPY mytable TO '&lt;SEG_DATA_DIR>/gpbackup&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
       <p>copies the data in <codeph>mytable</codeph> on segment 0 to the file
           <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
         in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
         for each segment.</p>
+      <p>For example if you have <codeph>mytable</codeph> with the segments and mirror segments like
+        this:<codeblock>0 | 1 |/home/usr1/data1/gpsegdir0
+0 | 3 /home/usr1/data_mirror1/gpsegdir0 
+1 | 4 /home/usr1/data2/gpsegdir1
+1 | 2 /home/usr1/data_mirror2/gpsegdir1 
+</codeblock>the
+          <codeph>COPY</codeph> would result in the following
+        backup:<codeblock>/home/usr1/data1/gpseg0/gpbackup0.txt
+/home/usr1/data2/gpseg1/gpbackup1.txt</codeblock></p>
       <p>If an absolute path is specified, instead of <codeph>&lt;SEG_DATA_DIR></codeph>, such as in
         the statement
         <codeblock>COPY mytable TO '/tmp/gpdir/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
