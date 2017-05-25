@@ -134,7 +134,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>&lt;SEGID></pt>
           <pd>The content ID number of the segment to be copied. Brackets indicate a string literal
-            in specifying the segment.</pd>
+            that will be replaced by the content ID when <codeph>COPY</codeph> is run.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
@@ -538,7 +538,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
       <p>copies the data in <codeph>mytable</codeph> on segment 0 to the file
           <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
         in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
-        for each segment.</p>
+        for each segment. The <codeph>&lt;SEGID></codeph> is replaced with the content ID.</p>
       <p>For example, if you have <codeph>mytable</codeph> with the segments and mirror segments
         like
         this:<codeblock>0 | 1 |/home/usr1/data1/gpsegdir0
