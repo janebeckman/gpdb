@@ -534,15 +534,15 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         will fill in the appropriate values when the operation is run.</p>
       <p>For example, if segment 0 has its segment data directory located at <codeph>/home/
           usr1/data/gpseg0</codeph>, then the
-        statement:<codeblock>COPY public.foo TO '&lt;/home/usr1/data/gpseg>&lt;0>/gpbackup_&lt;0>.txt' ON SEGMENT;</codeblock></p>
-      <p>copies the data in <codeph>public.foo</codeph> on segment 0 to the file
+        statement:<codeblock>COPY mytable TO '&lt;SEG_DATA_DIR>/gpbackup&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
+      <p>copies the data in <codeph>mytable</codeph> on segment 0 to the file
           <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
         in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
         for each segment.</p>
-      <p>If an absolute path is specified, instead of  <codeph>&lt;SEG_DATA_DIR></codeph>, such as
-        in the statement
-        <codeblock>COPY public.foo TO '/tmp/foo/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
-      <p>files would be placed in <codeph>/tmp/foo</codeph> on every segment.</p>
+      <p>If an absolute path is specified, instead of <codeph>&lt;SEG_DATA_DIR></codeph>, such as in
+        the statement
+        <codeblock>COPY mytable TO '/tmp/gpdir/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
+      <p>files would be placed in <codeph>/tmp/gpdir</codeph> on every segment.</p>
     </section>
     <section id="section12">
       <title>Compatibility</title>
