@@ -123,18 +123,21 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
           <pt>ON SEGMENT</pt>
           <pd>Copy table data to files on segments, then copy from those files back into the
             segment. Currently only supports COPY functionality needed to copy to and from files and
-            to support the CSV format option.</pd>
+            to support the CSV format option. The <codeph>&lt;SEG_DATA_DIR></codeph> and
+              <codeph>&lt;SEGID></codeph> parameters are used with <codeph>ON SEGMENT</codeph> (see
+            example).</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEG_DATA_DIR></pt>
           <pd>Full path of the segment data directory for <codeph>ON SEGMENT</codeph> copying.
-            Brackets are part of the string literal used when specifying the path. (An absolute path
-            can be used instead of <codeph>&lt;SEG_DATA_DIR></codeph>.)</pd>
+            Brackets are part of the string literal used when specifying the path. (Optional. An
+            absolute path can be used instead of <codeph>&lt;SEG_DATA_DIR></codeph>.)</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEGID></pt>
-          <pd>The content ID number of the segment to be copied. Brackets indicate a string literal
-            in specifying the segment.</pd>
+          <pd>The content ID number of the segment to be copied when copying <codeph>ON
+              SEGMENT</codeph>. Brackets indicate a string literal that will be replaced by the
+            content ID when <codeph>COPY</codeph> is run.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
@@ -526,7 +529,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
    SEGMENT REJECT LIMIT 10 ROWS;</codeblock>
       <p>Use of the <codeph>ON SEGMENT</codeph> argument takes the form:</p>
       <p>COPY <varname>table</varname> TO
-          '&lt;<varname>SEG_DATA_DIR</varname>>/<varname>gpdumpname</varname>&lt;<varname>SEGID</varname>>_<varname>suffix</varname>'
+          '&lt;SEG_DATA_DIR>/<varname>gpdumpname</varname>&lt;<varname>SEGID</varname>>_<varname>suffix</varname>'
         ON SEGMENT; </p>
       <p>The <codeph>&lt;SEGID></codeph> is required. However, you can substitute an absolute path
         for <codeph>&lt;SEG_DATA_DIR></codeph>. </p>
@@ -538,13 +541,13 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
       <p>copies the data in <codeph>mytable</codeph> on segment 0 to the file
           <codeph>/usr/local/gpseg0/gpbackup_0.txt</codeph> and dumps files to all segments, filling
         in the appropriate <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> values
-        for each segment.</p>
+        for each segment. The <codeph>&lt;SEGID></codeph> is replaced with the content ID.</p>
       <p>For example, if you have <codeph>mytable</codeph> with the segments and mirror segments
         like
         this:<codeblock>0 | 1 |/home/usr1/data1/gpsegdir0
-0 | 3 /home/usr1/data_mirror1/gpsegdir0 
-1 | 4 /home/usr1/data2/gpsegdir1
-1 | 2 /home/usr1/data_mirror2/gpsegdir1 
+0 | 3 | /home/usr1/data_mirror1/gpsegdir0 
+1 | 4 | /home/usr1/data2/gpsegdir1
+1 | 2 | /home/usr1/data_mirror2/gpsegdir1 
 </codeblock>the
           <codeph>COPY</codeph> would result in the following backup
         files:<codeblock>/home/usr1/data1/gpseg0/gpbackup0.txt
