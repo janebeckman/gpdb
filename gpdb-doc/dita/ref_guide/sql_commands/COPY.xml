@@ -34,7 +34,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         [CSV [QUOTE [ AS ] 'quote'] 
              [FORCE QUOTE column [, ...]] ]
       [IGNORE EXTERNAL PARTITIONS ]
-</codeblock>
+COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname>directorypath</varname>/<varname>gpdumpname</varname>&lt;<codeph>&lt;SEGID></codeph>>_<varname>suffix</varname>' ON SEGMENT</codeblock>
     </section>
     <section id="section3">
       <title>Description</title>
@@ -42,16 +42,19 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         files. <codeph>COPY TO</codeph> copies the contents of a table to a file, while <codeph>COPY
           FROM</codeph> copies data from a file to a table (appending the data to whatever is in the
         table already). <codeph>COPY TO</codeph> can also copy the results of a
-          <codeph>SELECT</codeph> query. </p>
+          <codeph>SELECT</codeph> query. <note>Use of <codeph>COPY FROM</codeph> with the <codeph>ON
+            SEGMENT</codeph> option is not yet supported.</note></p>
       <p>If a list of columns is specified, <codeph>COPY</codeph> will only copy the data in the
         specified columns to or from the file. If there are any columns in the table that are not in
         the column list, <codeph>COPY FROM</codeph> will insert the default values for those
         columns. </p>
       <p><codeph>COPY</codeph> with a file name instructs the Greenplum Database master host to
         directly read from or write to a file. The file must be accessible to the master host and
-        the name must be specified from the viewpoint of the master host. When
-          <codeph>STDIN</codeph> or <codeph>STDOUT</codeph> is specified, data is transmitted via
-        the connection between the client and the master.</p>
+        the name must be specified from the viewpoint of the master host. When <codeph>COPY</codeph>
+        is used with the <codeph>ON SEGMENT</codeph> option, the <codeph>COPY TO</codeph> causes
+        segments to create individual segment-oriented files. When <codeph>STDIN</codeph> or
+          <codeph>STDOUT</codeph> is specified, data is transmitted via the connection between the
+        client and the master.</p>
       <p>If <codeph>SEGMENT REJECT LIMIT</codeph> is used, then a <codeph>COPY FROM</codeph>
         operation will operate in single row error isolation mode. In this release, single row error
         isolation mode only applies to rows in the input file with format errors — for example,
@@ -68,7 +71,10 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         Database.</p>
       <p>The <codeph>ON SEGMENT</codeph> parameter allows you to copy table data to files on
         segments, then copy from those files back into the segment, when performing a backup.
-          <codeph>COPY FROM</codeph> is not currently supported.</p>
+          <codeph>COPY FROM</codeph> is not currently supported. It takes the string literal
+          <codeph>&lt;SEGID></codeph> (required) and either the absolute path or the
+          <codeph>&lt;SEG_DATA_DIR></codeph> string literal. When the COPY operation is run, segment
+        ids and the paths of the segments are substituted for the string literal values.</p>
       <sectiondiv id="section4">
         <b>Outputs</b>
         <p>On successful completion, a <codeph>COPY</codeph> command returns a command tag of the
@@ -125,19 +131,21 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
             segment. Currently only supports COPY functionality needed to copy to and from files and
             to support the CSV format option. The <codeph>&lt;SEG_DATA_DIR></codeph> and
               <codeph>&lt;SEGID></codeph> parameters are used with <codeph>ON SEGMENT</codeph> (see
-            example).</pd>
+            example). Mirror segments are not copied.</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEG_DATA_DIR></pt>
-          <pd>Full path of the segment data directory for <codeph>ON SEGMENT</codeph> copying.
-            Brackets are part of the string literal used when specifying the path. (Optional. An
-            absolute path can be used instead of <codeph>&lt;SEG_DATA_DIR></codeph>.)</pd>
+          <pd>The string literal representing the full path of the segment data directory for
+              <codeph>ON SEGMENT</codeph> copying. Brackets are part of the string literal used when
+            specifying the path. COPY will replace the string literal with the segment path(s).
+            (Optional. An absolute path can be used in place of using the
+              <codeph>&lt;SEG_DATA_DIR></codeph>string literal.)</pd>
         </plentry>
         <plentry>
           <pt>&lt;SEGID></pt>
-          <pd>The content ID number of the segment to be copied when copying <codeph>ON
-              SEGMENT</codeph>. Brackets indicate a string literal that will be replaced by the
-            content ID when <codeph>COPY</codeph> is run.</pd>
+          <pd>The string literal representing the content ID number of the segment to be copied when
+            copying <codeph>ON SEGMENT</codeph>. Brackets indicate a string literal that will be
+            replaced by the content ID when <codeph>COPY</codeph> is run.</pd>
         </plentry>
         <plentry>
           <pt>BINARY</pt>
@@ -527,13 +535,16 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         isolation mode and log errors:</p>
       <codeblock>COPY sales FROM '/home/usr1/sql/sales_data' LOG ERRORS 
    SEGMENT REJECT LIMIT 10 ROWS;</codeblock>
-      <p>Use of the <codeph>ON SEGMENT</codeph> argument takes the form:</p>
+      <p>To copy segment data for later backup, use the <codeph>ON SEGMENT</codeph> argument.
+          <note>The <codeph>COPY FROM</codeph> operation does not currently support the <codeph>ON
+            SEGMENT</codeph> argument.</note>Use of the <codeph>ON SEGMENT</codeph> argument takes
+        the form:</p>
       <p>COPY <varname>table</varname> TO
-          '&lt;SEG_DATA_DIR>/<varname>gpdumpname</varname>&lt;<varname>SEGID</varname>>_<varname>suffix</varname>'
+          '&lt;SEG_DATA_DIR>/<varname>gpdumpname</varname>&lt;<codeph>&lt;SEGID></codeph>>_<varname>suffix</varname>'
         ON SEGMENT; </p>
       <p>The <codeph>&lt;SEGID></codeph> is required. However, you can substitute an absolute path
-        for <codeph>&lt;SEG_DATA_DIR></codeph>. </p>
-      <p>You must pass in the string literal "&lt;SEG_DATA_DIR>" or "&lt;SEGID>" to COPY, then COPY
+        for the <codeph>&lt;SEG_DATA_DIR></codeph> string literal in the path. </p>
+      <p>When you pass in the string literal "&lt;SEG_DATA_DIR>" and "&lt;SEGID>" to COPY,  COPY
         will fill in the appropriate values when the operation is run.</p>
       <p>For example, if segment 0 has its segment data directory located at
           <codeph>/home/usr1/data/gpseg0</codeph>, then the
@@ -552,6 +563,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
           <codeph>COPY</codeph> would result in the following backup
         files:<codeblock>/home/usr1/data1/gpseg0/gpbackup0.txt
 /home/usr1/data2/gpseg1/gpbackup1.txt</codeblock></p>
+      <p>The mirror segments are not backed up by the ON SEGMENT copy.</p>
       <p>If an absolute path is specified, instead of <codeph>&lt;SEG_DATA_DIR></codeph>, such as in
         the statement
         <codeblock>COPY mytable TO '/tmp/gpdir/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
