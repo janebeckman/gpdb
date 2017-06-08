@@ -14,6 +14,7 @@ import json
 import csv
 import subprocess
 import commands
+from collections import defaultdict
 
 from datetime import datetime
 from time import sleep
@@ -29,6 +30,7 @@ from test.behave_utils.gpfdist_utils.gpfdist_mgmt import Gpfdist
 from test.behave_utils.utils import *
 from test.behave_utils.PgHba import PgHba, Entry
 from gppylib.commands.base import Command, REMOTE
+import yaml
 
 labels_json = '/tmp/old_to_new_timestamp_labels.json'
 timestamp_json = '/tmp/old_to_new_timestamps.json'
@@ -388,6 +390,12 @@ def impl(context, dbname):
 @when('the user runs "{command}"')
 @then('the user runs "{command}"')
 def impl(context, command):
+    if use_netbackup():
+        if 'gpcrondump' in command:
+            command = append_storage_config_to_backup_command(context, command)
+        elif 'gpdbrestore' in command:
+            command = append_storage_config_to_restore_command(context, command)
+
     run_gpcommand(context, command)
 
 
@@ -530,56 +538,21 @@ def impl(context, command, options):
         ts = context.backup_timestamp
     bnr_tool = command.split()[0].strip()
     if bnr_tool == 'gp_dump':
-        command_str = command
+        command_str = append_storage_config_to_backup_command(context, command)
     elif bnr_tool == 'gp_dump_agent':
         command_str = command + ' -p %s' % port
+        command_str = append_storage_config_to_backup_command(context, command_str)
     elif bnr_tool == 'gp_restore':
         command_str = "%s %s --gp-k %s --gp-d db_dumps/%s --gp-r db_dumps/%s" % (
             command, options, context.backup_timestamp, context.backup_timestamp[0:8], context.backup_timestamp[0:8])
+        command_str = append_storage_config_to_restore_command(context, command_str)
     elif bnr_tool == 'gp_restore_agent':
         command_str = "%s %s --gp-k %s --gp-d db_dumps/%s -p %s -U %s --target-host localhost " \
                       "--target-port %s db_dumps/%s/gp_dump_-1_1_%s_post_data.gz" % (
                         command, options, ts, ts[0:8], port, user, port, ts[0:8], ts)
+        command_str = append_storage_config_to_restore_command(context, command_str)
 
     run_valgrind_command(context, command_str, "valgrind_suppression.txt")
-
-
-@then(
-    'the user runs valgrind with "{command}" and options "{options}" '
-    'and suppressions file "{suppressions_file}" using netbackup')
-@when(
-    'the user runs valgrind with "{command}" and options "{options}" '
-    'and suppressions file "{suppressions_file}" using netbackup')
-def impl(context, command, options, suppressions_file):
-    # TODO several paths could have undefined vars below. FIXME
-    port = os.environ.get('PGPORT')
-    user = getpass.getuser()
-    if hasattr(context, 'backup_timestamp'):
-        ts = context.backup_timestamp
-    if hasattr(context, 'netbackup_service_host'):
-        netbackup_service_host = context.netbackup_service_host
-    if hasattr(context, 'netbackup_policy'):
-        netbackup_policy = context.netbackup_policy
-    if hasattr(context, 'netbackup_schedule'):
-        netbackup_schedule = context.netbackup_schedule
-    bnr_tool = command.split()[0].strip()
-    if bnr_tool == 'gp_dump':
-        command_str = command + " --netbackup-service-host " + netbackup_service_host \
-                      + " --netbackup-policy " + netbackup_policy + " --netbackup-schedule " + netbackup_schedule
-    elif bnr_tool == 'gp_dump_agent':
-        command_str = command + ' -p %s' % port + " --netbackup-service-host " \
-                      + netbackup_service_host + " --netbackup-policy " + netbackup_policy + " --netbackup-schedule " + netbackup_schedule
-    elif bnr_tool == 'gp_restore':
-        command_str = "%s %s --gp-k %s --gp-d db_dumps/%s --gp-r db_dumps/%s --netbackup-service-host %s" % (
-        command, options, context.backup_timestamp, context.backup_timestamp[0:8], context.backup_timestamp[0:8],
-        netbackup_service_host)
-    elif bnr_tool == 'gp_restore_agent':
-        command_str = "%s %s --gp-k %s --gp-d db_dumps/%s -p %s -U %s --target-host localhost --target-port %s db_dumps/%s/gp_dump_-1_1_%s_post_data.gz --netbackup-service-host %s" % (
-        command, options, ts, ts[0:8], port, user, port, ts[0:8], ts, netbackup_service_host)
-    else:
-        command_str = "%s %s" % (command, options)
-
-    run_valgrind_command(context, command_str, "netbackup_suppressions.txt")
 
 
 @when('the timestamp key is stored')
@@ -1033,6 +1006,7 @@ def impl(context, dbname):
 def impl(context, dbname):
     command = 'gp_restore -i --gp-k %s --gp-d db_dumps/%s --gp-i --gp-r db_dumps/%s --gp-l=p -d %s --gp-c' % (
     context.backup_timestamp, context.backup_subdir, context.backup_subdir, dbname)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1040,6 +1014,7 @@ def impl(context, dbname):
 def impl(context, dbname):
     command = 'gp_restore -i --gp-k %s --gp-d db_dumps/%s --gp-i --gp-r db_dumps/%s --gp-l=p -d %s --gp-c --gp-nostats' % (
     context.backup_timestamp, context.backup_subdir, context.backup_subdir, dbname)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1047,6 +1022,7 @@ def impl(context, dbname):
 def impl(context, dbname, backup_dir):
     command = 'gp_restore -i --gp-k %s --gp-d %s/db_dumps/%s --gp-i --gp-r %s/db_dumps/%s --gp-l=p -d %s --gp-c' % (
     context.backup_timestamp, backup_dir, context.backup_subdir, backup_dir, context.backup_subdir, dbname)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1056,6 +1032,7 @@ def impl(context, dbname):
     command = 'gp_restore -i --gp-k %s --gp-d db_dumps/%s --gp-i --gp-r db_dumps/%s --gp-l=p -d %s --gp-c -s db_dumps/%s/gp_dump_-1_1_%s.gz' % \
               (context.backup_timestamp, context.backup_subdir, context.backup_subdir, dbname, context.backup_subdir,
                context.backup_timestamp)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1063,6 +1040,7 @@ def impl(context, dbname):
 @then('the user runs gpdbrestore -e with the stored timestamp')
 def impl(context):
     command = 'gpdbrestore -e -t %s -a' % context.backup_timestamp
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1070,6 +1048,7 @@ def impl(context):
 @when('the user runs gpdbrestore -e with the stored timestamp and options "{options}"')
 def impl(context, options):
     command = 'gpdbrestore -e -t %s %s -a' % (context.backup_timestamp, options)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -1077,17 +1056,21 @@ def impl(context, options):
 @when('the user runs gpdbrestore -e with the date directory')
 def impl(context):
     command = 'gpdbrestore -e -b %s -a' % (context.backup_timestamp[0:8])
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
 @when('the user runs gpdbrestore without -e with the stored timestamp and options "{options}"')
 def impl(context, options):
     command = 'gpdbrestore -t %s %s -a' % (context.backup_timestamp, options)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
 @then('verify that there is no table "{tablename}" in "{dbname}"')
 def impl(context, tablename, dbname):
+    dbname = replace_special_char_env(dbname)
+    tablename = replace_special_char_env(tablename)
     if check_table_exists(context, dbname=dbname, table_name=tablename):
         raise Exception("Table '%s' still exists when it should not" % tablename)
 
@@ -2188,6 +2171,7 @@ def impl(context, num_tables, dbname, backedup_dbname):
 @then('the user runs gpdbrestore on dump date directory with options "{options}"')
 def impl(context, options):
     command = 'gpdbrestore -e -b %s %s -a' % (context.backup_timestamp[0:8], options)
+    command = append_storage_config_to_restore_command(context, command)
     run_gpcommand(context, command)
 
 
@@ -3709,17 +3693,15 @@ def impl(context, seg):
 
     cpCmd.run(validateAfter=True)
 
-    with open('/tmp/postmaster.pid', 'r') as fr:
-        pid = fr.readline().strip()
-
-    while True:
-        cmd = Command(name="get non-existing pid", cmdStr="ps ux | grep %s | grep -v grep | awk '{print \$2}'" % pid,
-                      remoteHost=hostname, ctxt=REMOTE)
-        cmd.run(validateAfter=True)
-        if cmd.get_stdout():
-            pid = pid + 1
-        else:
-            break
+    # Since Command creates a short-lived SSH session, we observe the PID given
+    # a throw-away remote process. Assume that the PID is unused and available on
+    # the remote in the near future.
+    # This pid is no longer associated with a
+    # running process and won't be recycled for long enough that tests
+    # have finished.
+    cmd = Command(name="get non-existing pid", cmdStr="echo \$\$", remoteHost=hostname, ctxt=REMOTE)
+    cmd.run(validateAfter=True)
+    pid = cmd.get_results().stdout.strip()
 
     with open('/tmp/postmaster.pid', 'r') as fr:
         lines = fr.readlines()
@@ -4211,11 +4193,11 @@ def impl(context, filename, output):
     check_stdout_msg(context, output)
 
 
-@then('verify that the last line of the master postgres configuration file contains the string "{output}"')
-def impl(context, output):
+@then('verify that the last line of the file "{filename}" in the master data directory contains the string "{output}"')
+def impl(context, filename, output):
     contents = ''
-    filename = master_data_dir + "/postgresql.conf"
-    with open(filename) as fr:
+    file_path = os.path.join(master_data_dir, filename)
+    with open(file_path) as fr:
         for line in fr:
             contents = line.strip()
     pat = re.compile(output)
@@ -4404,6 +4386,12 @@ def impl(context, dbname):
 
 @given('the backup test is initialized for special characters')
 def impl(context):
+    os.environ["SP_CHAR_DB"] = """ DB`~@#$%^&*()_-+[{]}|\;: \\'/?><;1 """
+    os.environ["SP_CHAR_SCHEMA"] = """ S`~@#$%^&*()-+[{]}|\;: \\'"/?><1 """
+    os.environ["SP_CHAR_SCHEMA2"] = """ S`~@#$%^&*()_-+[{]}|\;: \\'"/?><2 """
+    os.environ["SP_CHAR_HEAP"] = """ heap_T`~@#$%^&*()-+[{]}|\;: \\'"/?><1 """
+    os.environ["SP_CHAR_AO"] = """ ao_T`~@#$%^&*()-+[{]}|\;: \\'"/?><1 """
+    os.environ["SP_CHAR_CO"] = """ co_T`~@#$%^&*()-+[{]}|\;: \\'"/?><1 """
     context.execute_steps(u'''
         Given the database is running
         And the user runs "psql -f test/behave/mgmt_utils/steps/data/special_chars/create_special_database.sql template1"
@@ -4875,7 +4863,7 @@ def impl(context):
             When the user runs "gpstart -a"
             Then gpstart should return a return code of 0
             And verify that a role "gpmon" exists in database "gpperfmon"
-            And verify that the last line of the master postgres configuration file contains the string "gpperfmon_log_alert_level=warning"
+            And verify that the last line of the file "postgresql.conf" in the master data directory contains the string "gpperfmon_log_alert_level=warning"
             And verify that there is a "heap" table "database_history" in "gpperfmon"
             Then wait until the process "gpmmon" is up
             And wait until the process "gpsmon" is up
@@ -4902,3 +4890,67 @@ def impl(context):
 def impl(context):
     if os.path.exists(context.fake_timestamp_file):
         raise Exception("expected no file at: %s" % context.fake_timestamp_file)
+
+def use_netbackup():
+    if os.getenv('NETBACKUP'):
+        return True
+    else:
+        return False
+
+def append_storage_config_to_backup_command(context, command):
+    if use_netbackup():
+        command += " --netbackup-service-host " + context._root['netbackup_service_host'] + " --netbackup-policy " + context._root['netbackup_policy'] + " --netbackup-schedule " + context._root['netbackup_schedule']
+    return command
+
+def append_storage_config_to_restore_command(context, command):
+    if use_netbackup():
+        command += " --netbackup-service-host " + context._root['netbackup_service_host']
+    return command
+
+@given('the netbackup storage params have been parsed')
+def impl(context):
+    NETBACKUPDICT = defaultdict(dict)
+    NETBACKUPDICT['NETBACKUPINFO'] = parse_netbackup_params()
+    context._root['netbackup_service_host'] = NETBACKUPDICT['NETBACKUPINFO']['NETBACKUP_PARAMS']['NETBACKUP_SERVICE_HOST']
+    context._root['netbackup_policy'] = NETBACKUPDICT['NETBACKUPINFO']['NETBACKUP_PARAMS']['NETBACKUP_POLICY']
+    context._root['netbackup_schedule'] = NETBACKUPDICT['NETBACKUPINFO']['NETBACKUP_PARAMS']['NETBACKUP_SCHEDULE']
+
+def parse_netbackup_params():
+    current_path = os.path.realpath(__file__)
+    current_dir = os.path.dirname(current_path)
+    netbackup_yaml_file_path = os.path.join(current_dir, 'data/netbackup_behave_config.yaml')
+    try:
+        nbufile = open(netbackup_yaml_file_path, 'r')
+    except IOError,e:
+        raise Exception("Unable to open file %s: %s" % (netbackup_yaml_file_path, e))
+    try:
+        nbudata = yaml.load(nbufile.read())
+    except yaml.YAMLError, exc:
+        raise Exception("Error reading file %s: %s" % (netbackup_yaml_file_path, exc))
+    finally:
+        nbufile.close()
+
+    if len(nbudata) == 0:
+        raise Exception("The load of the config file %s failed.\
+         No configuration information to continue testing operation." % netbackup_yaml_file_path)
+    else:
+        return nbudata
+
+def _copy_nbu_lib_files(context, ver, gphome):
+    ver = ver.replace('.', '')
+    hosts = set(get_all_hostnames_as_list(context, 'template1'))
+    cpCmd = 'cp -f {gphome}/lib/nbu{ver}/lib/* {gphome}/lib/'.format(gphome=gphome,
+                                                                     ver=ver)
+    for host in hosts:
+        cmd = Command(name='Copy NBU lib files',
+                cmdStr=cpCmd,
+                ctxt=REMOTE,
+                remoteHost=host)
+        cmd.run(validateAfter=True)
+
+@given('the test suite is initialized for Netbackup "{ver}"')
+def impl(context, ver):
+    gphome = os.environ.get('GPHOME')
+    _copy_nbu_lib_files(context=context, ver=ver, gphome=gphome)
+    os.environ["NETBACKUP"] = "TRUE"
+

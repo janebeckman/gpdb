@@ -237,14 +237,6 @@ FaultInjectorIdentifierEnumToString[] = {
     	/* inject fault after segment receives state transition request */
 	_("segment_probe_response"),
 		/* inject fault after segment is probed by FTS */
-	_("SubtransactionFlushToFile"),
-		/* inject fault while writing subxids to file */
-	_("SubtransactionReadFromFile"),
-		/* inject fault while reading subxids from file */
-	_("SubtransactionRelease"),
-		/* inject fault before sub-transaction commit is recorded in xlog */
-	_("SubtransactionRollback"),
-		/* inject fault before sub-transaction abort is recorded in xlog */
 	_("local_tm_record_transaction_commit"),
 		/* inject fault after recording transaction commit for local transaction  */
 	_("malloc_failure"),
@@ -327,8 +319,8 @@ FaultInjectorIdentifierEnumToString[] = {
 		/* inject fault in cdbdisp_dispatchX*/
 	_("interconnect_stop_ack_is_lost"),
 		/* inject fault in interconnect to skip sending the stop ack */
-	_("cursor_qe_reader_after_snapshot"),
-		/* inject fault after QE READER has populated snashot for cursor */
+	_("qe_got_snapshot_and_interconnect"),
+		/* inject fault after qe got snapshot and interconnect*/
 	_("fsync_counter"),
 		/* inject fault to 'skip' in order to flush all buffers in BgBufferSync() */
 	_("bg_buffer_sync_default_logic"),
@@ -1102,11 +1094,6 @@ FaultInjector_NewHashEntry(
 		case TwoPhaseTransactionCommitPrepared:
 		case TwoPhaseTransactionAbortPrepared:
 		
-//		case SubtransactionFlushToFile:
-//		case SubtransactionReadFromFile:
-//		case SubtransactionRelease:
-//		case SubtransactionRollback:
-		/* Ashwin */
 		case FileRepChangeTrackingCompacting:
 
 		/* We do not use vmem on master. Therefore, we only attempt large palloc on segments. */

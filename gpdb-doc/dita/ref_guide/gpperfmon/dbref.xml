@@ -3,13 +3,14 @@
 <topic id="overview">
   <title>The gpperfmon Database</title>
   <body>
-    <p>The <codeph>gpperfmon</codeph> database is a dedicated database where monitoring agents on
-      Greenplum segment hosts save statistics for use by the Greenplum Command Center management
-      tool. The <codeph>gpperfmon</codeph> database is created using the
+    <p>The <codeph>gpperfmon</codeph> database is a dedicated database where data collection agents
+      on Greenplum segment hosts save statistics. The optional Greenplum Command Center management
+      tool requires the database. The <codeph>gpperfmon</codeph> database is created using the
         <codeph>gpperfmon_install</codeph> command-line utility. The utility creates the database
       and the <codeph>gpmon</codeph> database role and enables monitoring agents on the segment
       hosts. See the <codeph>gpperfmon_install</codeph> reference in the <cite>Greenplum Database
-        Utility Guide</cite> for information about using the utility.</p>
+        Utility Guide</cite> for information about using the utility and configuring the data
+      collection agents.</p>
     <p>The <codeph>gpperfmon</codeph> database consists of three sets of tables.</p>
     <ul id="ul_oqn_xsy_tz">
       <li>
@@ -33,8 +34,6 @@
         health and status metrics for the file replication process. This process is how
         high-availability/mirroring is achieved in Greenplum Database instance. Statistics are
         maintained for each primary-mirror pair.</li>
-      <li>The <codeph><xref href="db-health.xml#db-health">health_*</xref></codeph> tables store
-        system health metrics for the EMC Data Computing Appliance.</li>
       <li>The <codeph><xref href="db-interface-stats.xml#db-interface_stats"
             >interface_stats_*</xref></codeph> tables store statistical metrics for each active
         interface of a Greenplum Database instance. Note: These tables are in place for future use
@@ -52,12 +51,6 @@
         currently populated.</li>
       <li>The <codeph><xref href="db-system.xml#db-system">system_*</xref></codeph> tables store
         system utilization metrics.</li>
-      <li>The <codeph><xref href="db-tcp-stats.xml#db-tcp_stats">tcp_stats_*</xref></codeph> tables
-        store statistical metrics about TCP communications for a Greenplum Database instance. Note:
-        These tables are in place for future use and are not currently populated.</li>
-      <li>The <codeph><xref href="db-udp-stats.xml#db-udp_stats">udp_stats_*</xref></codeph> tables
-        store statistical metrics about UDP communications for a Greenplum Database instance. Note:
-        These tables are in place for future use and are not currently populated.</li>
     </ul>
     <p>The <codeph>gpperfmon</codeph> database also contains the following views:</p>
     <ul>

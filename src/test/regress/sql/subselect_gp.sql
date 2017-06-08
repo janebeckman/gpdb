@@ -144,16 +144,16 @@ select array(select x from csq_d1); -- {1}
 -- CSQs involving master-only and distributed tables
 --
 
-drop table if exists t3coquicklz;
+drop table if exists t3cozlib;
 
-create table t3coquicklz (c1 int , c2 varchar) with (appendonly=true, compresstype=quicklz, orientation=column) distributed by (c1);
+create table t3cozlib (c1 int , c2 varchar) with (appendonly=true, compresstype=zlib, orientation=column) distributed by (c1);
 
 drop table if exists pg_attribute_storage;
 
 create table pg_attribute_storage (attrelid int, attnum int, attoptions text[]) distributed by (attrelid);
 
-insert into pg_attribute_storage values ('t3coquicklz'::regclass, 1, E'{\'something\'}');
-insert into pg_attribute_storage values ('t3coquicklz'::regclass, 2, E'{\'something2\'}');
+insert into pg_attribute_storage values ('t3cozlib'::regclass, 1, E'{\'something\'}');
+insert into pg_attribute_storage values ('t3cozlib'::regclass, 2, E'{\'something2\'}');
 
 SELECT a.attname
 , pg_catalog.format_type(a.atttypid, a.atttypmod)
@@ -172,7 +172,7 @@ WHERE s.attrelid = a.attrelid AND s.attnum = a.attnum
 ) newcolumn
 
 FROM pg_catalog.pg_attribute a
-WHERE a.attrelid = 't3coquicklz'::regclass AND a.attnum > 0 AND NOT a.attisdropped
+WHERE a.attrelid = 't3cozlib'::regclass AND a.attnum > 0 AND NOT a.attisdropped
 ORDER BY a.attnum
 ; -- expect to see 2 rows
 
@@ -209,6 +209,9 @@ select * from csq_m1 where x not in (select x from csq_d1) or x < -100; -- (3)
 
 explain select * from csq_d1 where x not in (select x from csq_m1) or x < -100; -- broadcast motion
 select * from csq_d1 where x not in (select x from csq_m1) or x < -100; -- (4)
+
+-- drop csq_m1 since we deleted its gp_distribution_policy entry
+drop table csq_m1;
 
 --
 -- MPP-14441 Don't lose track of initplans
@@ -607,3 +610,21 @@ create table bar(a int, b int) distributed by (a);
 with CT as (select a from foo except select a from bar)
 select * from foo
 where exists (select 1 from CT where CT.a = foo.a);
+--
+-- Multiple SUBPLAN nodes must not refer to same plan_id
+--
+CREATE TABLE bar_s (c integer, d character varying(10));
+INSERT INTO bar_s VALUES (9,9);
+SELECT * FROM bar_s T1 WHERE c = (SELECT max(c) FROM bar_s T2 WHERE T2.d = T1.d GROUP BY c) AND c < 10;
+CREATE TABLE foo_s (a integer, b integer)  PARTITION BY RANGE(b)
+    (PARTITION sub_one START (1) END (10),
+     PARTITION sub_two START (11) END (22));
+INSERT INTO foo_s VALUES (9,9);
+INSERT INTO foo_s VALUES (2,9);
+SELECT bar_s.c from bar_s, foo_s WHERE foo_s.a=2 AND foo_s.b = (SELECT max(b) FROM foo_s WHERE bar_s.c = 9);
+CREATE TABLE baz_s (i int4);
+INSERT INTO baz_s VALUES (9);
+SELECT bar_s.c FROM bar_s, foo_s WHERE foo_s.b = (SELECT max(i) FROM baz_s WHERE bar_s.c = 9) AND foo_s.b = bar_s.d::int4;
+DROP TABLE bar_s;
+DROP TABLE foo_s;
+DROP TABLE baz_s;
