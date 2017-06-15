@@ -39,11 +39,11 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
       <title>Description</title>
       <p><codeph>COPY</codeph> moves data between Greenplum Database tables and standard file-system
         files. <codeph>COPY TO</codeph> copies the contents of a table to a file (or multiple files
-        based on the segment ID if  copying <codeph>ON SEGMENT</codeph>), while <codeph>COPY
-          FROM</codeph> copies data from a file to a table (appending the data to whatever is in the
-        table already). <codeph>COPY TO</codeph> can also copy the results of a
-          <codeph>SELECT</codeph> query. <note>Use of <codeph>COPY FROM</codeph> with the <codeph>ON
-            SEGMENT</codeph> option is not yet supported.</note></p>
+        based on the 17 ID if copying <codeph>ON SEGMENT</codeph>), while <codeph>COPY FROM</codeph>
+        copies data from a file to a table (appending the data to whatever is in the table already).
+          <codeph>COPY TO</codeph> can also copy the results of a <codeph>SELECT</codeph> query.
+          <note>Use of <codeph>COPY FROM</codeph> with the <codeph>ON SEGMENT</codeph> option is not
+          yet supported.</note></p>
       <p>If a list of columns is specified, <codeph>COPY</codeph> will only copy the data in the
         specified columns to or from the file. If there are any columns in the table that are not in
         the column list, <codeph>COPY FROM</codeph> will insert the default values for those
@@ -52,9 +52,9 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
         directly read from or write to a file. The file must be accessible to the master host and
         the name must be specified from the viewpoint of the master host. When <codeph>COPY</codeph>
         is used with the <codeph>ON SEGMENT</codeph> option, the <codeph>COPY TO</codeph> causes
-        segments to create individual segment-oriented files. When <codeph>STDIN</codeph> or
-          <codeph>STDOUT</codeph> is specified, data is transmitted via the connection between the
-        client and the master.</p>
+        segments to create individual segment-oriented files, which can then be used to restore
+        data. When <codeph>STDIN</codeph> or <codeph>STDOUT</codeph> is specified, data is
+        transmitted via the connection between the client and the master.</p>
       <p>If <codeph>SEGMENT REJECT LIMIT</codeph> is used, then a <codeph>COPY FROM</codeph>
         operation will operate in single row error isolation mode. In this release, single row error
         isolation mode only applies to rows in the input file with format errors — for example,
@@ -71,10 +71,13 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
         Database.</p>
       <p>The <codeph>ON SEGMENT</codeph> parameter allows you to copy table data to files on
         segments, then copy from those files back into the segment, when performing a backup.
-          <codeph>COPY FROM</codeph> is not currently supported. It takes the string literal
-          <codeph>&lt;SEGID></codeph> (required) and either the absolute path or the
-          <codeph>&lt;SEG_DATA_DIR></codeph> string literal. When the COPY operation is run, segment
-        ids and the paths of the segments are substituted for the string literal values.</p>
+        Segment data created by the <codeph>ON SEGMENT</codeph> parameter can be restored by tools
+        such as <codeph>gpfdist</codeph>, which is useful for high speed data loading.  <codeph>ON
+          SEGMENT</codeph> takes the string literal <codeph>&lt;SEGID></codeph> (required) and
+        either the absolute path or the <codeph>&lt;SEG_DATA_DIR></codeph> string literal. When the
+        COPY operation is run, segment ids and the paths of the segments are substituted for the
+        string literal values.<note><codeph>COPY FROM</codeph> is not currently supported.
+        </note></p>
       <sectiondiv id="section4">
         <b>Outputs</b>
         <p>On successful completion, a <codeph>COPY</codeph> command returns a command tag of the
