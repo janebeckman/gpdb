@@ -28,7 +28,7 @@ all : devel
 .PHONY : autoconf
 
 # Internal functions which are invoked by other rules within this makefile
-.PHONY : mkgpfdist copydocs mgmtcopy copylibs
+.PHONY : copydocs mgmtcopy copylibs
 .PHONY : greenplum_path RECONFIG HOMEDEP GPROOTDEP GPROOTDEP GPROOTFAIL
 .PHONY : gccVersionCheck clients loaders gppkg
 
@@ -159,23 +159,25 @@ endif
 
 APU_CONFIG=--with-apu-config=$(BLD_THIRDPARTY_BIN_DIR)/apu-1-config
 
-CODEGEN_CONFIG=--enable-codegen --with-codegen-prefix=/opt/llvm-3.7.1
-
 win32_CONFIGFLAGS=--with-gssapi --without-libcurl --disable-orca --disable-gpcloud $(APR_CONFIG)
 sol10_x86_64_CONFIGFLAGS=--enable-snmp --with-libxml $(APR_CONFIG)
 rhel5_x86_32_CONFIGFLAGS=--host=i686-pc-linux-gnu --enable-snmp --enable-ddboost --with-gssapi --enable-netbackup --with-libxml $(APR_CONFIG)
-rhel5_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-rhel6_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup --enable-mapreduce ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-rhel7_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup --enable-mapreduce ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-suse10_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-suse11_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-sles11_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
-linux_x86_64_CONFIGFLAGS=--enable-snmp ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG)
-osx106_x86_CONFIGFLAGS=--enable-snmp ${ORCA_CONFIG} ${CODEGEN_CONFIG} --with-libxml $(APR_CONFIG)
+rhel5_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+rhel6_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup --enable-mapreduce ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+rhel7_x86_64_CONFIGFLAGS=--enable-snmp --enable-gpperfmon --enable-ddboost --with-gssapi --enable-netbackup --enable-mapreduce ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+suse10_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+suse11_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+sles11_x86_64_CONFIGFLAGS=--enable-snmp --enable-ddboost --enable-gpperfmon --with-gssapi ${ORCA_CONFIG} --with-libxml $(APR_CONFIG) $(APU_CONFIG)
+linux_x86_64_CONFIGFLAGS=--enable-snmp ${ORCA_CONFIG} --with-libxml $(APR_CONFIG)
+osx106_x86_CONFIGFLAGS=--enable-snmp ${ORCA_CONFIG} --with-libxml $(APR_CONFIG)
 
 BLD_CONFIGFLAGS=$($(BLD_ARCH)_CONFIGFLAGS)
 
 CONFIGFLAGS=$(strip $(BLD_CONFIGFLAGS) --with-pgport=$(DEFPORT) --with-libedit-preferred $(BLD_DEPLOYMENT_SETTING))
+
+ifdef CONFIGURE_FLAGS
+CONFIGFLAGS+= $(CONFIGURE_FLAGS)
+endif
 
 # PL/Python does not compile on Tiger, skipping it on AIX
 ifneq "$(findstring $(BLD_ARCH),aix5_ppc_64 aix5_ppc_32)" ""
@@ -331,7 +333,6 @@ define BUILD_STEPS
 	@$(MAKE) mkpgbouncer INSTLOC=$(INSTLOC) BUILDDIR=$(BUILDDIR)
 	@$(MAKE) mkpgbench INSTLOC=$(INSTLOC) BUILDDIR=$(BUILDDIR)
 	if [ "$(findstring $(BLD_ARCH),$(SERVER_PLATFORMS))" != "" ]; then \
-	  $(MAKE) mkgpcloud INSTLOC=$(INSTLOC) && \
 	  $(MAKE) mkgphdfs INSTLOC=$(INSTLOC) && \
 	  $(MAKE) mkorafce INSTLOC=$(INSTLOC);  \
 	fi
@@ -352,7 +353,6 @@ ifeq "$(BLD_GPDB_BUILDSET)" "aix_subset"
 define BUILD_STEPS
 	rm -rf $(INSTLOC)
 	cd $(BUILDDIR)/src/include/ && $(MAKE) install
-	@$(MAKE) mkgpfdist INSTLOC=$(INSTLOC)
 	@$(MAKE) mgmtcopy INSTLOC=$(INSTLOC)
 	@$(MAKE) copylibs INSTLOC=$(INSTLOC)
 	@$(MAKE) loaders INSTLOC=$(INSTLOC) LOADERSINSTLOC=$(LOADERSINSTLOC)
@@ -855,15 +855,8 @@ set_scripts_version :
 # Internal functions
 #---------------------------------------------------------------------
 
-mkgpfdist:
-	@cd extensions && $(MAKE) mkgpfdist OPT="$(INSTCFLAGS)" INSTLOC=$(INSTLOC)
-	cp -p extensions/gpfdist/gpfdist$(EXE_EXT) $(INSTLOC)/bin/
-
 mkgphdfs:
 	@cd extensions && $(MAKE) mkgphdfs OPT="$(INSTCFLAGS)" INSTLOC=$(INSTLOC)
-
-mkgpcloud:
-	@cd extensions && $(MAKE) mkgpcloud OPT="$(INSTCFLAGS)" INSTLOC=$(INSTLOC) install
 
 mkorafce:
 	@cd extensions && $(MAKE) mkorafce OPT="$(INSTCFLAGS)" INSTLOC=$(INSTLOC)

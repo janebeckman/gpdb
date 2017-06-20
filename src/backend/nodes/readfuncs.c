@@ -9,7 +9,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/nodes/readfuncs.c,v 1.210 2008/01/01 19:45:50 momjian Exp $
+ *	  $PostgreSQL: pgsql/src/backend/nodes/readfuncs.c,v 1.215 2008/10/04 21:56:53 tgl Exp $
  *
  * NOTES
  *	  Path and Plan nodes do not need to have any readfuncs support, because we
@@ -2042,12 +2042,9 @@ _readRangeTblEntry(void)
 		case RTE_SUBQUERY:
 			READ_NODE_FIELD(subquery);
 			break;
-		case RTE_CTE:
-			READ_STRING_FIELD(ctename);
-			READ_INT_FIELD(ctelevelsup);
-			READ_BOOL_FIELD(self_reference);
-			READ_NODE_FIELD(ctecoltypes);
-			READ_NODE_FIELD(ctecoltypmods);
+		case RTE_JOIN:
+			READ_ENUM_FIELD(jointype, JoinType);
+			READ_NODE_FIELD(joinaliasvars);
 			break;
 		case RTE_FUNCTION:
 			READ_NODE_FIELD(funcexpr);
@@ -2067,9 +2064,12 @@ _readRangeTblEntry(void)
 		case RTE_VALUES:
 			READ_NODE_FIELD(values_lists);
 			break;
-		case RTE_JOIN:
-			READ_ENUM_FIELD(jointype, JoinType);
-			READ_NODE_FIELD(joinaliasvars);
+		case RTE_CTE:
+			READ_STRING_FIELD(ctename);
+			READ_UINT_FIELD(ctelevelsup);
+			READ_BOOL_FIELD(self_reference);
+			READ_NODE_FIELD(ctecoltypes);
+			READ_NODE_FIELD(ctecoltypmods);
 			break;
         case RTE_VOID:                                                  /*CDB*/
             break;
@@ -2755,14 +2755,14 @@ _readSlice(void)
 
 	READ_INT_FIELD(sliceIndex);
 	READ_INT_FIELD(rootIndex);
+	READ_INT_FIELD(parentIndex);
+	READ_NODE_FIELD(children); /* List of int index */
 	READ_ENUM_FIELD(gangType, GangType);
 	READ_INT_FIELD(gangSize);
 	READ_INT_FIELD(numGangMembersToBeActive);
 	READ_BOOL_FIELD(directDispatch.isDirectDispatch);
 	READ_NODE_FIELD(directDispatch.contentIds); /* List of int index */
 	READ_DUMMY_FIELD(primaryGang, NULL);
-	READ_INT_FIELD(parentIndex); /* List of int index */
-	READ_NODE_FIELD(children); /* List of int index */
 	READ_NODE_FIELD(primaryProcesses); /* List of (CDBProcess *) */
 
 	READ_DONE();

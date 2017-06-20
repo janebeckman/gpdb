@@ -2,26 +2,6 @@ CUR_DIR:=`pwd`
 EXT:=$(CUR_DIR)/ext
 
 
-#-------------------------------------------------------------------------------
-# DOCS
-#
-# To get documentation for Python scripts, run the make gen_epydoc target.
-#
-# Note that the $(CUR_DIR)/sbin/gen_epydocs.sh script assumes that the SRC_DIR
-# is set to the top of the Greenplum source tree.
-#-------------------------------------------------------------------------------
-
-gen_epydoc:
-	$(CUR_DIR)/sbin/gen_epydocs.sh
-
-#-------------------------------------------------------------------------------
-# clean
-#-------------------------------------------------------------------------------
-clean:
-	@rm -rf $(CUR_DIR)/epydocs
-	@rm -rf $(CURDIR)/tincrepo/epydocs
-
-
 unit: tincunit
 regress: tincregress
 check: tinccheck tincmmgrcheck
@@ -71,11 +51,9 @@ storage_vacuum_xidlimits:
 aocoalter_catalog_loaders:
 	$(TESTER) $(DISCOVER) -t tincrepo/mpp/gpdb/tests \
 	-s storage/aoco_alter \
-	-s catalog/mpp24606 \
 	-s catalog/mpp25256 \
 	-s catalog/oid_inconsistency \
 	-s catalog/udf_exception_handling \
-	-s catalog/upgrade \
 	-s storage/loaders
 
 storage_uao_and_transactionmanagement:

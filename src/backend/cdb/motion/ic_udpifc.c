@@ -594,6 +594,7 @@ typedef struct AckSendParam
  * capacityCountingTime      - counting times used to compute totalCapacity.
  * totalBuffers              - total buffers available when sending packets.
  * bufferCountingTime        - counting times when compute totalBuffers.
+ * activeConnectionsNum      - the number of active connections.
  * retransmits               - the number of packet retransmits.
  * mismatchNum               - the number of mismatched packets received.
  * crcErrors                 - the number of crc errors.
@@ -613,6 +614,7 @@ typedef struct ICStatistics
 	uint64	capacityCountingTime;
 	uint64	totalBuffers;
 	uint64	bufferCountingTime;
+	uint32  activeConnectionsNum;
 	int32	retransmits;
 	int32	startupCachedPktNum;
 	int32	mismatchNum;
@@ -1102,7 +1104,7 @@ checkRxThreadError()
 
 		ereport(ERROR, (errcode(ERRCODE_GP_INTERCONNECTION_ERROR),
 						errmsg("Interconnect encountered an error"),
-						errdetail("%m%s", "in receive background thread,")));
+						errdetail("%s: %m", "in receive background thread,")));
 	}
 	pthread_mutex_unlock(&ic_control_info.errorLock);
 }
@@ -1308,7 +1310,7 @@ error:
 	errno = errnoSave;
 	ereport(ERROR, (errcode(ERRCODE_GP_INTERCONNECTION_ERROR),
 					errmsg("Interconnect Error: Could not set up udp listener socket."),
-					errdetail("%m%s", fun)));
+					errdetail("%s: %m", fun)));
 	return;
 }
 
@@ -1614,6 +1616,9 @@ connAddHash(ConnHashTable *ht, MotionConn *conn)
 
 	if (ht->cxt)
 		MemoryContextSwitchTo(old);
+
+	ic_statistics.activeConnectionsNum++;
+
 	return true;
 }
 
@@ -1665,6 +1670,9 @@ connDelHash(ConnHashTable *ht, MotionConn *conn)
 		pfree(trash);
 	else
 		free(trash);
+
+	ic_statistics.activeConnectionsNum--;
+
 	return;
 }
 
@@ -2138,7 +2146,7 @@ error:
 	errno = errnoSave;
 	ereport(ERROR, (errcode(ERRCODE_GP_INTERCONNECTION_ERROR),
 					errmsg("Interconnect Error: Could not set up udp listener socket."),
-					errdetail("%m%s", fun)));
+					errdetail("%s: %m", fun)));
 	/* Make GCC not complain. */
 	return 0;
 }
@@ -6783,4 +6791,10 @@ send_error:
 	if (sockfd != -1)
 		closesocket(sockfd);
 	return;
+}
+
+uint32
+getActiveMotionConns(void)
+{
+	return ic_statistics.activeConnectionsNum;
 }
