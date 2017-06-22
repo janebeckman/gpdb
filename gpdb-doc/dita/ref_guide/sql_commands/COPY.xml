@@ -24,6 +24,7 @@
 
 COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} TO {'<varname>file</varname>' | STDOUT}
       [ [WITH] 
+        [ON SEGMENT]
         [BINARY]
         [OIDS]
         [HEADER]
@@ -32,8 +33,7 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         [ESCAPE [ AS ] '<varname>escape</varname>' | 'OFF']
         [CSV [QUOTE [ AS ] 'quote'] 
              [FORCE QUOTE column [, ...]] ]
-      [IGNORE EXTERNAL PARTITIONS ]
-COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname>directorypath</varname>/<varname>gpdumpname</varname>&lt;<codeph>SEGID</codeph>>_<varname>suffix</varname>' ON SEGMENT</codeblock>
+      [IGNORE EXTERNAL PARTITIONS ]</codeblock>
     </section>
     <section id="section3">
       <title>Description</title>
@@ -56,14 +56,16 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
         which remain on the segment hosts. The <varname>file</varname> argument for <codeph>ON
           SEGMENT</codeph> takes the string literal <codeph>&lt;SEGID></codeph> (required) and uses
         either the absolute path or the <codeph>&lt;SEG_DATA_DIR></codeph> string literal. When the
-          <codeph>COPY</codeph> operation is run, the segment ids and the paths of the segment data
+          <codeph>COPY</codeph> operation is run, the segment IDs and the paths of the segment data
         directories are substituted for the string literal values. </p>
       <p>The <codeph>ON SEGMENT</codeph> parameter allows you to copy table data to files on
         segments for use in operations such as migrating data between clusters or performing a
         backup. Segment data created by the <codeph>ON SEGMENT</codeph> parameter can be restored by
-        tools such as <codeph>gpfdist</codeph>, which is useful for high speed data loading. </p>
+        tools such as <codeph>gpfdist</codeph>, which is useful for high speed data loading.
+            <note><codeph>COPY FROM</codeph> is not currently supported.</note></p>
       <p>When <codeph>STDIN</codeph> or <codeph>STDOUT</codeph> is specified, data is transmitted
-        via the connection between the client and the master.</p>
+        via the connection between the client and the master. <codeph>STDOUT</codeph> cannot be used
+        with the <codeph>ON SEGMENT</codeph> option.</p>
       <p>If <codeph>SEGMENT REJECT LIMIT</codeph> is used, then a <codeph>COPY FROM</codeph>
         operation will operate in single row error isolation mode. In this release, single row error
         isolation mode only applies to rows in the input file with format errors — for example,
@@ -139,17 +141,17 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
                 <pt>&lt;SEG_DATA_DIR></pt>
                 <pd>The string literal representing the full path of the segment data directory for
                     <codeph>ON SEGMENT</codeph> copying. Brackets are part of the string literal
-                  used when specifying the path. COPY will replace the string literal with the
-                  segment path(s). (Optional. An absolute path can be used in place of using the
-                    <codeph>&lt;SEG_DATA_DIR></codeph>string literal.)</pd>
+                  used to specify the path. COPY replaces the string literal with the segment
+                  path(s) when <codeph>COPY</codeph> is run. (Optional. An absolute path can be used
+                  in place of using the <codeph>&lt;SEG_DATA_DIR></codeph> string literal.)</pd>
               </plentry>
             </parml><parml>
               <plentry>
                 <pt>&lt;SEGID></pt>
                 <pd>The string literal representing the content ID number of the segment to be
-                  copied when copying <codeph>ON SEGMENT</codeph>. Brackets indicate a string
-                  literal that will be replaced by the content ID when <codeph>COPY</codeph> is
-                  run.</pd>
+                  copied when copying <codeph>ON SEGMENT</codeph>. Brackets are part of string
+                  literal used to specify the path. <codeph>COPY</codeph> replaces the string
+                  literal with the content ID when <codeph>COPY</codeph> is run.</pd>
               </plentry>
             </parml></pd>
         </plentry>
@@ -550,15 +552,19 @@ COPY {table [(<varname>column</varname> [, ...])] TO '&lt;SEG_DATA_DIR>|<varname
         SEGMENT; </p>
       <p>The <codeph>&lt;SEGID></codeph> is required. However, you can substitute an absolute path
         for the <codeph>&lt;SEG_DATA_DIR></codeph> string literal in the path. </p>
-      <p>When you pass in the string literal "&lt;SEG_DATA_DIR>" and "&lt;SEGID>" to COPY,  COPY
-        will fill in the appropriate values when the operation is run.</p>
+      <p>When you pass in the string literal &lt;SEG_DATA_DIR> and &lt;SEGID> to
+          <codeph>COPY</codeph>, <codeph>COPY</codeph> will fill in the appropriate values when the
+        operation is run.</p>
       <p>For example, if you have <codeph>mytable</codeph> with the segments and mirror segments
         like
-        this:<codeblock>contentid | dbid| file segment location
-0 | 1 |/home/usr1/data1/gpsegdir0
-0 | 3 | /home/usr1/data_mirror1/gpsegdir0 
-1 | 4 | /home/usr1/data2/gpsegdir1
-1 | 2 | /home/usr1/data_mirror2/gpsegdir1 
+        this:<codeblock>contentid | dbid| file segment location 
+    0     |  1   |/home/usr1/data1/gpsegdir0
+
+    0     |  3   | /home/usr1/data_mirror1/gpsegdir0 
+
+    1     |  4   | /home/usr1/data2/gpsegdir1
+
+    1     |  2   | /home/usr1/data_mirror2/gpsegdir1 
 </codeblock>running
         <codeblock>COPY mytable TO '&lt;SEG_DATA_DIR>/gpbackup&lt;SEGID>.txt' ON SEGMENT;</codeblock>
         would result in the following
