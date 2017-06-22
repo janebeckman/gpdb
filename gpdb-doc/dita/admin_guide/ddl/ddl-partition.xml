@@ -214,7 +214,7 @@ PARTITION BY RANGE (date)
 char(1), count int)
 DISTRIBUTED BY (id)
 PARTITION BY RANGE (year)
-( START (2008) END (2016) EVERY (1), 
+( START (2006) END (2016) EVERY (1), 
   DEFAULT PARTITION extra ); 
 </codeblock>
         </p>
