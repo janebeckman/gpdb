@@ -133,8 +133,8 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>ON SEGMENT</pt>
           <pd>Copy table data to files on segments, then copy from those files back into the
-            segment. Currently only supports COPY functionality needed to copy to and from files and
-            to support the CSV format option. The <codeph>&lt;SEG_DATA_DIR></codeph> and
+            segment. Currently does not support <codeph>COPY FROM</codeph> or <codeph>COPY TO
+              STDOUT</codeph>. The <codeph>&lt;SEG_DATA_DIR></codeph> and
               <codeph>&lt;SEGID></codeph> parameters are used with <codeph>ON SEGMENT</codeph>.
             Mirror segments are not copied.<parml>
               <plentry>
