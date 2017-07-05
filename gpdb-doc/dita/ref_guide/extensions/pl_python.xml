@@ -18,11 +18,11 @@
       <li id="pw222281">
         <xref href="#topic10" type="topic" format="dita"/>
       </li>
-      <li id="pw21367213">
-        <xref href="#topic1113" type="topic" format="dita"/>
+      <li id="pw22228177">
+        <xref href="#topic_pydatascimod" type="topic" format="dita"/>
       </li>
-      <li id="pw21367217">
-        <xref href="#topic1117" type="topic" format="dita"/>
+      <li id="pw21367233">
+        <xref href="#topic_yx3_yjq_rt" type="topic" format="dita"/>
       </li>
       <li id="pw213672">
         <xref href="#topic11" type="topic" format="dita"/>
@@ -300,34 +300,53 @@ $$;</codeblock>
     </topic>
   </topic>
   <topic id="topic10" xml:lang="en">
-    <title id="pw221333">Installing Python Modules</title>
+    <title id="pw221333">Python Modules</title>
     <body>
       <p> A Python module is a text file containing Python statements and definitions. Python modules are named, with the file name for a module following the <codeph><varname>python-module-name</varname>.py</codeph> naming convention. You can import Python modules into user-defined functions that you create with PL/Python.  </p>
       <p> Greenplum Database provides a collection of data science-related Python modules that you can install and import into your UDFs. You can also build and install custom Python modules in your Greenplum Database cluster.  </p>
-      <p>You can build a Python module on a host system outside of your Greenplum Database cluster
-        and later install the built module on all cluster hosts. Before building a Python
-        module, ensure that the appropriate software build dependencies
-        are installed and properly configured on the build system and that the build
-        generates the correct executable. For example, on a Linux system the build
-        should create a 64-bit executable.</p>
-      <p>When you install a custom Python module in Greenplum Database, you must add the module to
-        all segment and mirror hosts in the cluster. When you expand Greenplum Database, you
-        must add the Python modules to the new segment hosts. You can use the Greenplum Database
-         utilities <codeph>gpssh</codeph> and <codeph>gpscp</codeph> to run commands on,
-        and copy files between, Greenplum Database hosts.</p>
-      <p>Python module examples in this section include:<ul id="ul_ukh_4wr_wt">
-          <li><xref href="#topic_pydatascimod" format="dita"/></li>
-          <li><xref href="#topic_yx3_yjq_rt" format="dita"/></li>
-          <li><xref href="#topic_e4p_gcw_vt" format="dita"/></li>
-        </ul></p>
-      </body>
+    </body>
 
-      <topic id="topic_pydatascimod">
-        <title>Installing the Greenplum Database Python Data Science Modules</title>
-        <body>
-         <p> The Greenplum Database Python Data Science Module package is available as a download from <xref href="https://network.pivotal.io/products/pivotal-gpdb" format="html" scope="external">Pivotal Network</xref>. Python modules provided in this <codeph>gppkg</codeph> include: 
-           <table id="iq1395577">
-          <title>Data Science Python Modules</title>
+  <topic id="topic_pydatascimod">
+    <title>Python Data Science Module Package</title>
+    <body>
+     <p> Greenplum Database provides a collection of data science-related Python modules. The Greenplum Database Python Data Science Module package is available in <codeph>.gppkg</codeph> format from <xref href="https://network.pivotal.io/products/pivotal-gpdb" format="html" scope="external">Pivotal Network</xref>.</p>
+     <p> See <xref href="#topic_pdsmods" format="dita"/> for a list of the Data Science modules provided in this package.</p> 
+    </body> 
+    <topic id="topic_instpdsm" xml:lang="en">
+      <title>Installing the Python Data Science Module Package</title>
+      <body>
+        <p>Before you install the Python Data Science Module package, make sure that your Greenplum Database is running, you have sourced <codeph>greenplum_path.sh</codeph>, and that the <codeph>$MASTER_DATA_DIRECTORY</codeph> and <codeph>$GPHOME</codeph> environment variables are set.</p>
+        <ol>
+          <li>Download the Python Data Science module package from <xref href="https://network.pivotal.io/products/pivotal-gpdb" format="html" scope="external">Pivotal Network</xref>. Make note of the directory to which the file was downloaded.<p>The file name format of the package is <codeph>gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
+          <li>Copy the downloaded file to the Greenplum Database master host.</li>
+          <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the Python Data Science modules on all nodes in your Greenplum Database cluster. The command also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
+          <li>Restart Greenplum Database. You must re-<codeph>source</codeph> <codeph>greenplum_path.sh</codeph> before restarting your Greenplum cluster:<codeblock>$ source /usr/local/greenplum-db/greenplum_path.sh
+$ gpstop -r</codeblock></li>
+        </ol>
+       <p>The Greenplum Database Python Data Science Modules are installed to the following directory:</p><codeblock>$GPHOME/ext/gpdbpython/lib/python2.7/site-packages/</codeblock>
+      </body>
+    </topic>
+    <topic id="topic_removepdsm" xml:lang="en">
+      <title>Uninstalling the Python Data Science Module Package</title>
+      <body>
+        <p>Use the <codeph>gppkg</codeph> utility to uninstall the Python Data Science Module package. You must include the version number in the package name you provide to <codeph>gppkg</codeph>.</p>
+        <note>When you uninstall the Python Data Science Module package from your Greenplum Database cluster, any UDFs that you have created that import Python modules installed with this package will return an error.</note>
+        <p> To determine your Python Data Science Module package version number and remove this package:</p>
+        <codeblock>$ gppkg -q --all | grep gpdbpython
+gpdbpython-&lt;version&gt;
+$ gppkg -r gpdbpython-&lt;version&gt;</codeblock>
+        <p>The command removes the Python Data Science modules from your Greenplum Database cluster. It also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file to their pre-installation values.</p>
+        <p>Re-<codeph>source</codeph> <codeph>greenplum_path.sh</codeph> and restart Greenplum Database after you remove the Python Data Science Module package:</p>
+        <codeblock>$ . /usr/local/greenplum-db/greenplum_path.sh
+$ gpstop -r </codeblock>
+      </body>
+    </topic>
+    <topic id="topic_pdsmods" xml:lang="en">
+      <title>Python Data Science Modules</title>
+      <body>
+        <p>Modules included in the Python Data Science Module package include:
+       <table id="iq1395577">
+          <title>Data Science Modules</title>
           <tgroup cols="2">
             <colspec colnum="1" colname="col1" colwidth="1*"/>
             <colspec colnum="2" colname="col2" colwidth="2*"/>
@@ -437,47 +456,40 @@ $$;</codeblock>
             </tbody>
           </tgroup>
         </table></p>
-        </body> 
-        <topic id="topic_instpdsm" xml:lang="en">
-          <title>Installing the Python Data Science Module Package</title>
-          <body>
-            <p>Before you install the Python Data Science Module package, make sure that your Greenplum Database is running, you have sourced <codeph>greenplum_path.sh</codeph>, and that the <codeph>$MASTER_DATA_DIRECTORY</codeph> and <codeph>$GPHOME</codeph> environment variables are set.</p>
-            <ol>
-              <li>Download the Python Data Science module package from <xref href="https://network.pivotal.io/products/pivotal-gpdb" format="html" scope="external">Pivotal Network</xref>. Make note of the directory to which the file was downloaded.<p>The file name format of the package is <codeph>gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
-              <li>Copy the downloaded file to the Greenplum Database master host.</li>
-              <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the Python Data Science modules on all nodes in your Greenplum Database cluster. The command also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
-              <li>Restart Greenplum Database. You must re-<codeph>source</codeph> <codeph>greenplum_path.sh</codeph> before restarting your Greenplum cluster:<codeblock>$ source /usr/local/greenplum-db/greenplum_path.sh
-$ gpstop -r</codeblock></li>
-            </ol>
-           <p>The Greenplum Database Python Data Science Modules are installed to the following directory:</p><codeblock>$GPHOME/ext/gpdbpython/lib/python2.7/site-packages/</codeblock>
-          </body>
-        </topic>
-        <topic id="topic_removepdsm" xml:lang="en">
-          <title>Uninstalling the Python Data Science Module Package</title>
-          <body>
-            <note>When you uninstall the Python Data Science Module package from your Greenplum Database cluster, any UDFs that you have created that import Python modules installed with this package will return an error.</note>
-            <p>Use the <codeph>gppkg</codeph> utility to uninstall the Python Data Science Module package. You must include the version number in the package name you provide to <codeph>gppkg</codeph>.</p>
-            <p> To determine your Python Data Science Module package version number and remove this package:</p>
-            <codeblock>$ gppkg -q --all | grep gpdbpython
-gpdbpython-&lt;version&gt;
-$ gppkg -r gpdbpython-&lt;version&gt;</codeblock>
-            <p>The command removes the Python Data Science modules from your Greenplum Database cluster. It also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file to their pre-installation values.</p>
-            <p>Re-<codeph>source</codeph> <codeph>greenplum_path.sh</codeph> and restart Greenplum Database after you remove the Python Data Science Module package:</p>
-            <codeblock>$ . /usr/local/greenplum-db/greenplum_path.sh
-$ gpstop -r </codeblock>
-          </body>
-        </topic>
-      </topic>
+      </body>
+    </topic>
+  </topic>
         
-    <topic id="topic_yx3_yjq_rt">
-      <title>Building/Installing a Simple Python Module (setuptools)</title>
+  <topic id="topic_yx3_yjq_rt">
+    <title>Building/Installing Custom Python Modules</title>
+    <body>
+      <p>You can build a Python module on a host system outside of your Greenplum Database cluster
+        and later install the built module on all cluster hosts. Before building a Python
+        module, ensure that the appropriate software build dependencies
+        are installed and properly configured on the build system and that the build
+        generates the correct executable. For example, on a Linux system the build
+        should create a 64-bit executable.</p>
+      <note>Some Python modules require installing additional software, such as a third party library or a compiler. Refer to the Python module's documentation for information about the requirements for building and using the module.</note>
+      <p>When you install a custom Python module in Greenplum Database, you must add the module to
+        all segment and mirror hosts in the cluster. When you expand Greenplum Database, you
+        must add the Python modules to the new segment hosts. You can use the Greenplum Database
+        utilities <codeph>gpssh</codeph> and <codeph>gpscp</codeph> to run commands on,
+        and copy files between, Greenplum Database hosts.</p>
+      <p>Python module examples in this section include:<ul id="ul_ukh_4wr_wt">
+          <li><xref href="#topic_pycustombldinst" format="dita"/></li>
+          <li><xref href="#topic_e4p_gcw_vt" format="dita"/></li>
+          <li><xref href="#topic_troubleshoot_pymodimp" format="dita"/></li>
+        </ul></p>
+      </body>
+    <topic id="topic_pycustombldinst">
+    <title>Building/Installing a Simple Python Module (setuptools)</title>
       <body>
-        <p>In this example, you will manually build and install the <codeph>setuptools</codeph> module from the
-          Python Package Index repository. <codeph>setuptools</codeph> enables you to easily
-          download, build, install, upgrade, and uninstall Python packages.</p>
-        <p>You will first build the module from the download package, installing it on
-          a single host. You will then build and install the module on all segment hosts
-          in your Greenplum Database cluster.</p>
+        <p><codeph>setuptools</codeph> is a Python module that enables you to easily
+          download, build, install, upgrade, and uninstall Python packages. <codeph>setuptools</codeph> 
+          is available from the Python Package Index repository.</p>
+        <p>In this example, you will build the <codeph>setuptools</codeph> module from the
+          download package and install it on a single host. You will then build and install 
+          the module on all segment hosts in your Greenplum Database cluster.</p>
         <ol id="ol_orb_3pq_rt">
           <li>(Optional) Create a work directory:
              <codeblock>$ mkdir plpython_pkgs
@@ -521,7 +533,7 @@ $ python setup.py install</codeblock><p>The package is installed to the location
       <body>
         <p>You can create a simple PL/Python user-defined function (UDF) to validate that a Python
           module is available in Greenplum Database. This example tests the NumPy module 
-          that you installed with the Python Data Science Module package:</p>
+          installed with the Python Data Science Module package:</p>
        <ol>
          <li>Create a PL/Python UDF that imports the NumPy module.
         <codeblock>CREATE OR REPLACE FUNCTION test_importnumpy(x int)
@@ -565,13 +577,14 @@ $$ LANGUAGE plpythonu;</codeblock>
             might have a problem accessing the Python libraries on a
             segment host.<p><i>Try</i>: Test importing the module directly on the
             segment host. The following <codeph>gpssh</codeph> command tests importing
-              the numpy module on the segment host named
+              the NumPy module on the segment host named
               <codeph>mdw1</codeph>.<codeblock>$ gpssh -h mdw1 -e 'python -c "import numpy"'</codeblock></p></li>
-          <li>Environment variables may not be configured in the Greenplum database environment. The Python <codeph>import</codeph> statement may not return an error in this case. <p><i>Try</i>: Ensure that any environment variables that you need to use a module are properly set in <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph> file on every host in your Greenplum Database cluster.</p></li>
+          <li>Environment variables may not be configured in the Greenplum database environment. The Python <codeph>import</codeph> statement may not return an error in this case. <p><i>Try</i>: Ensure that any environment variables that are required by a module are properly set in <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph> file on every host in your Greenplum Database cluster.</p></li>
           <li>Greenplum Database may not have been restarted after adding environment variable settings to the <codeph>.bashrc</codeph> file. Again, the Python <codeph>import</codeph> statement may not return an error in this case.<p><i>Try</i>: Ensure that you have restarted Greenplum Database after you make any updates to <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph>.</p><note>The <codeph>.bashrc</codeph> file for the <codeph>gpadmin</codeph> user must source <codeph>$GPHOME/greenplum_path.sh</codeph> on all Greenplum Database master and segment hosts.</note></li>
         </ul></p>
       </body>
     </topic>
+  </topic>
   </topic>
 
   <topic id="topic11" xml:lang="en">
