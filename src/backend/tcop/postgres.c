@@ -72,6 +72,7 @@
 #include "tcop/pquery.h"
 #include "tcop/tcopprot.h"
 #include "tcop/utility.h"
+#include "utils/backend_cancel.h"
 #include "utils/faultinjector.h"
 #include "utils/flatfiles.h"
 #include "utils/lsyscache.h"
@@ -79,6 +80,7 @@
 #include "utils/ps_status.h"
 #include "utils/datum.h"
 #include "utils/debugbreak.h"
+#include "utils/session_state.h"
 #include "mb/pg_wchar.h"
 #include "cdb/cdbvars.h"
 #include "cdb/cdbsrlz.h"
@@ -3693,10 +3695,22 @@ ProcessInterrupts(const char* filename, int lineno)
 					 errmsg("terminating autovacuum process due to administrator command"),
 					 errSendAlert(false)));
 		else
-			ereport(FATAL,
-					(errcode(ERRCODE_ADMIN_SHUTDOWN),
-					 errmsg("terminating connection due to administrator command"),
-					 errSendAlert(false)));
+		{
+			if (HasCancelMessage())
+			{
+				char   *buffer = palloc0(MAX_CANCEL_MSG);
+
+				GetCancelMessage(&buffer, MAX_CANCEL_MSG);
+				ereport(FATAL,
+						(errcode(ERRCODE_ADMIN_SHUTDOWN),
+						 errmsg("terminating connection due to administrator command: \"%s\"",
+						 buffer)));
+			}
+			else
+				ereport(FATAL,
+						(errcode(ERRCODE_ADMIN_SHUTDOWN),
+						 errmsg("terminating connection due to administrator command")));
+		}
 	}
 
 	if (ClientConnectionLost)
@@ -3741,6 +3755,16 @@ ProcessInterrupts(const char* filename, int lineno)
 				ereport(ERROR,
 						(errcode(ERRCODE_QUERY_CANCELED),
 						 errmsg("canceling autovacuum task")));
+			else if (HasCancelMessage())
+			{
+				char   *buffer = palloc0(MAX_CANCEL_MSG);
+
+				GetCancelMessage(&buffer, MAX_CANCEL_MSG);
+				ereport(ERROR,
+						(errcode(ERRCODE_QUERY_CANCELED),
+						 errmsg("canceling statement due to user request: \"%s\"",
+								buffer)));
+			}
 			else
 				ereport(ERROR,
 						(errcode(ERRCODE_QUERY_CANCELED),
@@ -4843,6 +4867,7 @@ PostgresMain(int argc, char *argv[],
 		MemoryContextSwitchTo(MessageContext);
 		MemoryContextResetAndDeleteChildren(MessageContext);
 		VmemTracker_ResetMaxVmemReserved();
+		VmemTracker_ResetWaiver();
 
 		/* Reset memory accounting */
 
@@ -5019,6 +5044,7 @@ PostgresMain(int argc, char *argv[],
 					const char *serializedParams = NULL;
 					const char *serializedQueryDispatchDesc = NULL;
 					const char *seqServerHost = NULL;
+					const char *resgroupInfoBuf = NULL;
 
 					int query_string_len = 0;
 					int serializedDtxContextInfolen = 0;
@@ -5028,6 +5054,7 @@ PostgresMain(int argc, char *argv[],
 					int serializedQueryDispatchDesclen = 0;
 					int seqServerHostlen = 0;
 					int seqServerPort = -1;
+					int resgroupInfoLen = 0;
 
 					int localSlice = -1, i;
 					int rootIdx;
@@ -5036,7 +5063,6 @@ PostgresMain(int argc, char *argv[],
 					Oid suid;
 					Oid ouid;
 					Oid cuid;
-					Oid resgroupId;
 					bool suid_is_super = false;
 					bool ouid_is_super = false;
 
@@ -5064,10 +5090,6 @@ PostgresMain(int argc, char *argv[],
 					if(pq_getmsgbyte(&input_message) == 1)
 						ouid_is_super = true;
 					cuid = pq_getmsgint(&input_message, 4);
-					resgroupId = pq_getmsgint(&input_message, 4);
-
-					if (IsResGroupEnabled())
-						AssignResGroup(resgroupId);
 
 					rootIdx = pq_getmsgint(&input_message, 4);
 
@@ -5130,9 +5152,16 @@ PostgresMain(int argc, char *argv[],
 								 errmsg("QE cannot find slice to execute")));
 					}
 
+					resgroupInfoLen = pq_getmsgint(&input_message, 4);
+					if (resgroupInfoLen > 0)
+						resgroupInfoBuf = pq_getmsgbytes(&input_message, resgroupInfoLen);
+
 					pq_getmsgend(&input_message);
 
 					elog((Debug_print_full_dtm ? LOG : DEBUG5), "MPP dispatched stmt from QD: %s.",query_string);
+
+					if (IsResGroupEnabled())
+						SwitchResGroupOnSegment(resgroupInfoBuf, resgroupInfoLen);
 
 					if (suid > 0)
 						SetSessionUserId(suid, suid_is_super); /* Set the session UserId */
