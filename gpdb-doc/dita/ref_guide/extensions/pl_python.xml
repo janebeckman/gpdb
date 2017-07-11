@@ -333,7 +333,7 @@ $$;</codeblock>
                 <entry colname="col1">
                   Gensim
                 </entry>
-                <entry colname="col2">topic modelling and document indexing</entry>
+                <entry colname="col2">topic modeling and document indexing</entry>
               </row>
               <row>
                 <entry colname="col1">
@@ -351,7 +351,7 @@ $$;</codeblock>
                 <entry colname="col1">
                   lxml
                 </entry>
-                <entry colname="col2">XML and HTML processor</entry>
+                <entry colname="col2">XML and HTML processing</entry>
               </row>
               <row>
                 <entry colname="col1">
@@ -393,7 +393,7 @@ $$;</codeblock>
                 <entry colname="col1">
                   scikit-learn
                 </entry>
-                <entry colname="col2">machine learnining data mining and analysis</entry>
+                <entry colname="col2">machine learning data mining and analysis</entry>
               </row>
               <row>
                 <entry colname="col1">
@@ -411,7 +411,7 @@ $$;</codeblock>
                 <entry colname="col1">
                   StatsModels
                 </entry>
-                <entry colname="col2">statistical modelling</entry>
+                <entry colname="col2">statistical modeling</entry>
               </row>
               <row>
                 <entry colname="col1">
@@ -511,7 +511,7 @@ $ python setup.py install</codeblock><p>The package is installed to the location
             successfully imported.</p></li>
           <li>The <codeph>setuptools</codeph> package installs the <codeph>easy_install</codeph> utility. This utility enables you to install Python packages from the Python Package Index repository. The following command installs the Python <codeph>pip</codeph> utility from the Python Package Index site:
             <codeblock>$ easy_install pip</codeblock></li>
-          <li>Copy the <codeph>setuptools</codeph> package to all Greenplum Database
+          <li>Copy the <codeph>setuptools</codeph> source package to all Greenplum Database
             hosts in your cluster. For example, this command uses the <codeph>gpscp</codeph>
             utility to copy the <codeph>.tar.gz</codeph> file from the current host to 
             the <codeph>/home/gpadmin</codeph> directory on all hosts listed in
@@ -524,7 +524,7 @@ $ python setup.py install</codeblock><p>The package is installed to the location
 >>> python setup.py build
 >>> python setup.py install
 >>> python -c "import setuptools"
->>> exit</codeblock></li>
+>>> exit</codeblock><p>Alternatively, you could copy the built Python module files to each Greenplum Database host.</p></li>
         </ol>
       </body>
     </topic>
