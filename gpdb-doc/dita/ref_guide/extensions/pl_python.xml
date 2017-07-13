@@ -327,25 +327,25 @@ $$;</codeblock>
                 <entry colname="col1">
                   Beautiful Soup
                 </entry>
-                <entry colname="col2">navigating HTML and XML</entry>
+                <entry colname="col2">Navigating HTML and XML</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Gensim
                 </entry>
-                <entry colname="col2">topic modeling and document indexing</entry>
+                <entry colname="col2">Topic modeling and document indexing</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Keras
                 </entry>
-                <entry colname="col2">deep learning</entry>
+                <entry colname="col2">Deep learning</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Lifelines
                 </entry>
-                <entry colname="col2">survival analysis</entry>
+                <entry colname="col2">Survival analysis</entry>
               </row>
               <row>
                 <entry colname="col1">
@@ -357,73 +357,73 @@ $$;</codeblock>
                 <entry colname="col1">
                   NLTK
                 </entry>
-                <entry colname="col2">natural language toolkit</entry>
+                <entry colname="col2">Natural language toolkit</entry>
               </row>
               <row>
                 <entry colname="col1">
                   NumPy
                 </entry>
-                <entry colname="col2">scientific computing</entry>
+                <entry colname="col2">Scientific computing</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Pandas
                 </entry>
-                <entry colname="col2">data analysis</entry>
+                <entry colname="col2">Data analysis</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Pattern-en
                 </entry>
-                <entry colname="col2">part-of-speech tagging</entry>
+                <entry colname="col2">Part-of-speech tagging</entry>
               </row>
               <row>
                 <entry colname="col1">
                   pyLDAvis
                 </entry>
-                <entry colname="col2">interactive topic model visualization</entry>
+                <entry colname="col2">Interactive topic model visualization</entry>
               </row>
               <row>
                 <entry colname="col1">
                   PyMC3
                 </entry>
-                <entry colname="col2">statistical modeling and probabilistic machine learning</entry>
+                <entry colname="col2">Statistical modeling and probabilistic machine learning</entry>
               </row>
               <row>
                 <entry colname="col1">
                   scikit-learn
                 </entry>
-                <entry colname="col2">machine learning data mining and analysis</entry>
+                <entry colname="col2">Machine learning data mining and analysis</entry>
               </row>
               <row>
                 <entry colname="col1">
                   SciPy
                 </entry>
-                <entry colname="col2">scientific computing</entry>
+                <entry colname="col2">Scientific computing</entry>
               </row>
               <row>
                 <entry colname="col1">
                   spaCy
                 </entry>
-                <entry colname="col2">large scale natural language processing</entry>
+                <entry colname="col2">Large scale natural language processing</entry>
               </row>
               <row>
                 <entry colname="col1">
                   StatsModels
                 </entry>
-                <entry colname="col2">statistical modeling</entry>
+                <entry colname="col2">Statistical modeling</entry>
               </row>
               <row>
                 <entry colname="col1">
                   Tensorflow
                 </entry>
-                <entry colname="col2">numerical computation using data flow graphs</entry>
+                <entry colname="col2">Numerical computation using data flow graphs</entry>
               </row>
               <row>
                 <entry colname="col1">
                   XGBoost
                 </entry>
-                <entry colname="col2">gradient boosting, classifying, ranking </entry>
+                <entry colname="col2">Gradient boosting, classifying, ranking </entry>
               </row>
             </tbody>
           </tgroup>
@@ -474,7 +474,7 @@ $ gpstop -r </codeblock>
         all segment and mirror hosts in the cluster. When you expand Greenplum Database, you
         must add the Python modules to the new segment hosts. You can use the Greenplum Database
         utilities <codeph>gpssh</codeph> and <codeph>gpscp</codeph> to run commands on,
-        and copy files between, Greenplum Database hosts.</p>
+        and copy files to, remote Greenplum Database hosts.</p>
       <p>Python module examples in this section include:<ul id="ul_ukh_4wr_wt">
           <li><xref href="#topic_pycustombldinst" format="dita"/></li>
           <li><xref href="#topic_e4p_gcw_vt" format="dita"/></li>
@@ -579,7 +579,7 @@ $$ LANGUAGE plpythonu;</codeblock>
             segment host. The following <codeph>gpssh</codeph> command tests importing
               the NumPy module on the segment host named
               <codeph>mdw1</codeph>.<codeblock>$ gpssh -h mdw1 -e 'python -c "import numpy"'</codeblock></p></li>
-          <li>Environment variables may not be configured in the Greenplum database environment. The Python <codeph>import</codeph> statement may not return an error in this case. <p><i>Try</i>: Ensure that any environment variables that are required by a module are properly set in <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph> file on every host in your Greenplum Database cluster.</p></li>
+          <li>Environment variables may not be configured in the Greenplum Database environment. The Python <codeph>import</codeph> statement may not return an error in this case. <p><i>Try</i>: Ensure that any environment variables that are required by a module are properly set in <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph> file on every host in your Greenplum Database cluster.</p></li>
           <li>Greenplum Database may not have been restarted after adding environment variable settings to the <codeph>.bashrc</codeph> file. Again, the Python <codeph>import</codeph> statement may not return an error in this case.<p><i>Try</i>: Ensure that you have restarted Greenplum Database after you make any updates to <codeph>gpadmin</codeph>'s <codeph>.bashrc</codeph>.</p><note>The <codeph>.bashrc</codeph> file for the <codeph>gpadmin</codeph> user must source <codeph>$GPHOME/greenplum_path.sh</codeph> on all Greenplum Database master and segment hosts.</note></li>
         </ul></p>
       </body>
