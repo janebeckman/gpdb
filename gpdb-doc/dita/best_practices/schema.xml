@@ -56,8 +56,8 @@
             accessed (cold). </li>
           <li>Storage options should be set at the partition level or at the level where the data is
             stored.</li>
-          <li> Compress large tables to improve I/O performance and to make space in the cluster, if
-            needed.</li>
+          <li> If needed, compress large tables to improve I/O performance and to make space in the
+            cluster, if needed.</li>
         </ol></p>
       <section id="heap_vs_ao">
         <title>Heap Storage or Append-Optimized Storage</title>
@@ -68,16 +68,16 @@
             <codeph>UPDATE</codeph>, <codeph>DELETE</codeph>, and <codeph>INSERT</codeph>
           operations. </p>
         <p>Use append-optimized storage for tables and partitions that are updated infrequently
-          after the initial load with subsequent inserts only performed in batch operations. Never
-          perform singleton <codeph>INSERT</codeph>, <codeph>UPDATE</codeph>, or
+          after the initial load and have subsequent inserts only performed in batch operations.
+          Never perform singleton <codeph>INSERT</codeph>, <codeph>UPDATE</codeph>, or
             <codeph>DELETE</codeph> operations on append-optimized tables. Concurrent batch
-            <codeph>INSERT</codeph> operations are okay but <i>never</i> perform concurrent batch
-            <codeph>UPDATE</codeph> or <codeph>DELETE</codeph> operations. </p>
-        <p>Space occupied by rows that are updated and deleted in append-optimized tables is not
-          recovered and reused as efficiently as with heap tables, so the append-optimized storage
-          model is inappropriate for frequently updated tables. It is intended for large tables that
-          are loaded once, updated infrequently, and queried frequently for analytical query
-          processing. </p>
+            <codeph>INSERT</codeph> operations are acceptable, but <i>never</i> perform concurrent
+          batch <codeph>UPDATE</codeph> or <codeph>DELETE</codeph> operations. </p>
+        <p>The append-optimized storage model is inappropriate for frequently updated tables, as
+          space occupied by rows that are updated and deleted in append-optimized tables is not
+          recovered and reused as efficiently as with heap tables. Append-optimized storage is
+          intended for large tables that are loaded once, updated infrequently, and queried
+          frequently for analytical query processing. </p>
       </section>
 
       <section id="row_vs_column">
@@ -108,8 +108,8 @@
         <p>Use column-oriented storage for data warehouse analytic workloads where selects are
           narrow or aggregations of data are computed over a small number of columns. Use
           column-oriented storage for tables that have single columns that are regularly updated
-          without modifying other columns in the row. <b>Reading a complete row in a wide columnar
-            table requires more time than reading the same row from a row-oriented table.</b> It is
+          without modifying other columns in the row. Reading a complete row in a wide columnar
+          table requires more time than reading the same row from a row-oriented table. It is
           important to understand that each column is a separate physical file on <i>every</i>
           segment in Greenplum Database. </p>
       </section>
@@ -125,14 +125,14 @@
       <p>Note that new partitions added to a partitioned table do not automatically inherit
         compression defined at the table level; you must <i>specifically</i> define compression when
         you add new partitions. </p>
-      <p>Delta and RLE compression provide the best levels of compression. Higher levels of
-        compression usually result in more compact storage on disk, but require additional time and
-        CPU cycles when compressing data on writes and uncompressing on reads. Sorting data, in
-        combination with the various compression options, can achieve the highest level of
-        compression. </p>
+      <p>RLE compression provides the best levels of compression. Higher levels of compression
+        usually result in more compact storage on disk, but require additional time and CPU cycles
+        when compressing data on writes and uncompressing on reads. Sorting data, in combination
+        with the various compression options, can achieve the highest level of compression. </p>
       <p>Data compression should never be used for data that is stored on a compressed file system. </p>
       <p>Test different compression types and ordering methods to determine the best compression for
-        your specific data.</p>
+        your specific data. For example, you might start zlib compression at level 4 o 5 and adjust
+        for best results. RLE compression works best with files containing repetitive data.</p>
     </body>
   </topic>
   <topic id="distribution">
@@ -156,8 +156,8 @@
           <li>The distribution key column data should contain unique values or very high
             cardinality. </li>
           <li>If a single column cannot achieve an even distribution, use a multi-column
-            distribution key, but no more than two columns. Additional column values do not
-            typically yield a more even distribution and they require additional time in the hashing
+            distribution key, limit it to two columns. Additional column values do not typically
+            yield a more even distribution and they require additional time in the hashing
             process.</li>
           <li>If a two-column distribution key cannot achieve an even distribution of data, use a
             random distribution. Multi-column distribution keys in most cases require motion
@@ -178,7 +178,7 @@
           the same segment, much of the processing can be accomplished within the segment instance.
           These are called <i>local</i> or <i>co-located</i> joins. Local joins minimize data
           movement; each segment operates independently of the other segments, without network
-          traffic cor communications between segments. </p>
+          traffic or communications between segments. </p>
         <p>To achieve local joins for large tables commonly joined together, distribute the tables
           on the same column. Local joins require that both sides of a join be distributed on the
           same columns (and in the same order) <i>and</i> that all columns in the distribution
@@ -205,16 +205,16 @@ FROM (SELECT count(*) c, gp_segment_id FROM facts GROUP BY 2) AS a;</codeblock>
             skew.<ul id="ul_cg4_1vp_y4">
             <li>The <codeph>gp_toolkit.gp_skew_coefficients</codeph> view shows data distribution
               skew by calculating the coefficient of variation (CV) for the data stored on each
-              segment. The <codeph>skccoeff</codeph> column shows the coefficient of variation (CV),
-              which is calculated as the standard deviation divided by the average. It takes into
-              account both the average and variability around the average of a data series. The
+              segment. The <codeph>skccoeff</codeph>  column shows the coefficient of variation
+              (CV), which is calculated as the standard deviation divided by the average. It takes
+              into account both the average and variability around the average of a data series. The
               lower the value, the better. Higher values indicate greater data skew.</li>
             <li>The <codeph>gp_toolkit.gp_skew_idle_fractions</codeph> view shows data distribution
               skew by calculating the percentage of the system that is idle during a table scan,
               which is an indicator of computational skew. The <codeph>siffraction</codeph> column
               shows the percentage of the system that is idle during a table scan. This is an
               indicator of uneven data distribution or query processing skew. For example, a value
-              of 0.1 indicates 10% skew, a value of 0.5 indicates 50% skew, and so on. Tables that
+              of 0.1 indicates  10% skew, a value of 0.5 indicates 50% skew, and so on. Tables that
               have more than10% skew should have their distribution policies evaluated.</li>
           </ul></p>
       </section>
@@ -432,16 +432,17 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
     <body>
       <p>A good partitioning strategy reduces the amount of data to be scanned by reading only the
         partitions needed to satisfy a query. </p>
-      <p>Each partition is a separate physical file on <i>every</i> segment. Just as reading a
-        complete row in a wide columnar table requires more time than reading the same row from a
-        heap table, <i>reading all partitions in a partitioned table requires more time than reading
-          the same data from a non-partitioned table</i>. </p>
+      <p>Each partition is a separate physical file or set of tiles (in the case of column-oriented
+        tables) on <i>every</i> segment. Just as reading a complete row in a wide columnar table
+        requires more time than reading the same row from a heap table, <i>reading all partitions in
+          a partitioned table requires more time than reading the same data from a non-partitioned
+          table</i>. </p>
       <p>Following are partitioning best practices:<ul id="ul_wfh_bbb_3r">
           <li>Partition large tables only, do not partition small tables. </li>
           <li>Use partitioning on large tables <i>only</i> when partition elimination (partition
             pruning) can be achieved based on query criteria and is accomplished by partitioning the
-            table based on the query predicate. Use range partitioning over list partitioning.</li>
-          <li>Choose range partitioning over list partitioning.</li>
+            table based on the query predicate. Whenever possible, use range partitioning over list
+            partitioning.</li>
           <li>The query planner can selectively scan partitioned tables only when the query contains
             a direct and simple restriction of the table using immutable operators, such as
               <codeph>=</codeph>, <codeph>&lt;</codeph> , <codeph>&lt;= </codeph>,
@@ -525,9 +526,9 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
         is considered good. </p>
       <p>If adding an index does not produce performance gains, drop it. Verify that every index you
         create is used by the optimizer.</p>
-      <p>Always drop indexes before loading data into a table. The load will run an order of
-        magnitude faster than loading data into a table with indexes. After the load, re-create the
-        indexes. </p>
+      <p>As a general rule, drop indexes before loading data into a table. The load will run an
+        order of magnitude faster than loading data into a table with indexes. After the load,
+        re-create the indexes. </p>
       <p>Bitmap indexes are suited for querying and not updating. Bitmap indexes perform best when
         the column has a low cardinality—100 to 100,000 distinct values. Do not use bitmap indexes
         for unique columns, very high, or very low cardinality data. Do not use bitmap indexes for
