@@ -220,14 +220,14 @@
       <body>
         <p>Before you install the R Data Science Library package, make sure that your Greenplum Database is running, you have sourced <codeph>greenplum_path.sh</codeph>, and that the <codeph>$MASTER_DATA_DIRECTORY</codeph> and <codeph>$GPHOME</codeph> environment variables are set.</p>
         <ol>
-          <li>Locate the R Data Science library package that you built or downloaded.<p>The file name format of the package is <codeph>gpdbr-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
+          <li>Locate the R Data Science library package that you built or downloaded.<p>The file name format of the package is <codeph>DataScienceR-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
           <li>Copy the package to the Greenplum Database master host.</li>
-          <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i gpdbr-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the R Data Science libraries on all nodes in your Greenplum Database cluster. The command also sets the <codeph>R_LIBS_USER</codeph> environment variable and updates the <codeph>PATH</codeph> and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
+          <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i DataScienceR-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the R Data Science libraries on all nodes in your Greenplum Database cluster. The command also sets the <codeph>R_LIBS_USER</codeph> environment variable and updates the <codeph>PATH</codeph> and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
           <li>Restart Greenplum Database. You must re-source <codeph>greenplum_path.sh</codeph> before restarting your Greenplum cluster:<codeblock>$ source /usr/local/greenplum-db/greenplum_path.sh
 $ gpstop -r</codeblock></li>
         </ol>
-       <p>The Greenplum Database R Data Science Modules are installed in the following directory:<codeblock>$GPHOME/ext/gpdbr/library</codeblock></p>
-        <note><codeph>rjags</codeph> libraries are installed in the <codeph>$GPHOME/ext/gpdbr/extlib/lib</codeph> directory. If you want to use <codeph>rjags</codeph> and your <codeph>$GPHOME</codeph> is not <codeph>/usr/local/greenplum-db</codeph>, you must perform additional configuration steps to create a symbolic link from <codeph>$GPHOME</codeph> to <codeph>/usr/local/greenplum-db</codeph> on each node in your Greenplum Database cluster. For example: <codeblock>$ gpssh -f all_hosts -e 'ln -s $GPHOME /usr/local/greenplum-db'
+       <p>The Greenplum Database R Data Science Modules are installed in the following directory:<codeblock>$GPHOME/ext/DataScienceR/library</codeblock></p>
+        <note><codeph>rjags</codeph> libraries are installed in the <codeph>$GPHOME/ext/DataScienceR/extlib/lib</codeph> directory. If you want to use <codeph>rjags</codeph> and your <codeph>$GPHOME</codeph> is not <codeph>/usr/local/greenplum-db</codeph>, you must perform additional configuration steps to create a symbolic link from <codeph>$GPHOME</codeph> to <codeph>/usr/local/greenplum-db</codeph> on each node in your Greenplum Database cluster. For example: <codeblock>$ gpssh -f all_hosts -e 'ln -s $GPHOME /usr/local/greenplum-db'
 $ gpssh -f all_hosts -e 'chown -h gpadmin /usr/local/greenplum-db'
 </codeblock></note>
       </body>
@@ -237,9 +237,9 @@ $ gpssh -f all_hosts -e 'chown -h gpadmin /usr/local/greenplum-db'
       <body>
         <p>Use the <codeph>gppkg</codeph> utility to uninstall the R Data Science Library package. You must include the version number in the package name you provide to <codeph>gppkg</codeph>.</p>
         <p> To determine your R Data Science Library package version number and remove this package:</p>
-        <codeblock>$ gppkg -q --all | grep gpdbr
-gpdbpr-&lt;version&gt;
-$ gppkg -r gpdbr-&lt;version&gt;</codeblock>
+        <codeblock>$ gppkg -q --all | grep DataScienceR
+DataScienceR-&lt;version&gt;
+$ gppkg -r DataScienceR-&lt;version&gt;</codeblock>
         <p>The command removes the R Data Science libraries from your Greenplum Database cluster. It also removes the <codeph>R_LIBS_USER</codeph> environment variable and updates the <codeph>PATH</codeph> and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file to their pre-installation values.</p>
         <p>Re-source <codeph>greenplum_path.sh</codeph> and restart Greenplum Database after you remove the R Data Science Library package:</p>
         <codeblock>$ . /usr/local/greenplum-db/greenplum_path.sh
