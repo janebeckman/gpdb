@@ -434,13 +434,13 @@ $$;</codeblock>
       <body>
         <p>Before you install the Python Data Science Module package, make sure that your Greenplum Database is running, you have sourced <codeph>greenplum_path.sh</codeph>, and that the <codeph>$MASTER_DATA_DIRECTORY</codeph> and <codeph>$GPHOME</codeph> environment variables are set.</p>
         <ol>
-          <li>Locate the Python Data Science module package that you built or downloaded.<p>The file name format of the package is <codeph>gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
+          <li>Locate the Python Data Science module package that you built or downloaded.<p>The file name format of the package is <codeph>DataSciencePython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeph>.</p></li>
           <li>Copy the package to the Greenplum Database master host.</li>
-          <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i gpdbpython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the Python Data Science modules on all nodes in your Greenplum Database cluster. The command also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
+          <li>Use the <codeph>gppkg</codeph> command to install the package. For example:<codeblock>$ gppkg -i DataSciencePython-&lt;version&gt;-relhel&lt;N&gt;-x86_64.gppkg</codeblock><p><codeph>gppkg</codeph> installs the Python Data Science modules on all nodes in your Greenplum Database cluster. The command also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file.</p></li>
           <li>Restart Greenplum Database. You must re-source <codeph>greenplum_path.sh</codeph> before restarting your Greenplum cluster:<codeblock>$ source /usr/local/greenplum-db/greenplum_path.sh
 $ gpstop -r</codeblock></li>
         </ol>
-       <p>The Greenplum Database Python Data Science Modules are installed in the following directory:</p><codeblock>$GPHOME/ext/gpdbpython/lib/python2.7/site-packages/</codeblock>
+       <p>The Greenplum Database Python Data Science Modules are installed in the following directory:</p><codeblock>$GPHOME/ext/DataSciencePython/lib/python2.7/site-packages/</codeblock>
       </body>
     </topic>
     <topic id="topic_removepdsm" xml:lang="en">
@@ -448,9 +448,9 @@ $ gpstop -r</codeblock></li>
       <body>
         <p>Use the <codeph>gppkg</codeph> utility to uninstall the Python Data Science Module package. You must include the version number in the package name you provide to <codeph>gppkg</codeph>.</p>
         <p> To determine your Python Data Science Module package version number and remove this package:</p>
-        <codeblock>$ gppkg -q --all | grep gpdbpython
-gpdbpython-&lt;version&gt;
-$ gppkg -r gpdbpython-&lt;version&gt;</codeblock>
+        <codeblock>$ gppkg -q --all | grep DataSciencePython
+DataSciencePython-&lt;version&gt;
+$ gppkg -r DataSciencePython-&lt;version&gt;</codeblock>
         <p>The command removes the Python Data Science modules from your Greenplum Database cluster. It also updates the <codeph>PYTHONPATH</codeph>, <codeph>PATH</codeph>, and <codeph>LD_LIBRARY_PATH</codeph> environment variables in your <codeph>greenplum_path.sh</codeph> file to their pre-installation values.</p>
         <p>Re-source <codeph>greenplum_path.sh</codeph> and restart Greenplum Database after you remove the Python Data Science Module package:</p>
         <codeblock>$ . /usr/local/greenplum-db/greenplum_path.sh
