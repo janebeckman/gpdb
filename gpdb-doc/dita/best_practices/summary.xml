@@ -127,7 +127,7 @@
         <li>Use partitioning only if partition elimination (partition pruning) can be achieved based
           on the query criteria.</li>
         <li>Choose range partitioning over list partitioning.</li>
-        <li>Partition the table based on the query predicate.</li>
+        <li>Partition the table based on a commonly-used column, such as a date column.</li>
         <li>Never partition and distribute tables on the same column. </li>
         <li>Do not use default partitions. </li>
         <li>Do not use multi-level partitioning; create fewer partitions with more data in each
@@ -151,7 +151,9 @@
           re-create the indexes for the table. </li>
         <li>Create selective B-tree indexes. </li>
         <li>Do not create bitmap indexes on columns that are updated. </li>
-        <li>Do not use bitmap indexes for unique columns, very high or very low cardinality data. </li>
+        <li>Do not use bitmap indexes for unique columns, very high or very low cardinality data.
+          Bitmap indexes perform best when the column has a low cardinality—100 to 100,000 distinct
+          values. </li>
         <li>Do not use bitmap indexes for transactional workloads.</li>
         <li>In general do not index partitioned tables. If indexes are needed, the index columns
           must be different than the partition columns.</li>
@@ -167,9 +169,6 @@
           queries that members of the particular queue can run concurrently. </li>
         <li>Use the <codeph>MEMORY_LIMIT</codeph> parameter to control the total amount of memory
           that queries running through the queue can utilize. </li>
-        <li>Unless using the ACTIVE_STATEMENTS and/or MEMORY_LIMIT parameters, avoid setting set all
-          queues to <codeph>MEDIUM</codeph>, as this effectively does nothing to manage the
-          workload.</li>
         <li>Alter resource queues dynamically to match the workload and time of day.</li>
       </ul>
       <p>See <xref href="workloads.xml#topic_hhc_z5w_r4/configuring_rq"/>.</p>
@@ -207,7 +206,6 @@
           up to date.</li>
         <li>Do not run <codeph>ANALYZE</codeph> on the entire database. Selectively run
             <codeph>ANALYZE</codeph> at the table level when needed.</li>
-        <li>Always run <codeph>ANALYZE</codeph> after loading.</li>
         <li>Always run <codeph>ANALYZE</codeph> after <codeph>INSERT</codeph>,
             <codeph>UPDATE</codeph>. and <codeph>DELETE</codeph> operations that significantly
           changes the underlying data. </li>
@@ -239,19 +237,16 @@
       <ul id="ul_jln_src_3r">
         <li> Maximize the parallelism as the number of segments increase. </li>
         <li> Spread the data evenly across as many ETL nodes as possible. </li>
-        <li> Split very large data files into equal parts and spread the data across as many file
+        <li>Split very large data files into equal parts and spread the data across as many file
           systems as possible. </li>
         <li> Run two <codeph>gpfdist</codeph> instances per file system. </li>
         <li> Run <codeph>gpfdist</codeph> on as many interfaces as possible. </li>
-        <li> Use <codeph>gp_external_max_segs</codeph> to control the number of segments that will
+        <li>Use <codeph>gp_external_max_segs</codeph> to control the number of segments that will
           request data from the <codeph>gpfdist</codeph> process. </li>
-        <li> Always keep <codeph>gp_external_max_segs</codeph> and the number of
+        <li>Always keep <codeph>gp_external_max_segs</codeph> and the number of
             <codeph>gpfdist</codeph> processes an even factor.</li>
         <li> Always drop indexes before loading into existing tables and re-create the index after
           loading. </li>
-        <li> Always run <codeph>ANALYZE</codeph> on the table after loading it. </li>
-        <li> Disable automatic statistics collection during loading by setting
-            <codeph>gp_autostats_mode</codeph> to <codeph>NONE</codeph>. </li>
         <li> Run <codeph>VACUUM</codeph> after load errors to recover space. </li>
       </ul>
       <p>See <xref href="data_loading.xml#topic_fj5_b1x_r4"/>.</p>
