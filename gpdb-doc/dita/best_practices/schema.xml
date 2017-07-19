@@ -510,9 +510,11 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
         of rows of data. In Greenplum Database, a sequential scan is an efficient method to read
         data as each segment contains an equal portion of the data and all segments work in parallel
         to read the data. </p>
+      <p>If adding an index does not produce performance gains, drop it. Verify that every index you
+        create is used by the optimizer.</p>
       <p>For queries with high selectivity, indexes may improve query performance. Create an index
         on a single column of a columnar table for drill through purposes for high cardinality
-        tables that are required for selective queries. </p>
+        columns that are required for highly selective queries. </p>
       <p>Do not index columns that are frequently updated. Creating an index on a column that is
         frequently updated increases the number of writes required on updates. </p>
       <p>Indexes on expressions should be used only if the expression is used frequently in queries. </p>
@@ -526,8 +528,6 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
         values a column has divided by the number of rows in a table. For example, if a table has
         1000 rows and a column has 800 distinct values, the selectivity of the index is 0.8, which
         is considered good. </p>
-      <p>If adding an index does not produce performance gains, drop it. Verify that every index you
-        create is used by the optimizer.</p>
       <p>As a general rule, drop indexes before loading data into a table. The load will run an
         order of magnitude faster than loading data into a table with indexes. After the load,
         re-create the indexes. </p>
@@ -535,11 +535,11 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
         the column has a low cardinality—100 to 100,000 distinct values. Do not use bitmap indexes
         for unique columns, very high, or very low cardinality data. Do not use bitmap indexes for
         transactional workloads.</p>
-      <p>In general, do not index partitioned tables. If indexes are needed, the index columns must
-        be different than the partition columns. A benefit of indexing partitioned tables is that
-        because the b-tree performance degrades exponentially as the size of the b-tree grows,
-        creating indexes on partitioned tables creates smaller b-trees that perform better than with
-        non-partitioned tables.</p>
+      <p>If indexes are needed on partitioned tables, the index columns must be different than the
+        partition columns. A benefit of indexing partitioned tables is that because the b-tree
+        performance degrades exponentially as the size of the b-tree grows, creating indexes on
+        partitioned tables creates smaller b-trees that perform better than with non-partitioned
+        tables.</p>
     </body>
   </topic>
   <topic id="column_sequence">
