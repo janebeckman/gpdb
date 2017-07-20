@@ -56,7 +56,7 @@
             accessed (cold). </li>
           <li>Storage options should be set at the partition level.</li>
           <li> If needed, compress large tables to improve I/O performance and to make space in the
-            cluster, if needed.</li>
+            cluster.</li>
         </ol></p>
       <section id="heap_vs_ao">
         <title>Heap Storage or Append-Optimized Storage</title>
@@ -67,14 +67,14 @@
             <codeph>UPDATE</codeph>, <codeph>DELETE</codeph>, and <codeph>INSERT</codeph>
           operations. </p>
         <p>Use append-optimized storage for tables and partitions that are updated infrequently
-          after the initial load and have subsequent inserts only performed in batch operations.
-          Never perform singleton <codeph>INSERT</codeph>, <codeph>UPDATE</codeph>, or
+          after the initial load and have subsequent inserts performed only in batch operations.
+          Avoid performing singleton <codeph>INSERT</codeph>, <codeph>UPDATE</codeph>, or
             <codeph>DELETE</codeph> operations on append-optimized tables. Concurrent batch
             <codeph>INSERT</codeph> operations are acceptable, but <i>never</i> perform concurrent
           batch <codeph>UPDATE</codeph> or <codeph>DELETE</codeph> operations. </p>
-        <p>The append-optimized storage model is inappropriate for frequently updated tables, as
-          space occupied by rows that are updated and deleted in append-optimized tables is not
-          recovered and reused as efficiently as with heap tables. Append-optimized storage is
+        <p>The append-optimized storage model is inappropriate for frequently updated tables,
+          because space occupied by rows that are updated and deleted in append-optimized tables is
+          not recovered and reused as efficiently as with heap tables. Append-optimized storage is
           intended for large tables that are loaded once, updated infrequently, and queried
           frequently for analytical query processing. </p>
       </section>
@@ -131,8 +131,8 @@
         compression. </p>
       <p>Data compression should never be used for data that is stored on a compressed file system. </p>
       <p>Test different compression types and ordering methods to determine the best compression for
-        your specific data. For example, you might start zlib compression at level 4 o 5 and adjust
-        for best results. RLE compression works best with files containing repetitive data.</p>
+        your specific data. For example, you might start zlib compression at level 4 or 5 and adjust
+        for best results. RLE compression works best with files that contain repetitive data.</p>
     </body>
   </topic>
   <topic id="distribution">
@@ -156,8 +156,8 @@
           <li>The distribution key column data should contain unique values or very high
             cardinality. </li>
           <li>If a single column cannot achieve an even distribution, use a multi-column
-            distribution key, limit it to two columns. Additional column values do not typically
-            yield a more even distribution and they require additional time in the hashing
+            distribution key with a maximum of two columns. Additional column values do not
+            typically yield a more even distribution and they require additional time in the hashing
             process.</li>
           <li>If a two-column distribution key cannot achieve an even distribution of data, use a
             random distribution. Multi-column distribution keys in most cases require motion
@@ -172,7 +172,7 @@
         to the other segments. In some cases a broadcast motion, in which each segment sends its
         individual rows to all other segments, is performed rather than a redistribution motion,
         where each segment rehashes the data and sends the rows to the appropriate segments
-        according to hash key. </p>
+        according to the hash key. </p>
       <section>
         <title>Local (Co-located) Joins</title>
         <p>Using a hash distribution that evenly distributes table rows across all segments and
@@ -277,128 +277,34 @@ Total 14856967207 bytes (13.8366 GB)</codeblock></p><p>If
               skew situations are caused by sort files, so you will need to customize the
               command:<codeblock>$ gpssh -f ~/hosts -e 
     "ls -l /data[1-2]/primary/gpseg*/base/19979/pgsql_tmp/*" 
-    | grep -i sort | sort</codeblock></p><p>Here
+    | grep -i sort | awk '{sub(/base.*tmp\//, ".../", $10); print $1,$6,$10}' | sort -k2 -n</codeblock></p><p>Here
               is output from this command:
-              <codeblock>[sdw1] -rw------- 1 gpadmin gpadmin 1002209280 Jul 29 12:48
-        /data1/primary/gpseg2/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19791_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin 1003356160 Jul 29 12:48
-        /data1/primary/gpseg1/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19789_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  288718848 Jul 23 14:58
-        /data1/primary/gpseg2/base/19979/pgsql_tmp/pgsql_tmp_slice0_sort_17758_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  291176448 Jul 23 14:58
-        /data2/primary/gpseg5/base/19979/pgsql_tmp/pgsql_tmp_slice0_sort_17764_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  988446720 Jul 29 12:48
-        /data1/primary/gpseg0/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19787_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  995033088 Jul 29 12:48
-        /data2/primary/gpseg3/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19793_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  997097472 Jul 29 12:48
-        /data2/primary/gpseg5/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19797_0001.0
-[sdw1] -rw------- 1 gpadmin gpadmin  997392384 Jul 29 12:48
-        /data2/primary/gpseg4/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_19795_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin 1002340352 Jul 29 12:48
-        /data2/primary/gpseg11/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3973_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin 1004339200 Jul 29 12:48
-        /data1/primary/gpseg8/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3967_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin  989036544 Jul 29 12:48
-        /data2/primary/gpseg10/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3971_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin  993722368 Jul 29 12:48
-        /data1/primary/gpseg6/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3963_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin  998277120 Jul 29 12:48
-        /data1/primary/gpseg7/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3965_0001.0
-[sdw2] -rw------- 1 gpadmin gpadmin  999751680 Jul 29 12:48
-        /data2/primary/gpseg9/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_3969_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin 1000112128 Jul 29 12:48
-        /data1/primary/gpseg13/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24723_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin 1004797952 Jul 29 12:48
-        /data2/primary/gpseg17/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24731_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin 1004994560 Jul 29 12:48
-        /data2/primary/gpseg15/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24727_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin 1006108672 Jul 29 12:48
-        /data1/primary/gpseg14/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24725_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin  998244352 Jul 29 12:48
-        /data1/primary/gpseg12/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24721_0001.0
-[sdw3] -rw------- 1 gpadmin gpadmin  998440960 Jul 29 12:48
-        /data2/primary/gpseg16/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_24729_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin 1001029632 Jul 29 12:48
-        /data2/primary/gpseg23/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29435_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin 1002504192 Jul 29 12:48
-        /data1/primary/gpseg20/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29429_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin 1002504192 Jul 29 12:48
-        /data2/primary/gpseg21/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29431_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin 1009451008 Jul 29 12:48
-        /data1/primary/gpseg19/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29427_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin  980582400 Jul 29 12:48
-        /data1/primary/gpseg18/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29425_0001.0
-[sdw4] -rw------- 1 gpadmin gpadmin  993230848 Jul 29 12:48
-        /data2/primary/gpseg22/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29433_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin 1000898560 Jul 29 12:48
-        /data2/primary/gpseg28/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28641_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin 1003388928 Jul 29 12:48
-        /data2/primary/gpseg29/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28643_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin 1008566272 Jul 29 12:48
-        /data1/primary/gpseg24/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28633_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin  987332608 Jul 29 12:48
-        /data1/primary/gpseg25/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28635_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin  990543872 Jul 29 12:48
-        /data2/primary/gpseg27/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28639_0001.0
-[sdw5] -rw------- 1 gpadmin gpadmin  999620608 Jul 29 12:48
-        /data1/primary/gpseg26/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_28637_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin 1002242048 Jul 29 12:48
-        /data2/primary/gpseg33/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29598_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin 1003683840 Jul 29 12:48
-        /data1/primary/gpseg31/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29594_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin 1004732416 Jul 29 12:48
-        /data2/primary/gpseg34/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29600_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin  986447872 Jul 29 12:48
-        /data2/primary/gpseg35/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29602_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin  990543872 Jul 29 12:48
-        /data1/primary/gpseg30/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29592_0001.0
-[sdw6] -rw------- 1 gpadmin gpadmin  992870400 Jul 29 12:48
-        /data1/primary/gpseg32/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_29596_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin 1007321088 Jul 29 12:48
-        /data2/primary/gpseg39/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18530_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin 1011187712 Jul 29 12:48
-        /data1/primary/gpseg37/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18526_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin  987332608 Jul 29 12:48
-        /data2/primary/gpseg41/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18534_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin  994344960 Jul 29 12:48
-        /data1/primary/gpseg38/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18528_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin  996114432 Jul 29 12:48
-        /data2/primary/gpseg40/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18532_0001.0
-[sdw7] -rw------- 1 gpadmin gpadmin  999194624 Jul 29 12:48
-        /data1/primary/gpseg36/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_18524_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin 1002242048 Jul 29 12:48
-        /data2/primary/gpseg46/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15675_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin 1003520000 Jul 29 12:48
-        /data1/primary/gpseg43/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15669_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin 1008009216 Jul 29 12:48
-        /data1/primary/gpseg44/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15671_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:16
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:21
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0002.1
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:24
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0003.2
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:26
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0004.3
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:31
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0006.5
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:32
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0005.4
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:34
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0007.6
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:36
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0008.7
-[sdw8] -rw------- 1 gpadmin gpadmin 1073741824 Jul 29 12:43
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0009.8
-[sdw8] -rw------- 1 gpadmin gpadmin  924581888 Jul 29 12:48
-        /data2/primary/gpseg45/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15673_0010.9
-[sdw8] -rw------- 1 gpadmin gpadmin  990085120 Jul 29 12:48
-        /data1/primary/gpseg42/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15667_0001.0
-[sdw8] -rw------- 1 gpadmin gpadmin  996933632 Jul 29 12:48
-      /data2/primary/gpseg47/base/19979/pgsql_tmp/pgsql_tmp_slice10_sort_15677_0001.0</codeblock></p><p>Scanning
+              <codeblock>[sdw1] 288718848
+      /data1/primary/gpseg2/.../pgsql_tmp_slice0_sort_17758_0001.0[sdw1] 291176448
+      /data2/primary/gpseg5/.../pgsql_tmp_slice0_sort_17764_0001.0[sdw8] 924581888
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0010.9[sdw4] 980582400
+      /data1/primary/gpseg18/.../pgsql_tmp_slice10_sort_29425_0001.0[sdw6] 986447872
+      /data2/primary/gpseg35/.../pgsql_tmp_slice10_sort_29602_0001.0...[sdw5] 999620608
+      /data1/primary/gpseg26/.../pgsql_tmp_slice10_sort_28637_0001.0[sdw2] 999751680
+      /data2/primary/gpseg9/.../pgsql_tmp_slice10_sort_3969_0001.0[sdw3] 1000112128
+      /data1/primary/gpseg13/.../pgsql_tmp_slice10_sort_24723_0001.0[sdw5] 1000898560
+      /data2/primary/gpseg28/.../pgsql_tmp_slice10_sort_28641_0001.0...[sdw8] 1008009216
+      /data1/primary/gpseg44/.../pgsql_tmp_slice10_sort_15671_0001.0[sdw5] 1008566272
+      /data1/primary/gpseg24/.../pgsql_tmp_slice10_sort_28633_0001.0[sdw4] 1009451008
+      /data1/primary/gpseg19/.../pgsql_tmp_slice10_sort_29427_0001.0[sdw7] 1011187712
+      /data1/primary/gpseg37/.../pgsql_tmp_slice10_sort_18526_0001.0[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0001.0[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0002.1[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0003.2[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0004.3[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0005.4[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0006.5[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0007.6[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0008.7[sdw8] 1573741824
+      /data2/primary/gpseg45/.../pgsql_tmp_slice10_sort_15673_0009.8</codeblock></p><p>Scanning
               this output reveals that segment <codeph>gpseg45</codeph> on host
-                <codeph>sdw8</codeph> is the culprit.</p></li>
+                <codeph>sdw8</codeph> is the culprit, as its sort files are larger than the others
+              in the output.</p></li>
           <li>Log in to the offending node with <codeph>ssh</codeph> and become root. Use the
               <codeph>lsof</codeph> command to find the PID for the process that owns one of the
             sort
@@ -443,8 +349,8 @@ root     29622 29566  0 12:50 pts/16   00:00:00 grep 15673</codeblock>
           <li>Partition large tables only, do not partition small tables. </li>
           <li>Use partitioning on large tables <i>only</i> when partition elimination (partition
             pruning) can be achieved based on query criteria and is accomplished by partitioning the
-            table based on the query predicate. Whenever possible, use range partitioning over list
-            partitioning.</li>
+            table based on the query predicate. Whenever possible, use range partitioning instead of
+            list partitioning.</li>
           <li>The query planner can selectively scan partitioned tables only when the query contains
             a direct and simple restriction of the table using immutable operators, such as
               <codeph>=</codeph>, <codeph>&lt;</codeph> , <codeph>&lt;= </codeph>,

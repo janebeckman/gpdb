@@ -14,8 +14,8 @@
     </section>
     <section id="port_config">
       <title>Port Configuration</title>
-      <p>Set up <codeph>ip_local_port_range</codeph> not to conflict with the Greenplum Database
-        port ranges. For example:
+      <p>Set up <codeph>ip_local_port_range</codeph> so it does not conflict with the Greenplum
+        Database port ranges. For example:
         <codeblock>net.ipv4.ip_local_port_range = 3000         65535
 PORT_BASE=2000
 MIRROR_PORT_BASE=2100
@@ -156,8 +156,8 @@ kernel.shmall = 4000000000</codeblock>
         space, or reduce the number of segments per host.</p>
       <p>Note that adding segment hosts to the cluster cannot help out-of-memory errors unless you
         use the additional hosts to decrease the number of segments per host.</p>
-      <p>Spilling happens when there is not enough memory to fit all the mapper output, usually when
-        80% of the buffer space is occupied.  Greenplum Database then creates spill files.</p>
+      <p>Spill files are created when there is not enough memory to fit all the mapper output,
+        usually when 80% of the buffer space is occupied. </p>
       <p>Also, see <xref href="workloads.xml#topic_hhc_z5w_r4">Workload Management</xref> for best
         practices for managing query memory using resource queues.</p>
     </section>

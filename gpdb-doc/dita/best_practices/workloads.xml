@@ -45,8 +45,8 @@ VM Protect failed to allocate 4096 bytes, 0 MB available</codeblock></p>
         <li>Use a session setting to reduce the <codeph>statement_mem</codeph> used by specific
           queries</li>
         <li>Decrease <codeph>statement_mem</codeph> at the database level</li>
-        <li>Decrease the number of segments per host in the Greenplum cluster. This solution
-          requires a full data reload and initialization of Greenplum Database.</li>
+        <li>Decrease the number of segments per host in the Greenplum Database cluster. This
+          solution requires a re-initializing Greenplum Database and reloading your data.</li>
         <li>Increase memory on the host, if possible. (Additional hardware may be required.)</li>
       </ul>
       <p>Adding segment hosts to the cluster will not in itself alleviate out of memory problems.
@@ -223,8 +223,8 @@ gp_vmem_protect_limit = gp_vmem / maximum_acting_primary_segments
         <li>
           <p>Alter resource queues dynamically to match the real requirements of the queue for the
             workload and time of day. You can script an operational flow that changes based on the
-            time of day and type of usage of the system and add crontab entries to execute the
-            scripts.</p>
+            time of day and type of usage of the system and add <codeph>crontab</codeph> entries to
+            execute the scripts.</p>
         </li>
         <li>
           <p>Use gptoolkit to view resource queue usage and to understand how the queues are

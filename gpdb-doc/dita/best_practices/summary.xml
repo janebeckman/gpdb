@@ -147,11 +147,11 @@
         <li>Create an index on a single column of a columnar table for drill-through purposes for
           high cardinality tables that require queries with high selectivity. </li>
         <li>Do not index columns that are frequently updated. </li>
-        <li>We recommend dropping indexes before loading data into a table. After the load,
-          re-create the indexes for the table. </li>
+        <li>Consider dropping indexes before loading data into a table. After the load, re-create
+          the indexes for the table. </li>
         <li>Create selective B-tree indexes. </li>
         <li>Do not create bitmap indexes on columns that are updated. </li>
-        <li>Do not use bitmap indexes for unique columns, very high or very low cardinality data.
+        <li>Avoid using bitmap indexes for unique columns, very high or very low cardinality data.
           Bitmap indexes perform best when the column has a low cardinality—100 to 100,000 distinct
           values. </li>
         <li>Do not use bitmap indexes for transactional workloads.</li>
@@ -200,8 +200,8 @@
         <li>Use <codeph>analyzedb</codeph> in preference to <codeph>ANALYZE</codeph>. The
             <codeph>analyzedb</codeph> utility updates statistics data for the specified tables
           incrementally and concurrently. For append optimized tables, <codeph>analyzedb</codeph>
-          updates statistics incrementally, only if the statistics are not current. For heap tables,
-          statistics are alwas updated. <codeph>ANALYZE</codeph> does not update the table metadata
+          updates statistics incrementally only if the statistics are not current. For heap tables,
+          statistics are always updated. <codeph>ANALYZE</codeph> does not update the table metadata
           that the <codeph>analyzedb</codeph> utility uses to determine whether table statistics are
           up to date.</li>
         <li>Do not run <codeph>ANALYZE</codeph> on the entire database. Selectively run
