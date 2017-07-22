@@ -452,6 +452,8 @@ extern Datum current_database(PG_FUNCTION_ARGS);
 extern Datum current_query(PG_FUNCTION_ARGS);
 extern Datum pg_cancel_backend(PG_FUNCTION_ARGS);
 extern Datum pg_terminate_backend(PG_FUNCTION_ARGS);
+extern Datum pg_cancel_backend_msg(PG_FUNCTION_ARGS);
+extern Datum pg_terminate_backend_msg(PG_FUNCTION_ARGS);
 extern Datum gp_cancel_query(PG_FUNCTION_ARGS);
 extern Datum pg_reload_conf(PG_FUNCTION_ARGS);
 extern Datum pg_tablespace_databases(PG_FUNCTION_ARGS);
@@ -1100,6 +1102,7 @@ extern Datum pg_resqueue_status(PG_FUNCTION_ARGS);
 extern Datum pg_resqueue_status_kv(PG_FUNCTION_ARGS);
 
 /* utils/resgroup/resgroup.c */
+extern Datum pg_resgroup_get_status(PG_FUNCTION_ARGS);
 extern Datum pg_resgroup_get_status_kv(PG_FUNCTION_ARGS);
 
 /* utils/adt/matrix.c */
