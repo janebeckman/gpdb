@@ -7,9 +7,8 @@
     <p>This topic contains best practices for designing Greenplum Database schemas. </p>
     <p>Greenplum Database is an analytical, shared-nothing database, which is much different than a
       highly normalized, transactional SMP database. Greenplum Database performs best with a
-      denormalized schema design suited for MPP analytical processing, for example a star or
-      snowflake schema, with large centralized fact tables connected to multiple smaller dimension
-      tables.</p>
+      denormalized schema design suited for MPP analytical processing, a star or snowflake schema,
+      with large centralized fact tables connected to multiple smaller dimension tables.</p>
   </body>
   <topic id="data_types">
     <title>Data Types</title>
@@ -55,7 +54,7 @@
             storage for data often accessed (hot) and row-oriented storage for data not often
             accessed (cold). </li>
           <li>Storage options should be set at the partition level.</li>
-          <li> If needed, compress large tables to improve I/O performance and to make space in the
+          <li>Compress large tables to improve I/O performance and to make space in the
             cluster.</li>
         </ol></p>
       <section id="heap_vs_ao">
