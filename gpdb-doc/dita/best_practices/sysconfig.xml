@@ -10,7 +10,8 @@
       <title>File System</title>
       <p>XFS is the file system used for Greenplum Database data directories. XFS should be mounted
         with the following mount options:
-        <codeblock>rw,noatime,nobarrier,nodev,inode64,allocsize=16m</codeblock></p>
+          <codeblock>rw,noatime,nobarrier,nodev,inode64</codeblock><note>For CentOS 5.x, and SUSE
+          versions 11.3 and earlier, the allocsize=16m option is also recommended.</note></p>
     </section>
     <section id="port_config">
       <title>Port Configuration</title>

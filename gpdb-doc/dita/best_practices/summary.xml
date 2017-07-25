@@ -11,8 +11,8 @@
       significantly different from a highly normalized/transactional SMP database. Because of this,
       the following best practices are recommended.<ul id="ul_knm_src_3r">
         <li>Greenplum Database performs best with a denormalized schema design suited for MPP
-          analytical processing for example, Star or Snowflake schema, with large fact tables and
-          smaller dimension tables. </li>
+          analytical processing, Star or Snowflake schema, with large fact tables and smaller
+          dimension tables. </li>
         <li>Use the same data types for columns used in joins between tables.</li>
       </ul><p>See <xref href="schema.xml#schema_design"/>.</p></section>
     <section>
