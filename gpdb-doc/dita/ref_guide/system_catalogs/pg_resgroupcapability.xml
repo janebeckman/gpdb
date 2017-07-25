@@ -5,12 +5,13 @@
   <title id="hk141670">pg_resgroupcapability</title>
   <body>
     <p>The <codeph>pg_resgroupcapability</codeph> system catalog table contains information about
-      the capabilities and limits of existing Greenplum Database resource groups.
-      This table is joined to the <xref
+      the capabilities and limits of defined Greenplum Database resource groups.
+      You can join this table to the <xref
         href="pg_resgroup.xml#topic1" type="topic" format="dita"/> table by resource group object
       ID.</p>
-    <p>This table is populated only on the master. This table is defined in the
-        <codeph>pg_global</codeph> tablespace, meaning it is globally shared across all databases in
+    <p>The <codeph>pg_resgroupcapability</codeph> table is populated only on the Greenplum Database
+        master. This table, defined in the
+        <codeph>pg_global</codeph> tablespace, is globally shared across all databases in
       the system.</p>
     <table id="hk141982">
       <title>pg_catalog.pg_resgroupcapability</title>
