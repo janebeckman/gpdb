@@ -6,9 +6,7 @@
        [, LEFTARG = <varname>lefttype</varname>] [, RIGHTARG = <varname>righttype</varname>]
        [, COMMUTATOR = <varname>com_op</varname>] [, NEGATOR = <varname>neg_op</varname>]
        [, RESTRICT = <varname>res_proc</varname>] [, JOIN = <varname>join_proc</varname>]
-       [, HASHES] [, MERGES]
-       [, SORT1 = <varname>left_sort_op</varname>] [, SORT2 = <varname>right_sort_op</varname>]
-       [, LTCMP = <varname>less_than_op</varname>] [, GTCMP = <varname>greater_than_op</varname>] )</codeblock></section><section id="section3"><title>Description</title><p><codeph>CREATE OPERATOR</codeph> defines a new operator. The user who
+       [, HASHES] [, MERGES] )</codeblock></section><section id="section3"><title>Description</title><p><codeph>CREATE OPERATOR</codeph> defines a new operator. The user who
 defines an operator becomes its owner. </p><p>The operator name is a sequence of up to <codeph>NAMEDATALEN</codeph>-1
 (63 by default) characters from the following list: <codeph>+ - * / &lt;
 &gt; = ~ ! @ # % ^ &amp; | ` ?</codeph></p><p>There are a few restrictions on your choice of name: </p><ul><li id="bw144996"><codeph>--</codeph> and <codeph>/*</codeph> cannot appear anywhere in
@@ -109,25 +107,11 @@ in the sort order. In practice this means that the join operator must
 behave like equality. It is possible to merge-join two distinct data
 types so long as they are logically compatible. For example, the smallint-versus-integer
 equality operator is merge-joinable. We only need sorting operators that
-will bring both data types into a logically compatible sequence.</pd><pd>Execution of a merge join requires that the system be able to identify
-four operators related to the merge-join equality operator: less-than
-comparison for the left operand data type, less-than comparison for the
-right operand data type, less-than comparison between the two data types,
-and greater-than comparison between the two data types. It is possible
-to specify these operators individually by name, as the <codeph>SORT1</codeph>,
-<codeph>SORT2</codeph>, <codeph>LTCMP</codeph>, and <codeph>GTCMP</codeph>
-options respectively. The system will fill in the default names if any
-of these are omitted when <codeph>MERGES</codeph> is specified.</pd></plentry><plentry><pt><varname>left_sort_op</varname></pt><pd>If this operator can support a merge join, the less-than operator
-that sorts the left-hand data type of this operator. <codeph>&lt;</codeph>
-is the default if not specified.</pd></plentry><plentry><pt><varname>right_sort_op</varname></pt><pd>If this operator can support a merge join, the less-than operator
-that sorts the right-hand data type of this operator. <codeph>&lt;</codeph>
-is the default if not specified.</pd></plentry><plentry><pt><varname>less_than_op</varname></pt><pd>If this operator can support a merge join, the less-than operator
-that compares the input data types of this operator. <codeph>&lt;</codeph>
-is the default if not specified. </pd></plentry><plentry><pt><varname>greater_than_op</varname></pt><pd>If this operator can support a merge join, the greater-than operator that compares the input
-                        data types of this operator. <codeph>&gt;</codeph> is the default if not
-                            specified.<p>To give a schema-qualified operator name in optional
-                            arguments, use the <codeph>OPERATOR()</codeph> syntax, for
-                        example:</p><codeblock>COMMUTATOR = OPERATOR(myschema.===) ,</codeblock></pd></plentry></parml></section><section id="section5"><title>Notes</title><p>Any functions used to implement the operator must be defined as <codeph>IMMUTABLE</codeph>.</p></section><section id="section6"><title>Examples</title><p>Here is an example of creating an operator for adding two complex numbers,
+will bring both data types into a logically compatible sequence.</pd><pd>SORT1, SORT2, LTCMP, and GTCMP were formerly used to specify the names of sort operators
+                        associated with a merge-joinable operator. Information about associated
+                        operators is now found by looking at B-tree operator families; specifying
+                        any of these operators will be ignored, although it will implicitly set
+                        MERGES to true. </pd></plentry></parml></section><section id="section5"><title>Notes</title><p>Any functions used to implement the operator must be defined as <codeph>IMMUTABLE</codeph>.</p></section><section id="section6"><title>Examples</title><p>Here is an example of creating an operator for adding two complex numbers,
 assuming we have already created the definition of type <codeph>complex</codeph>.
 First define the function that does the work, then define the operator:
 </p><codeblock>CREATE FUNCTION complex_add(complex, complex)
