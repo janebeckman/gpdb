@@ -10272,12 +10272,23 @@ copy_buffer_pool_data(Relation rel, SMgrRelation dst,
 
 		smgrread(src, blkno, buf);
 
+		if (!PageIsVerified(page, blkno))
+			ereport(ERROR,
+					(errcode(ERRCODE_DATA_CORRUPTED),
+					 errmsg("invalid page in block %u of relation %s/%s/%s",
+							blkno,
+							src->smgr_rnode.spcNode,
+							src->smgr_rnode.dbNode,
+							src->smgr_rnode.relNode)));
+
 		/* XLOG stuff */
 		if (useWal)
 		{
 			log_newpage_relFileNode(&dst->smgr_rnode, blkno, page, persistentTid,
 						persistentSerialNum);
 		}
+
+		PageSetChecksumInplace(page, blkno);
 
 		// -------- MirroredLock ----------
 		LWLockAcquire(MirroredLock, LW_SHARED);
