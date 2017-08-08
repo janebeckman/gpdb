@@ -69,8 +69,8 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
           necessary. Use of the <codeph>COPY FROM</codeph> with the <codeph>ON SEGMENT</codeph> is
           recommended for expert users only.</note></p>
       <p>When <codeph>STDIN</codeph> or <codeph>STDOUT</codeph> is specified, data is transmitted
-        via the connection between the client and the master. <codeph>STDOUT</codeph> cannot be used
-        with the <codeph>ON SEGMENT</codeph> option.</p>
+        via the connection between the client and the master. <codeph>STDIN</codeph> and
+          <codeph>STDOUT</codeph> cannot be used with the <codeph>ON SEGMENT</codeph> option.</p>
       <p>If <codeph>SEGMENT REJECT LIMIT</codeph> is used, then a <codeph>COPY FROM</codeph>
         operation will operate in single row error isolation mode. In this release, single row error
         isolation mode only applies to rows in the input file with format errors — for example,
@@ -138,10 +138,10 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
         <plentry>
           <pt>ON SEGMENT</pt>
           <pd>Copy table data to create individual segment-oriented files, which remain on the
-            segment hosts. <codeph>COPY TO STDOUT</codeph> cannot be used with <codeph>ON
-              SEGMENT</codeph>. The <codeph>&lt;SEG_DATA_DIR></codeph> and
-              <codeph>&lt;SEGID></codeph> string literals are used with <codeph>ON SEGMENT</codeph>,
-            with the following
+            segment hosts. <codeph>COPY TO STDOUT</codeph> and <codeph>COPY FROM
+            STDOUT</codeph>cannot be used with <codeph>ON SEGMENT</codeph>. The
+              <codeph>&lt;SEG_DATA_DIR></codeph> and <codeph>&lt;SEGID></codeph> string literals are
+            used with <codeph>COPY TO ON SEGMENT</codeph>, with the following
             syntax:<codeblock>COPY <varname>table</varname> TO '&lt;SEG_DATA_DIR>/<varname>gpdumpname</varname>&lt;SEGID>_<varname>suffix</varname>' ON SEGMENT; </codeblock>Mirror
             segments do not copy their data into the segment files.<parml>
               <plentry>
@@ -553,16 +553,16 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
       <codeblock>COPY sales FROM '/home/usr1/sql/sales_data' LOG ERRORS 
    SEGMENT REJECT LIMIT 10 ROWS;</codeblock>
       <p>To copy segment data for later use, use the <codeph>ON SEGMENT</codeph> argument. Use of
-        the <codeph>ON SEGMENT</codeph> argument takes the form:</p>
+        the <codeph>COPY TO ON SEGMENT</codeph> argument takes the form:</p>
       <p><codeph>COPY</codeph>
         <varname>table</varname> TO
           '&lt;SEG_DATA_DIR>/<varname>gpdumpname</varname>&lt;SEGID>_<varname>suffix</varname>' ON
         SEGMENT; </p>
       <p>The <codeph>&lt;SEGID></codeph> is required. However, you can substitute an absolute path
         for the <codeph>&lt;SEG_DATA_DIR></codeph> string literal in the path. </p>
-      <p>When you pass in the string literal &lt;SEG_DATA_DIR> and &lt;SEGID> to
-          <codeph>COPY</codeph>, <codeph>COPY</codeph> will fill in the appropriate values when the
-        operation is run.</p>
+      <p>When you pass in the string literal <codeph>&lt;SEG_DATA_DIR></codeph> and
+          <codeph>&lt;SEGID></codeph> to <codeph>COPY</codeph>, <codeph>COPY</codeph> will fill in
+        the appropriate values when the operation is run.</p>
       <p>For example, if you have <codeph>mytable</codeph> with the segments and mirror segments
         like
         this:<codeblock>contentid | dbid | file segment location 
