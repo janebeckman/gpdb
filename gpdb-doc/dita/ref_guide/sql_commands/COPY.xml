@@ -587,12 +587,12 @@ COPY {table [(<varname>column</varname> [, ...])] | (<varname>query</varname>)} 
       <p>If an absolute path is specified, instead of <codeph>&lt;SEG_DATA_DIR></codeph>, such as in
         the statement
         <codeblock>COPY mytable TO '/tmp/gpdir/gpbackup_&lt;SEGID>.txt' ON SEGMENT;</codeblock></p>
-      <p>files would be placed in <codeph>/tmp/gpdir</codeph> on every segment. The gpfdist tool can
-        also be used to restore data files generated with <codeph>COPY TO</codeph> with the
-          <codeph>ON SEGMENT</codeph> option if redistribution is necessary<note>Tools such as
-            <codeph>gpfdist</codeph> or backup/restore can be used to restore data. The
+      <p>files would be placed in <codeph>/tmp/gpdir</codeph> on every segment. The
+          <codeph>gpfdist</codeph> tool can also be used to restore data files generated with
+          <codeph>COPY TO</codeph> with the <codeph>ON SEGMENT</codeph> option if redistribution is
+          necessary.<note>Tools such as <codeph>gpfdist</codeph> can be used to restore data. The
           backup/restore tools will not work with files that were manually generated with
-            <codeph>COPY TO ON SEGMENT</codeph>.  </note></p>
+            <codeph>COPY TO ON SEGMENT</codeph>. </note></p>
     </section>
     <section id="section12">
       <title>Compatibility</title>
