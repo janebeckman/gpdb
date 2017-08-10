@@ -11,9 +11,9 @@
 */
 
 #include "postgres.h"
+#include "miscadmin.h"
 #include "gp-libpq-fe.h"
 #include "gp-libpq-int.h"
-#include "miscadmin.h"
 #include "cdb/cdbconn.h"
 #include "cdb/cdbcopy.h"
 #include "cdb/cdbdisp_query.h"

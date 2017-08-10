@@ -16,8 +16,10 @@ groups:
   - regression_tests_gpcloud_centos
   - MM_gpperfmon
   - MM_gpcheck
+  - MM_analyzedb
   - DPM_backup-restore
   - MM_gppkg
+  - MM_gpinitsystem
   - MM_pt-rebuild
   - fts
   - storage
@@ -45,6 +47,29 @@ groups:
 - name: Release
   jobs:
   - Release_Candidate
+
+- name: Remaining Pulse
+  jobs:
+  - DPM_netbackup77
+  - DPM_backup-restore-ddboost
+  - DPM_backup_43_restore_5
+  - MM_gpcheckcat
+  - MM_gpexpand
+  - DPM_gptransfer-43x-to-5x
+  - DPM_gptransfer-5x-to-5x
+  - cs-pg-two-phase
+  - cs-walrepl-multinode
+  - cs-filerep-schema-topology-crashrecov
+  - cs-filerep-end-to-end
+  - cs-aoco-compression
+  - mpp_interconnect
+
+- name: Adopted CCP
+  jobs:
+  - DPM_backup-restore
+  - MM_gppkg
+  - MM_gprecoverseg
+
 ## ======================================================================
 ## resource types
 ## ======================================================================
@@ -66,6 +91,7 @@ resources:
     branch: {{ccp-git-branch}}
     private_key: {{ccp-git-key}}
     uri: {{ccp-git-remote}}
+    tag_filter: 1.0.0-beta.1
 
 - name: terraform
   type: terraform
@@ -660,7 +686,6 @@ jobs:
       BLDWRAP_POSTGRES_CONF_ADDONS: "fsync=off"
       TEST_OS: centos
 
-
 - name: MU_check_centos
   plan:
   - aggregate:
@@ -737,6 +762,25 @@ jobs:
         BEHAVE_TAGS: gpcheck_as_gpadmin
         GPCHECK_SETUP: true
 
+- name: MM_analyzedb
+  plan:
+  - aggregate:
+    - get: gpdb_src
+      params:
+        submodules:
+        - gpMgmt/bin/pythonSrc/ext
+      passed: [compile_gpdb_centos6]
+    - get: bin_gpdb
+      resource: bin_gpdb_centos6
+      passed: [compile_gpdb_centos6]
+      trigger: true
+    - get: centos-gpdb-dev-6
+  - task: analyzedb
+    file: gpdb_src/concourse/tasks/behave_gpdb.yml
+    image: centos-gpdb-dev-6
+    params:
+      BEHAVE_TAGS: analyzedb
+
 - name: DPM_backup-restore
   plan:
   - aggregate:
@@ -762,7 +806,7 @@ jobs:
     file: gpdb_src/concourse/tasks/run_behave.yml
     image: centos-gpdb-dev-6
     params:
-      BEHAVE_FLAGS: --tags=analyzedb,backups,backup_and_restore_backups,backup_and_restore_restores,restores --tags=-nbuonly --tags=-ddonly
+      BEHAVE_FLAGS: --tags=backups,backup_and_restore_backups,backup_and_restore_restores,restores --tags=-nbuonly --tags=-ddonly
     on_failure:
       <<: *debug_sleep
   - *ccp_destroy
@@ -802,6 +846,25 @@ jobs:
     on_failure:
       <<: *debug_sleep
   - *ccp_destroy
+
+- name: MM_gpinitsystem
+  plan:
+  - aggregate:
+    - get: gpdb_src
+      params:
+        submodules:
+        - gpMgmt/bin/pythonSrc/ext
+      passed: [compile_gpdb_centos6]
+    - get: bin_gpdb
+      resource: bin_gpdb_centos6
+      passed: [compile_gpdb_centos6]
+      trigger: true
+    - get: centos-gpdb-dev-6
+  - task: gpinitsystem
+    file: gpdb_src/concourse/tasks/behave_gpdb.yml
+    image: centos-gpdb-dev-6
+    params:
+      BEHAVE_FLAGS: --tags=gpinitsystem
 
 - name: MM_pt-rebuild
   plan:

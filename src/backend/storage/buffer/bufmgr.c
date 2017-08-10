@@ -1984,9 +1984,13 @@ FlushBuffer(volatile BufferDesc *buf, SMgrRelation reln)
 	 * have been able to write it while we were busy with log flushing because
 	 * we have the io_in_progress lock.
 	 */
-
 	bufBlock = BufHdrGetBlock(buf);
 
+	/*
+	 * Update page checksum if desired.  Since we have only shared lock on the
+	 * buffer, other processes might be updating hint bits in it, so we must
+	 * copy the page to private storage if we do checksumming.
+	 */
 	bufToWrite = PageSetChecksumCopy((Page) bufBlock, buf->tag.blockNum);
 
 	/*
@@ -2118,8 +2122,10 @@ BufferGetLSNAtomic(Buffer buffer)
 	char				*page = BufferGetPage(buffer);
 	XLogRecPtr			 lsn;
 
-	/* Local buffers don't need a lock. */
-	if (BufferIsLocal(buffer))
+	/*
+	 * If we don't need locking for correctness, fastpath out.
+	 */
+	if (!DataChecksumsEnabled() || BufferIsLocal(buffer))
 		return PageGetLSN(page);
 
 	/* Make sure we've got a real buffer, and that we hold a pin on it. */
@@ -2485,7 +2491,6 @@ IncrBufferRefCount(Buffer buffer)
 		PrivateRefCount[buffer - 1]++;
 }
 
-
 /*
  * MarkBufferDirtyHint
  *
@@ -2501,7 +2506,7 @@ IncrBufferRefCount(Buffer buffer)
  *    (due to a race condition), so it cannot be used for important changes.
  */
 void
-MarkBufferDirtyHint(Buffer buffer)
+MarkBufferDirtyHint(Buffer buffer, Relation relation)
 {
 	volatile BufferDesc *bufHdr;
 	Page	page = BufferGetPage(buffer);
@@ -2537,7 +2542,8 @@ MarkBufferDirtyHint(Buffer buffer)
 	{
 		XLogRecPtr	lsn = InvalidXLogRecPtr;
 		bool		dirtied = false;
-#if 0
+		bool	saved_inCommit = MyProc->inCommit;
+
 		/*
 		 * If checksums are enabled, and the buffer is permanent, then a full
 		 * page image may be required even for some hint bit updates to protect
@@ -2584,9 +2590,13 @@ MarkBufferDirtyHint(Buffer buffer)
 			 * essential that CreateCheckpoint waits for virtual transactions
 			 * rather than full transactionids.
 			 */
-			lsn = XLogSaveBufferForHint(buffer);
+			MyProc->inCommit = true;
+			if (!relation->rd_istemp)
+			{
+				lsn = XLogSaveBufferForHint(buffer, relation);
+			}
 		}
-#endif
+
 		LockBufHdr(bufHdr);
 		Assert(bufHdr->refcount > 0);
 		if (!(bufHdr->flags & BM_DIRTY))
@@ -2599,8 +2609,8 @@ MarkBufferDirtyHint(Buffer buffer)
 			 * as long as we serialise it somehow we're OK. We choose to
 			 * set LSN while holding the buffer header lock, which causes
 			 * any reader of an LSN who holds only a share lock to also
-			 * obtain a buffer header lock before using PageGetLSN().
-			 * Fortunately, thats not too many places.
+			 * obtain a buffer header lock before using PageGetLSN(),
+			 * which is enforced in BufferGetLSNAtomic().
 			 *
 			 * If checksums are enabled, you might think we should reset the
 			 * checksum here. That will happen when the page is written
@@ -2611,6 +2621,8 @@ MarkBufferDirtyHint(Buffer buffer)
 		}
 		bufHdr->flags |= (BM_DIRTY | BM_JUST_DIRTIED);
 		UnlockBufHdr(bufHdr);
+
+		MyProc->inCommit = saved_inCommit;
 
 		if (dirtied)
 		{

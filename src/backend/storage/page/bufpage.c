@@ -17,14 +17,11 @@
 #include "access/htup.h"
 #include "storage/bufpage.h"
 #include "access/xlog.h"
-#include "utils/pg_crc.h"
+#include "storage/checksum.h"
+#include "utils/memutils.h"
 
-bool ignore_checksum_failure = false;
-
-static char pageCopyData[BLCKSZ];	/* for checksum calculation */
-static Page pageCopy = pageCopyData;
-
-static uint16 PageCalcChecksum16(Page page, BlockNumber blkno);
+/* GUC variable */
+bool		ignore_checksum_failure = false;
 
 /* ----------------------------------------------------------------
  *						Page support functions
@@ -95,7 +92,7 @@ PageIsVerified(Page page, BlockNumber blkno)
 	{
 		if (DataChecksumsEnabled())
 		{
-			checksum = PageCalcChecksum16(page, blkno);
+			checksum = pg_checksum_page((char *) page, blkno);
 
 			if (checksum != p->pd_checksum)
 				checksum_failure = true;
@@ -866,13 +863,16 @@ PageIndexMultiDelete(Page page, OffsetNumber *itemnos, int nitems)
 	pfree(itemidbase);
 }
 
+
 /*
- * Set checksum for page in shared buffers.
+ * Set checksum for a page in shared buffers.
  *
  * If checksums are disabled, or if the page is not initialized, just return
- * the input. Otherwise, we must make a copy of the page before calculating the
- * checksum, to prevent concurrent modifications (e.g. setting hint bits) from
- * making the final checksum invalid.
+ * the input.  Otherwise, we must make a copy of the page before calculating
+ * the checksum, to prevent concurrent modifications (e.g. setting hint bits)
+ * from making the final checksum invalid.	It doesn't matter if we include or
+ * exclude hints during the copy, as long as we write a valid page and
+ * associated checksum.
  *
  * Returns a pointer to the block-sized data that needs to be written. Uses
  * statically-allocated memory, so the caller must immediately write the
@@ -881,82 +881,38 @@ PageIndexMultiDelete(Page page, OffsetNumber *itemnos, int nitems)
 char *
 PageSetChecksumCopy(Page page, BlockNumber blkno)
 {
+	static char *pageCopy = NULL;
+
+	/* If we don't need a checksum, just return the passed-in data */
 	if (PageIsNew(page) || !DataChecksumsEnabled())
 		return (char *) page;
 
 	/*
-	 * We make a copy iff we need to calculate a checksum because other
-	 * backends may set hint bits on this page while we write, which
-	 * would mean the checksum differs from the page contents. It doesn't
-	 * matter if we include or exclude hints during the copy, as long
-	 * as we write a valid page and associated checksum.
+	 * We allocate the copy space once and use it over on each subsequent
+	 * call.  The point of palloc'ing here, rather than having a static char
+	 * array, is first to ensure adequate alignment for the checksumming code
+	 * and second to avoid wasting space in processes that never call this.
 	 */
-	memcpy((char *) pageCopy, (char *) page, BLCKSZ);
-	PageSetChecksumInplace(pageCopy, blkno);
-	return (char *) pageCopy;
+	if (pageCopy == NULL)
+		pageCopy = MemoryContextAlloc(TopMemoryContext, BLCKSZ);
+
+	memcpy(pageCopy, (char *) page, BLCKSZ);
+	((PageHeader) pageCopy)->pd_checksum = pg_checksum_page(pageCopy, blkno);
+	return pageCopy;
 }
 
 /*
- * Set checksum for page in private memory.
+ * Set checksum for a page in private memory.
  *
- * This is a simpler version of PageSetChecksumCopy(). The more explicit API
- * allows us to more easily see if we're making the correct call and reduces
- * the amount of additional code specific to page verification.
+ * This must only be used when we know that no other process can be modifying
+ * the page buffer.
  */
 void
 PageSetChecksumInplace(Page page, BlockNumber blkno)
 {
-	if (PageIsNew(page))
+	/* If we don't need a checksum, just return */
+	if (PageIsNew(page) || !DataChecksumsEnabled())
 		return;
 
-	if (DataChecksumsEnabled())
-	{
-		PageHeader	p = (PageHeader) page;
-		p->pd_checksum = PageCalcChecksum16(page, blkno);
-	}
-
-	return;
-}
-
-/*
- * Calculate checksum for a PostgreSQL Page. This includes the block number (to
- * detect the case when a page is somehow moved to a different location), the
- * page header (excluding the checksum itself), and the page data.
- *
- * Note that if the checksum validation fails we cannot tell the difference
- * between a transposed block and failure from direct on-block corruption,
- * though that is better than just ignoring transposed blocks altogether.
- */
-static uint16
-PageCalcChecksum16(Page page, BlockNumber blkno)
-{
-	pg_crc32    		crc;
-	PageHeader	p = (PageHeader) page;
-
-	/* only calculate the checksum for properly-initialized pages */
-	Assert(!PageIsNew(page));
-
-	INIT_CRC32C(crc);
-
-	/*
-	 * Initialize the checksum calculation with the block number. This helps
-	 * catch corruption from whole blocks being transposed with other whole
-	 * blocks.
-	 */
-	COMP_CRC32C(crc, &blkno, sizeof(blkno));
-
-	/*
-	 * Now add in the LSN, which is always the first field on the page.
-	 */
-	COMP_CRC32C(crc, page, sizeof(p->pd_lsn));
-
-	/*
-	 * Now add the rest of the page, skipping the pd_checksum field.
-	 */
-	COMP_CRC32C(crc, page + sizeof(p->pd_lsn) + sizeof(p->pd_checksum),
-				  BLCKSZ - sizeof(p->pd_lsn) - sizeof(p->pd_checksum));
-
-	FIN_CRC32C(crc);
-
-	return (uint16) crc;
+	((PageHeader) page)->pd_checksum = pg_checksum_page((char *) page, blkno);
 }

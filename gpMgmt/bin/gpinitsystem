@@ -214,15 +214,11 @@ CHK_PARAMS () {
 		fi
 		# Make sure that script has been supplied a config file
 		if [ x"$CLUSTER_CONFIG" = x"" ] && [ x"$INPUT_CONFIG" = x"" ]; then
-			LOG_MSG "[FATAL]:-Please specify either -c or -I as an option." 1
-			USAGE
-			ERROR_EXIT "[FATAL]:-Greenplum configuration filename [-c] option or [-I] option not provided." 2
+			ERROR_EXIT "[FATAL]:-At least one of two options, [-c] or [-I], is required." 2
 		fi
 
 		if [ -n "$CLUSTER_CONFIG" ] && [ -n "$INPUT_CONFIG" ]; then
-			LOG_MSG "[FATAL]:-Option -c and -I cannot be both specified." 1
-			USAGE
-			ERROR_EXIT "[FATAL]:-Received both Greenplum configuration filename options [-c] and [-I]." 2
+			ERROR_EXIT "[FATAL]:-Options [-c] and [-I] cannot be used at the same time." 2
 		fi
 		
 		if [ x"" != x"$CLUSTER_CONFIG" ] ; then
@@ -352,12 +348,6 @@ CHK_PARAMS () {
 				ERROR_EXIT "[FATAL]:-Master hostname in gpinitsystem configuration file must be $MASTER_HOSTNAME" 2
 			fi
 		fi
-
-
-		# Deal with issue of mixed case segment names being created in all lower case on tails but mixed
-		# case in head system tables.
-		LWR_CASE_SEG_PREFIX=`$ECHO $SEG_PREFIX|$TR '[A-Z]' '[a-z]'`
-		SEG_PREFIX=$LWR_CASE_SEG_PREFIX
 
 		# MASTER_PORT
 		if [ x"" = x"$MASTER_PORT" ]; then
@@ -1086,6 +1076,7 @@ DISPLAY_CONFIG () {
 		LOG_MSG "[INFO]:-Postgres param file        = $PG_ADD" 1
 		LOG_MSG "[INFO]:-Initdb to be used          = $INITDB" 1
 		LOG_MSG "[INFO]:-GP_LIBRARY_PATH is         = $GP_LIBRARY_PATH" 1
+		LOG_MSG "[INFO]:-HEAP_CHECKSUM is           = $HEAP_CHECKSUM" 1
 		if [ $ULIMIT_WARN -eq 1 ];then
 			LOG_MSG "[WARN]:-Ulimit check               = Warnings generated, see log file $WARN_MARK" 1
 		else
@@ -1680,6 +1671,10 @@ DUMP_OUTPUT_CONFIG () {
     fi
     
     $ECHO "SEG_PREFIX=$SEG_PREFIX" >> $OUTPUT_CONFIG
+
+    if [ x"" != x"$HEAP_CHECKSUM" ] ; then
+	$ECHO "HEAP_CHECKSUM=$HEAP_CHECKSUM" >> $OUTPUT_CONFIG
+    fi
 
     $ECHO "QD_PRIMARY_ARRAY=$QD_PRIMARY_ARRAY" >> $OUTPUT_CONFIG
     $ECHO "declare -a PRIMARY_ARRAY=(" >> $OUTPUT_CONFIG

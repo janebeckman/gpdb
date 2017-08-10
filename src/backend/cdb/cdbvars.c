@@ -18,6 +18,8 @@
 #include "utils/guc.h"
 #include "catalog/gp_segment_config.h"
 #include "cdb/cdbvars.h"
+#include "gp-libpq-fe.h"
+#include "gp-libpq-int.h"
 #include "cdb/cdbfts.h"
 #include "cdb/cdbdisp.h"
 #include "cdb/cdbutil.h"
@@ -183,7 +185,7 @@ bool		gp_enable_slow_cursor_testmode = false;
  * backends.  Assigned by initMotionLayerIPC() at process startup.  This port
  * is used for the duration of this process and should never change.
  */
-int			Gp_listener_port;
+uint32		Gp_listener_port;
 
 int			Gp_max_packet_size; /* max Interconnect packet size */
 
@@ -198,6 +200,7 @@ int			Gp_interconnect_min_rto = 20;
 int			Gp_interconnect_fc_method = INTERCONNECT_FC_METHOD_LOSS;
 int			Gp_interconnect_transmit_timeout = 3600;
 int			Gp_interconnect_min_retries_before_timeout = 100;
+int			Gp_interconnect_debug_retry_interval= 10;
 
 int			Gp_interconnect_hash_multiplier = 2;		/* sets the size of the
 														 * hash table used by
