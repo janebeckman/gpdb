@@ -52,7 +52,7 @@ MEMORY_LIMIT=<varname>integer</varname>
         </plentry>
         <plentry>
           <pt>MEMORY_LIMIT <varname>integer</varname></pt>
-          <pd>Required. Sets the total percentage of Greenplum Database memory resources to allocate to all statements submitted from roles assigned this resource group. The minimum memory percentage you can specify for a resource group is 1. The maximum is 100. The sum of the <codeph>MEMORY_LIMIT</codeph> values specified for all resource groups defined in the Greenplum Database cluster must be less than or equal to 100.</pd>
+          <pd>Required. Sets the total percentage of Greenplum Database memory resources to allocate to all transactions submitted from roles assigned this resource group. The minimum memory percentage you can specify for a resource group is 1. The maximum is 100. The sum of the <codeph>MEMORY_LIMIT</codeph> values specified for all resource groups defined in the Greenplum Database cluster must be less than or equal to 100.</pd>
         </plentry>
         <plentry>
           <pt>MEMORY_SHARED_QUOTA <varname>integer</varname></pt>
@@ -67,19 +67,14 @@ MEMORY_LIMIT=<varname>integer</varname>
     <section id="section5"><title>Notes</title>
         <p>You cannot submit an <codeph>CREATE RESOURCE GROUP</codeph> command in a sub-transaction.</p>
         <p>Use the
-          <codeph>pg_resgroupcapability</codeph> system catalog table to display the limit 
-        settings of all resource groups:</p><codeblock>SELECT rsgname, resgroupid, reslimittype, value
-  FROM pg_resgroupcapability, pg_resgroup
-  WHERE pg_resgroup.oid=pg_resgroupcapability.resgroupid;</codeblock>
-         <p> See "Using Resource Groups" in the <i>Greenplum Database Administrator Guide</i>
-           for more information about using resource groups.</p>
+          <codeph>gp_toolkit.gp_resgroup_config</codeph> system view to display the limit 
+        settings of all resource groups:</p><codeblock>SELECT * FROM gp_toolkit.gp_resgroup_config;</codeblock>
     </section>
     <section id="section6">
       <title>Examples</title>
       <p>Create a resource group with CPU and memory limit percentages of 35: </p>
       <codeblock>CREATE RESOURCE GROUP rgroup1 WITH (CPU_RATE_LIMIT=35, MEMORY_LIMIT=35);</codeblock>
-      <p>Create a resource group with a concurrent transaction limit of 30, a memory limit of 15, and a CPU limit of 25:
-        (each query will be allocated 100MB of segment host memory at execution time): </p>
+      <p>Create a resource group with a concurrent transaction limit of 30, a memory limit of 15, and a CPU limit of 25:</p>
       <codeblock>CREATE RESOURCE GROUP rgroup2 WITH (CONCURRENCY=20, 
   MEMORY_LIMIT=15, CPU_RATE_LIMIT=25);</codeblock>
     </section>

@@ -64,7 +64,7 @@ its password if the password is MD5-encrypted.</li><li id="av136604"><b>SET | RE
             role-specific settings. See <codeph><xref href="./SET.xml#topic1" type="topic"
                 format="dita"/></codeph> and <xref href="../config_params/guc_config.xml" type="topic"
               format="dita"/> for information about user-settable configuration parameters. </pd></plentry><plentry><pt><varname>group_name</varname></pt><pd>The name of the resource group to assign to this role.
-Specifying the <varname>group_name</varname> <codeph>NONE</codeph> removes the role's current resource group assignment and assigns a (pre-defined) default resource group based on the role's capability. <codeph>SUPERUSER</codeph> roles are assigned the <codeph>admin_group</codeph> resource group, while the <codeph>default_group</codeph> resource group is assigned to non-admin roles.
+Specifying the <varname>group_name</varname> <codeph>NONE</codeph> removes the role's current resource group assignment and assigns a default resource group based on the role's capability. <codeph>SUPERUSER</codeph> roles are assigned the <codeph>admin_group</codeph> resource group, while the <codeph>default_group</codeph> resource group is assigned to non-admin roles.
 </pd></plentry><plentry><pt><varname>queue_name</varname></pt><pd>The name of the resource queue to which the user-level role is to
 be assigned. Only roles with <codeph>LOGIN</codeph> privilege can be
 assigned to a resource queue. To unassign a role from a resource queue
