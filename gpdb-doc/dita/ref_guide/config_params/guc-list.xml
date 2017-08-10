@@ -8118,7 +8118,7 @@
   <topic id="resource_scheduler">
     <title>resource_scheduler</title>
     <body>
-      <p>Enables resource scheduling and the workload management feature. The <codeph>gp_resource_manager</codeph> server configuration parameter identifies the type of workload management currently enabled in the Greenplum Database cluster - resource queue-based or resource group-based.</p>
+      <p>Enables resource scheduling and the workload management feature. The <codeph>gp_resource_manager</codeph> server configuration parameter identifies the workload management scheme currently enabled in the Greenplum Database cluster - resource queue-based or resource group-based.</p>
       <table id="resource_scheduler_table">
         <tgroup cols="3">
           <colspec colnum="1" colname="col1" colwidth="1*"/>
@@ -8135,7 +8135,7 @@
             <row>
               <entry colname="col1">on<p>off</p></entry>
               <entry colname="col2">on</entry>
-              <entry colname="col3">local<p>system</p><p>restart</p></entry>
+              <entry colname="col3">master<p>system</p><p>restart</p></entry>
             </row>
           </tbody>
         </tgroup>
