@@ -1191,7 +1191,7 @@
   <topic id="topic444" xml:lang="en">
     <title id="kh1550694">Workload Management Parameters (Resource Groups)</title>
     <body>
-      <p>The following configuration parameters configure the Greenplum Database resource group
+      <p>The following parameters configure the Greenplum Database resource group
         workload management feature. </p>
       <simpletable id="kh1571613" frame="none">
         <strow>
