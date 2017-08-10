@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic
+  PUBLIC "-//OASIS//DTD DITA Composite//EN" "ditabase.dtd">
+<topic id="topic1">
+  <title id="au20941">ALTER RESOURCE GROUP</title>
+  <body>
+    <p id="sql_command_desc">Changes the limits of a resource group.</p>
+    <section id="section2">
+      <title>Synopsis</title>
+      <codeblock id="sql_command_synopsis">ALTER RESOURCE GROUP <varname>name</varname> SET CONCURRENCY <varname>integer</varname>
+ALTER RESOURCE GROUP <varname>name</varname> SET CPU_RATE_LIMIT <varname>integer</varname></codeblock>
+    </section>
+    <section id="section3">
+      <title>Description</title>
+      <p><codeph>ALTER RESOURCE GROUP</codeph> changes the limits of a resource group. 
+        Only a superuser can alter a resource group.</p>
+        <p>You can set or reset the concurrency limit of a resource group to control the maximum
+        number of active concurrent statements. You can also reset the CPU rate limit of a
+        resource group to control the amount of CPU resources that all queries submitted through
+        the group can consume on a segment host.</p><p>You can alter one limit type in a single <codeph>ALTER RESOURCE GROUP</codeph> call.</p>
+    </section>
+    <section id="section4">
+      <title>Parameters</title>
+      <parml>
+        <plentry>
+          <pt><varname>name</varname></pt>
+          <pd>The name of the resource group whose limits are to be altered. </pd>
+        </plentry>
+        <plentry>
+          <pt>CONCURRENCY <varname>integer</varname></pt>
+          <pd>The maximum number of concurrent transactions submitted from users in this resource
+            group allowed on the system at any given time, including active and idle transactions.
+            Any transactions submitted after the <codeph>CONCURRENCY</codeph> value limit is
+            reached are queued. When a running transaction completes, the earliest pending queued
+            transaction is selected for execution.</pd>
+          <pd> The <codeph>CONCURRENCY</codeph> value
+            should be an integer in the range [1 .. <codeph>max_connections</codeph>]. The default 
+            <codeph>CONCURRENCY</codeph> value is 20.</pd>
+        </plentry>
+        <plentry>
+          <pt>CPU_RATE_LIMIT <varname>integer</varname></pt>
+          <pd>Sets the total percentage of CPU resources to allocate to
+            this resource group. The minimum CPU percentage for a resource group is 1.
+            The maximum is 100. The sum of the
+            <codeph>CPU_RATE_LIMIT</codeph>s of all resource groups defined in the
+            Greenplum Database cluster must not exceed 100.</pd>
+        </plentry>
+      </parml>
+    </section>
+    <section id="section5">
+      <title>Notes</title>
+      <p>Use <codeph><xref href="./CREATE_ROLE.xml#topic1" type="topic" format="dita"/></codeph> or
+            <codeph><xref href="./ALTER_ROLE.xml#topic1" type="topic" format="dita"/></codeph> to
+        assign a specific resource group to a role (user).</p>
+      <p>You cannot submit an <codeph>ALTER RESOURCE GROUP</codeph> command in a sub-transaction.</p>
+    </section>
+    <section id="section6">
+      <title>Examples</title>
+      <p>Change the active transaction limit for a resource group: </p>
+      <codeblock>ALTER RESOURCE GROUP rgroup1 WITH CONCURRENCY 13;</codeblock>
+      <p>Update the CPU limit for a resource group: </p>
+      <codeblock>ALTER RESOURCE GROUP rgroup2 WITH CPU_RATE_LIMIT 45;</codeblock>
+    </section>
+    <section id="section7">
+      <title>Compatibility</title>
+      <p>The <codeph>ALTER RESOURCE GROUP</codeph> statement is a Greenplum Database extension. This
+        command does not exist in standard PostgreSQL.</p>
+    </section>
+    <section id="section8">
+      <title>See Also</title>
+      <p><codeph><xref href="./CREATE_RESOURCE_GROUP.xml#topic1" type="topic" format="dita"
+          /></codeph>, <codeph><xref href="./DROP_RESOURCE_GROUP.xml#topic1" type="topic"
+            format="dita"/></codeph>, <codeph><xref href="./CREATE_ROLE.xml#topic1" type="topic"
+            format="dita"/></codeph>, <codeph><xref href="./ALTER_ROLE.xml#topic1" type="topic"
+            format="dita"/></codeph></p>
+    </section>
+  </body>
+</topic>
