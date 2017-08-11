@@ -15,9 +15,9 @@ on the <codeph>pg_roles</codeph> and <codeph>pg_resgroup</codeph> system
 catalog tables:</p><codeblock>SELECT rolname, rsgname 
   FROM pg_roles, pg_resgroup
   WHERE pg_roles.rolresgroup=pg_resgroup.oid;</codeblock></section><section id="section6"><title>Examples</title>
-<p>Remove the resource group named <codeph>adhoc</codeph>:</p><codeblock>DROP RESOURCE GROUP adhoc;</codeblock></section>
 <p>Remove the resource group assigned to a role. This operation then assigns the default
 resource group <codeph>default_group</codeph> to the role:</p><codeblock>ALTER ROLE bob RESOURCE GROUP NONE;</codeblock>
+<p>Remove the resource group named <codeph>adhoc</codeph>:</p><codeblock>DROP RESOURCE GROUP adhoc;</codeblock></section>
 <section id="section7"><title>Compatibility</title><p>The <codeph>DROP RESOURCE GROUP</codeph> statement is a Greenplum Database extension. </p></section><section id="section8"><title>See Also</title><p><codeph><xref href="ALTER_RESOURCE_GROUP.xml#topic1" type="topic" format="dita"/></codeph>,
             <codeph><xref href="CREATE_RESOURCE_GROUP.xml#topic1" type="topic" format="dita"
           /></codeph>, <codeph><xref href="ALTER_ROLE.xml#topic1" type="topic" format="dita"
