@@ -7,7 +7,7 @@
     <p>The <codeph>gp_toolkit.gp_resgroup_config</codeph> view allows administrators to see the
       current CPU, memory, and concurrency limits for a workload management resource group. The
       view also displays proposed limit settings. A proposed limit will differ from a current
-      limit when the limit has been altered, but the new value could not immediately be applied.</p>
+      limit when the limit has been altered, but the new value could not be immediately applied.</p>
     <table id="fp141982">
       <title>gp_toolkit.gp_resgroup_config</title>
       <tgroup cols="4">
