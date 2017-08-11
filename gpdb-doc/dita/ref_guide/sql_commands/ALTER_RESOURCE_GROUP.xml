@@ -15,31 +15,30 @@ ALTER RESOURCE GROUP <varname>name</varname> SET CPU_RATE_LIMIT <varname>integer
       <p><codeph>ALTER RESOURCE GROUP</codeph> changes the limits of a resource group. 
         Only a superuser can alter a resource group.</p>
         <p>You can set or reset the concurrency limit of a resource group to control the maximum
-        number of active concurrent statements. You can also reset the CPU rate limit of a
+        number of active concurrent statements in that group. You can also reset the CPU rate limit of a
         resource group to control the amount of CPU resources that all queries submitted through
-        the group can consume on a segment host.</p><p>You can alter one limit type in a single <codeph>ALTER RESOURCE GROUP</codeph> call.</p>
+        the group can consume on each segment host.</p><p>You can alter one limit type in a single <codeph>ALTER RESOURCE GROUP</codeph> call.</p>
     </section>
     <section id="section4">
       <title>Parameters</title>
       <parml>
         <plentry>
           <pt><varname>name</varname></pt>
-          <pd>The name of the resource group whose limits are to be altered. </pd>
+          <pd>The name of the resource group to alter. </pd>
         </plentry>
         <plentry>
           <pt>CONCURRENCY <varname>integer</varname></pt>
-          <pd>The maximum number of concurrent transactions submitted from users in this resource
-            group allowed on the system at any given time, including active and idle transactions.
+          <pd>The maximum number of concurrent transactions, including active and idle transactions, that are permitted for this resource group.
             Any transactions submitted after the <codeph>CONCURRENCY</codeph> value limit is
-            reached are queued. When a running transaction completes, the earliest pending queued
-            transaction is selected for execution.</pd>
+            reached are queued. When a running transaction completes, the earliest queued
+            transaction is executed.</pd>
           <pd> The <codeph>CONCURRENCY</codeph> value
-            should be an integer in the range [1 .. <codeph>max_connections</codeph>]. The default 
+            must be an integer in the range [1 .. <codeph>max_connections</codeph>]. The default 
             <codeph>CONCURRENCY</codeph> value is 20.</pd>
         </plentry>
         <plentry>
           <pt>CPU_RATE_LIMIT <varname>integer</varname></pt>
-          <pd>Sets the total percentage of CPU resources to allocate to
+          <pd>The percentage of CPU resources to allocate to
             this resource group. The minimum CPU percentage for a resource group is 1.
             The maximum is 100. The sum of the
             <codeph>CPU_RATE_LIMIT</codeph>s of all resource groups defined in the

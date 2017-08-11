@@ -46,11 +46,10 @@ its password if the password is MD5-encrypted.</li><li id="av136604"><b>SET | RE
           role can only belong to one resource queue. For a role without <codeph>LOGIN</codeph>
           privilege, resource queues have no effect. See <codeph><xref
               href="./CREATE_RESOURCE_QUEUE.xml#topic1" type="topic" format="dita"/></codeph> for
-          more information.</li><li id="av1370583"><b>RESOURCE GROUP</b> — When resource group-based workload management is configured, assigns a resource group to the role.
+          more information.</li><li id="av1370583"><b>RESOURCE GROUP</b> — Assigns a resource group to the role.
           The role would then be subject to the concurrent transaction, memory, and CPU limits
-          configured for the resource group. You can
-          assign a single resource group to a role, and you can assign a resource group to multiple
-          roles. See <codeph><xref
+          configured for the resource group. You can assign a single resource group to one or more roles. 
+          See <codeph><xref
               href="./CREATE_RESOURCE_GROUP.xml#topic1" type="topic" format="dita"/></codeph> for
           additional information.</li><li id="av137061"><b>WITH <varname>option</varname></b> — Changes many of the role attributes that can be
           specified in <codeph><xref href="./CREATE_ROLE.xml#topic1" type="topic" format="dita"

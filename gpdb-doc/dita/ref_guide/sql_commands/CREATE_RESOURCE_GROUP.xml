@@ -11,9 +11,9 @@
       <p>where <varname>group_attribute</varname> is:</p>
       <codeblock>CPU_RATE_LIMIT=<varname>integer</varname>
 MEMORY_LIMIT=<varname>integer</varname>
-    [ CONCURRENCY=<varname>integer</varname> ]
-    [ MEMORY_SHARED_QUOTA=<varname>integer</varname> ]
-    [ MEMORY_SPILL_RATIO=<varname>integer</varname> ]</codeblock>
+[ CONCURRENCY=<varname>integer</varname> ]
+[ MEMORY_SHARED_QUOTA=<varname>integer</varname> ]
+[ MEMORY_SPILL_RATIO=<varname>integer</varname> ]</codeblock>
     </section>
     <section id="section3">
       <title>Description</title>
@@ -42,12 +42,12 @@ MEMORY_LIMIT=<varname>integer</varname>
         </plentry>
         <plentry>
           <pt>CONCURRENCY <varname>integer</varname></pt>
-          <pd>The maximum number of concurrent active and idle transactions submitted from roles assigned this resource group permitted on the system at any given time. The <codeph>CONCURRENCY</codeph> value must be an integer in the range [1 .. <codeph>max_connections</codeph>]. The default <codeph>CONCURRENCY</codeph> value is 20.
+          <pd>The maximum number of concurrent transactions, including active and idle transactions, that are permitted for this resource group. The <codeph>CONCURRENCY</codeph> value must be an integer in the range [1 .. <codeph>max_connections</codeph>]. The default <codeph>CONCURRENCY</codeph> value is 20.
             </pd>
         </plentry>
         <plentry>
           <pt>CPU_RATE_LIMIT <varname>integer</varname></pt>
-          <pd>Required. Sets the total percentage of Greenplum Database CPU resources to allocate to this resource group. The minimum CPU percentage you can specify for a resource group is 1. The maximum is 100. The sum of the <codeph>CPU_RATE_LIMIT</codeph> values specified for all resource groups defined in the Greenplum Database cluster must be less than or equal to 100.
+          <pd>Required. The percentage of CPU resources to allocate to this resource group. The minimum CPU percentage you can specify for a resource group is 1. The maximum is 100. The sum of the <codeph>CPU_RATE_LIMIT</codeph> values specified for all resource groups defined in the Greenplum Database cluster must be less than or equal to 100.
           </pd>
         </plentry>
         <plentry>
@@ -65,7 +65,7 @@ MEMORY_LIMIT=<varname>integer</varname>
       </parml>
     </section>
     <section id="section5"><title>Notes</title>
-        <p>You cannot submit an <codeph>CREATE RESOURCE GROUP</codeph> command in a sub-transaction.</p>
+        <p>You cannot submit a <codeph>CREATE RESOURCE GROUP</codeph> command in a sub-transaction.</p>
         <p>Use the
           <codeph>gp_toolkit.gp_resgroup_config</codeph> system view to display the limit 
         settings of all resource groups:</p><codeblock>SELECT * FROM gp_toolkit.gp_resgroup_config;</codeblock>

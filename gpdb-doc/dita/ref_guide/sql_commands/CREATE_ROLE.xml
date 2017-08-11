@@ -158,12 +158,10 @@
                 </plentry>
                 <plentry>
                     <pt>RESOURCE GROUP <varname>group_name</varname></pt>
-                    <pd>When resource group-based workload management is enabled,
-                        the name of the resource group to assign to the the new role.  The role 
+                    <pd> The name of the resource group to assign to the the new role.  The role 
                         will be subject to the concurrent transaction, memory, and CPU limits
                         configured for the resource group.
-                        You can assign a single resource group to a role, and you can assign a
-                        resource group to multiple roles.</pd>
+                        You can assign a single resource group to one or more roles.</pd>
                     <pd>If you do not specify a resource group for a new role, the role is
                         automatically assigned the default resource group for the role's capability,
                         <codeph>admin_group</codeph> for <codeph>SUPERUSER</codeph> roles,
