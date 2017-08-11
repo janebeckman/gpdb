@@ -4664,8 +4664,8 @@
   <topic id="gp_resource_group_cpu_limit">
     <title>gp_resource_group_cpu_limit</title>
     <body>
-      <p>When resource group-based workload management is enabled, identifies the maximum 
-          percentage of system CPU resources to allocate to the Greenplum Database segment node.</p>
+      <p>Identifies the maximum percentage of system CPU resources to allocate to resource
+        groups on each Greenplum Database segment node.</p>
       <table id="gp_resource_group_cpu_limit_table">
         <tgroup cols="3">
           <colspec colnum="1" colname="col1" colwidth="1*"/>
@@ -4692,8 +4692,7 @@
   <topic id="gp_resource_group_memory_limit">
     <title>gp_resource_group_memory_limit</title>
     <body>
-      <p>When resource group-based workload management is enabled, identifies the maximum 
-          percentage of system memory resources to allocate to the Greenplum Database segment node.</p>
+      <p>Identifies the maximum percentage of system memory resources to allocate to resource groups on each Greenplum Database segment node.</p>
       <table id="gp_resource_group_memory_limit_table">
         <tgroup cols="3">
           <colspec colnum="1" colname="col1" colwidth="1*"/>
@@ -8118,7 +8117,7 @@
   <topic id="resource_scheduler">
     <title>resource_scheduler</title>
     <body>
-      <p>Enables resource scheduling and the workload management feature. The <codeph>gp_resource_manager</codeph> server configuration parameter identifies the workload management scheme currently enabled in the Greenplum Database cluster - resource queue-based or resource group-based.</p>
+      <p>Enables or disables resource scheduling and the workload management feature. The <codeph>gp_resource_manager</codeph> server configuration parameter identifies the workload management scheme currently enabled in the Greenplum Database cluster - resource queue-based or resource group-based.</p>
       <table id="resource_scheduler_table">
         <tgroup cols="3">
           <colspec colnum="1" colname="col1" colwidth="1*"/>
