@@ -65,7 +65,7 @@ MEMORY_LIMIT=<varname>integer</varname>
       </parml>
     </section>
     <section id="section5"><title>Notes</title>
-        <p>You cannot submit a <codeph>CREATE RESOURCE GROUP</codeph> command in a sub-transaction.</p>
+        <p>You cannot submit a <codeph>CREATE RESOURCE GROUP</codeph> command in an explicit transaction or sub-transaction.</p>
         <p>Use the
           <codeph>gp_toolkit.gp_resgroup_config</codeph> system view to display the limit 
         settings of all resource groups:</p><codeblock>SELECT * FROM gp_toolkit.gp_resgroup_config;</codeblock>

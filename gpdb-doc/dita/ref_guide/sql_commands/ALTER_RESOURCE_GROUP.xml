@@ -51,7 +51,7 @@ ALTER RESOURCE GROUP <varname>name</varname> SET CPU_RATE_LIMIT <varname>integer
       <p>Use <codeph><xref href="./CREATE_ROLE.xml#topic1" type="topic" format="dita"/></codeph> or
             <codeph><xref href="./ALTER_ROLE.xml#topic1" type="topic" format="dita"/></codeph> to
         assign a specific resource group to a role (user).</p>
-      <p>You cannot submit an <codeph>ALTER RESOURCE GROUP</codeph> command in a sub-transaction.</p>
+      <p>You cannot submit an <codeph>ALTER RESOURCE GROUP</codeph> command in an explicit transaction or sub-transaction.</p>
     </section>
     <section id="section6">
       <title>Examples</title>
