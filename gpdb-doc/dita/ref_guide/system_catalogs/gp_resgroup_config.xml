@@ -46,7 +46,7 @@
             </entry>
             <entry colname="col2">text</entry>
             <entry colname="col3">pg_resgroupcapability.value for pg_resgroupcapability.reslimittype = 1</entry>
-            <entry colname="col4">The concurrency value specified for the resource group.</entry>
+            <entry colname="col4">The concurrency (<codeph>CONCURRENCY</codeph>) value specified for the resource group.</entry>
           </row>
           <row>
             <entry colname="col1">
@@ -62,7 +62,7 @@
             </entry>
             <entry colname="col2">text</entry>
             <entry colname="col3">pg_resgroupcapability.value for pg_resgroupcapability.reslimittype = 2</entry>
-            <entry colname="col4">The CPU limit value specified for the resource group.</entry>
+            <entry colname="col4">The CPU limit (<codeph>CPU_RATE_LIMIT</codeph>) value specified for the resource group.</entry>
           </row>
           <row>
             <entry colname="col1">
@@ -78,7 +78,7 @@
             </entry>
             <entry colname="col2">text</entry>
             <entry colname="col3">pg_resgroupcapability.value for pg_resgroupcapability.reslimittype = 3</entry>
-            <entry colname="col4">The memory limit value specified for the resource group.</entry>
+            <entry colname="col4">The memory limit (<codeph>MEMORY_LIMIT</codeph>) value specified for the resource group.</entry>
           </row>
           <row>
             <entry colname="col1">
@@ -94,7 +94,7 @@
             </entry>
             <entry colname="col2">text</entry>
             <entry colname="col3">pg_resgroupcapability.value for pg_resgroupcapability.reslimittype = 4</entry>
-            <entry colname="col4">The shared memory quota value specified for the resource group.</entry>
+            <entry colname="col4">The shared memory quota (<codeph>MEMORY_SHARED_QUOTA</codeph>) value specified for the resource group.</entry>
           </row>
           <row>
             <entry colname="col1">
@@ -110,7 +110,7 @@
             </entry>
             <entry colname="col2">text</entry>
             <entry colname="col3">pg_resgroupcapability.value for pg_resgroupcapability.reslimittype = 5</entry>
-            <entry colname="col4">The memory spill ratio value specified for the resource group.</entry>
+            <entry colname="col4">The memory spill ratio (<codeph>MEMORY_SPILL_RATIO</codeph>) value specified for the resource group.</entry>
           </row>
           <row>
             <entry colname="col1">
