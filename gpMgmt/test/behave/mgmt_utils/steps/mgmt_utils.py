@@ -19,6 +19,7 @@ import json
 import csv
 import subprocess
 import commands
+import signal
 from collections import defaultdict
 
 from datetime import datetime
@@ -2760,7 +2761,7 @@ def impl(context):
     if pid is None:
         raise Exception('Unable to locate segment "%s" on host "%s"' % (seg_data_dir, seg_host))
 
-    kill_process(int(pid), seg_host)
+    kill_process(int(pid), seg_host, signal.SIGKILL)
 
     has_process_eventually_stopped(pid, seg_host)
 
@@ -4934,7 +4935,7 @@ def impl(context):
                               When the user runs "gpstart -a"
                               Then gpstart should return a return code of 0
                               And verify that a role "gpmon" exists in database "gpperfmon"
-                              And verify that the last line of the file "postgresql.conf" in the master data directory contains the string "gpperfmon_log_alert_level=warning"
+                              And verify that the last line of the file "postgresql.conf" in the master data directory contains the string "gpperfmon_log_alert_level='warning'"
                               And verify that there is a "heap" table "database_history" in "gpperfmon"
                               Then wait until the process "gpmmon" is up
                               And wait until the process "gpsmon" is up

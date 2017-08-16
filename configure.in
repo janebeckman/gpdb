@@ -20,7 +20,7 @@ m4_pattern_forbid(^PGAC_)dnl to catch undefined macros
 dnl The PACKAGE_VERSION from upstream PostgreSQL is maintained in the
 dnl PG_PACKAGE_VERSION variable, when merging make sure to update this
 dnl variable with the merge conflict from the AC_INIT() statement.
-AC_INIT([Greenplum Database], [5.0.0-alpha], [support@greenplum.org])
+AC_INIT([Greenplum Database], [5.0.0-beta.6], [support@greenplum.org])
 [PG_PACKAGE_VERSION=8.3.23]
 AC_SUBST(PG_PACKAGE_VERSION)
 
@@ -848,6 +848,14 @@ AC_MSG_CHECKING([whether to build Python modules])
 PGAC_ARG_BOOL(with, python, no, [  --with-python           build Python modules (PL/Python)])
 AC_MSG_RESULT([$with_python])
 AC_SUBST(with_python)
+
+#
+# Optionally build PXF support
+#
+AC_MSG_CHECKING([whether to build PXF modules])
+PGAC_ARG_BOOL(with, pxf, no, [  --with-pxf              build Greenplum PXF support])
+AC_MSG_RESULT([$with_pxf])
+AC_SUBST(with_pxf)
 
 #
 # GSSAPI
