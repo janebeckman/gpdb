@@ -27,7 +27,7 @@ MEMORY_LIMIT=<varname>integer</varname>
         To set appropriate limits for resource groups, the Greenplum Database administrator must
         be familiar with the queries typically executed on the system, as well as the users/roles executing those queries.</p>
       <p>
-        After defining a resource group, assign the group to one more more roles using the <codeph><xref
+        After defining a resource group, assign the group to one or more roles using the <codeph><xref
             href="ALTER_ROLE.xml#topic1" type="topic" format="dita"/></codeph> or <codeph><xref
             href="./CREATE_ROLE.xml#topic1" type="topic" format="dita"/></codeph> commands.</p>
     </section>
@@ -56,7 +56,7 @@ MEMORY_LIMIT=<varname>integer</varname>
         </plentry>
         <plentry>
           <pt>MEMORY_SHARED_QUOTA <varname>integer</varname></pt>
-          <pd>The quota of shared memory in the resource group. Resource groups with a <codeph>MEMORY_SHARED_QUOTA</codeph> threshold set aside a percentage of memory allotted to the resource group to share across transactions. This shared memory isallocated on a first-come first-server basis as available. A transaction may use none, some, or all of this memory. The minimum memory shared quota percentage you can specify for a resource group is 0. The maximum is 100. The default <codeph>MEMORY_SHARED_QUOTA</codeph> value is 20. The sum of the <codeph>MEMORY_SHARED_QUOTA</codeph> and <codeph>MEMORY_SPILL_RATIO</codeph> values specified for a resource group cannot exceed 100.</pd>
+          <pd>The quota of shared memory in the resource group. Resource groups with a <codeph>MEMORY_SHARED_QUOTA</codeph> threshold set aside a percentage of memory allotted to the resource group to share across transactions. This shared memory is allocated on a first-come first-server basis as available. A transaction may use none, some, or all of this memory. The minimum memory shared quota percentage you can specify for a resource group is 0. The maximum is 100. The default <codeph>MEMORY_SHARED_QUOTA</codeph> value is 20. The sum of the <codeph>MEMORY_SHARED_QUOTA</codeph> and <codeph>MEMORY_SPILL_RATIO</codeph> values specified for a resource group cannot exceed 100.</pd>
         </plentry>
         <plentry>
           <pt>MEMORY_SPILL_RATIO <varname>integer</varname></pt>
