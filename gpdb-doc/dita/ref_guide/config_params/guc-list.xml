@@ -731,9 +731,6 @@
               <xref href="#resource_cleanup_gangs_on_wait"/>
             </li>
             <li>
-              <xref href="#resource_scheduler"/>
-            </li>
-            <li>
               <xref href="#resource_select_only"/>
             </li>
             <li>
@@ -4719,7 +4716,7 @@
   <topic id="gp_resource_manager">
     <title>gp_resource_manager</title>
     <body>
-      <p>Identifies the workload management scheme currently enabled in the Greenplum Database cluster. The default scheme is workload management using resource queues.</p>
+      <p>Identifies the resource management scheme currently enabled in the Greenplum Database cluster. The default scheme is workload management using resource queues.</p>
       <table id="gp_resource_manager_table">
         <tgroup cols="3">
           <colspec colnum="1" colname="col1" colwidth="1*"/>
@@ -8106,33 +8103,6 @@
           <tbody>
             <row>
               <entry colname="col1">Boolean</entry>
-              <entry colname="col2">on</entry>
-              <entry colname="col3">master<p>system</p><p>restart</p></entry>
-            </row>
-          </tbody>
-        </tgroup>
-      </table>
-    </body>
-  </topic>
-  <topic id="resource_scheduler">
-    <title>resource_scheduler</title>
-    <body>
-      <p>Enables or disables resource scheduling and the workload management feature. The <codeph>gp_resource_manager</codeph> server configuration parameter identifies the workload management scheme currently enabled in the Greenplum Database cluster - resource queue-based or resource group-based.</p>
-      <table id="resource_scheduler_table">
-        <tgroup cols="3">
-          <colspec colnum="1" colname="col1" colwidth="1*"/>
-          <colspec colnum="2" colname="col2" colwidth="1*"/>
-          <colspec colnum="3" colname="col3" colwidth="1*"/>
-          <thead>
-            <row>
-              <entry colname="col1">Value Range</entry>
-              <entry colname="col2">Default</entry>
-              <entry colname="col3">Set Classifications</entry>
-            </row>
-          </thead>
-          <tbody>
-            <row>
-              <entry colname="col1">on<p>off</p></entry>
               <entry colname="col2">on</entry>
               <entry colname="col3">master<p>system</p><p>restart</p></entry>
             </row>
