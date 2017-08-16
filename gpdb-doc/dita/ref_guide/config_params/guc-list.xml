@@ -6494,7 +6494,7 @@
     <body>
       <p>Controls logging of temporary file names and sizes. Temporary files can be created for
         sorts, hashes, and temporary query results. A log entry is made for each temporary file when
-        it is deleted. A l<codeph>log_temp_files</codeph> value of zero logs all temporary file
+        it is deleted. A <codeph>log_temp_files</codeph> value of zero logs all temporary file
         information, while positive values log only files whose size is greater than or equal to the
         specified number of kilobytes. The default setting is <codeph>-1</codeph>, which disables
         logging. Only superusers can change this setting.</p>
