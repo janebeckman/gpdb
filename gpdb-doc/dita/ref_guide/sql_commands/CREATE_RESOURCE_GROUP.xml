@@ -21,7 +21,7 @@ MEMORY_LIMIT=<varname>integer</varname>
          group is assigned to one or more roles and identifies concurrent transaction, memory,
          and CPU limits for the role when resource group-based workload management is enabled. Only a superuser can create a resource group.</p>
       <p>Greenplum Database pre-defines two default resource groups: <codeph>admin_group</codeph>
-         and <codeph>default_group</codeph>. These group names are reserved, as is the group name <codeph>NONE</codeph>.</p>
+         and <codeph>default_group</codeph>. These group names are reserved.</p>
       <p>The <codeph>max_resource_groups</codeph> server configuration parameter governs the maximum number of resource groups you can create.</p>
       <p>
         To set appropriate limits for resource groups, the Greenplum Database administrator must
