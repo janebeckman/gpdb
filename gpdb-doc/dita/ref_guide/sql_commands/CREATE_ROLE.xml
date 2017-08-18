@@ -166,10 +166,8 @@
                         automatically assigned the default resource group for the role's capability,
                         <codeph>admin_group</codeph> for <codeph>SUPERUSER</codeph> roles,
                         <codeph>default_group</codeph> for non-admin roles.</pd>
-                    <pd>You may assign a role with the <codeph>SUPERUSER</codeph> attribute the
-                        <codeph>admin_group</codeph> resource group.</pd>
-                    <pd>You may assign a non-admin role the <codeph>default_group</codeph>
-                        resource group.</pd>
+                    <pd>You can assign the <codeph>admin_group</codeph> resource group to any role having the <codeph>SUPERUSER</codeph> attribute.</pd>
+                    <pd>You can assign the <codeph>default_group</codeph> resource group to any role.</pd>
                 </plentry>
                 <plentry>
                     <pt>RESOURCE QUEUE <varname>queue_name</varname></pt>
