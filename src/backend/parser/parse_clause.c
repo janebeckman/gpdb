@@ -156,32 +156,12 @@ transformFromClause(ParseState *pstate, List *frmList)
 	}
 }
 
-static bool
-expr_null_check_walker(Node *node, void *context)
-{
-	if (!node)
-		return false;
-
-	if (IsA(node, Const))
-	{
-		Const *con = (Const *)node;
-
-		if (con->constisnull)
-			return true;
-	}
-	return expression_tree_walker(node, expr_null_check_walker, context);
-}
-
-static bool
-expr_contains_null_const(Expr *expr)
-{
-	return expr_null_check_walker((Node *)expr, NULL);
-}
-
 static void
 transformWindowFrameEdge(ParseState *pstate, WindowFrameEdge *e,
 						 WindowSpec *spec, Query *qry, bool is_rows)
 {
+	const char *constructName = NULL;
+
 	/* Only bound frame edges will have a value */
 	if (e->kind == WINDOW_BOUND_PRECEDING ||
 		e->kind == WINDOW_BOUND_FOLLOWING)
@@ -189,26 +169,12 @@ transformWindowFrameEdge(ParseState *pstate, WindowFrameEdge *e,
 		if (is_rows)
 		{
 			/* the e->val should already be transformed */
-			if (IsA(e->val, Const))
-			{
-				Const *con = (Const *)e->val;
 
-				if (con->consttype != INT4OID)
-					ereport(ERROR,
-							(errcode(ERROR_INVALID_WINDOW_FRAME_PARAMETER),
-							 errmsg("ROWS parameter must be an integer expression"),
-							 parser_errposition(pstate, con->location)));
-				if (DatumGetInt32(con->constvalue) < 0)
-					ereport(ERROR,
-							(errcode(ERROR_INVALID_WINDOW_FRAME_PARAMETER),
-							 errmsg("ROWS parameter cannot be negative"),
-							 parser_errposition(pstate, con->location)));
-			}
-
-			if (expr_contains_null_const((Expr *)e->val))
-				ereport(ERROR,
-						(errcode(ERROR_INVALID_WINDOW_FRAME_PARAMETER),
-						 errmsg("ROWS parameter cannot contain NULL value")));
+			/*
+			 * Like LIMIT clause, simply coerce to int8
+			 */
+			constructName = "ROWS";
+			e->val = coerce_to_specific_type(pstate, e->val, INT8OID, constructName);
 		}
 		else
 		{
