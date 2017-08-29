@@ -47,7 +47,6 @@
 #define RESGROUP_MAX_CPU_RATE_LIMIT	(100)
 
 #define RESGROUP_MIN_MEMORY_LIMIT	(1)
-#define RESGROUP_MAX_MEMORY_LIMIT	(100)
 
 #define RESGROUP_MIN_MEMORY_SHARED_QUOTA	(0)
 #define RESGROUP_MAX_MEMORY_SHARED_QUOTA	(100)
@@ -195,7 +194,7 @@ CreateResourceGroup(CreateResourceGroupStmt *stmt)
 	pg_resgroup_rel = heap_open(ResGroupRelationId, ExclusiveLock);
 
 	/* Check if max_resource_group limit is reached */
-	sscan = systable_beginscan(pg_resgroup_rel, InvalidOid, false,
+	sscan = systable_beginscan(pg_resgroup_rel, ResGroupRsgnameIndexId, false,
 							   SnapshotNow, 0, NULL);
 	nResGroups = 0;
 	while (systable_getnext(sscan) != NULL)
@@ -393,7 +392,7 @@ DropResourceGroup(DropResourceGroupStmt *stmt)
 									DF_CANCEL_ON_ERROR|
 									DF_WITH_SNAPSHOT|
 									DF_NEED_TWO_PHASE,
-									NIL, /* FIXME */
+									NIL,
 									NULL);
 	}
 
@@ -638,7 +637,7 @@ AlterResourceGroup(AlterResourceGroupStmt *stmt)
 									DF_CANCEL_ON_ERROR|
 									DF_WITH_SNAPSHOT|
 									DF_NEED_TWO_PHASE,
-									GetAssignedOidsForDispatch(), /* FIXME */
+									GetAssignedOidsForDispatch(),
 									NULL);
 	}
 
@@ -1229,7 +1228,7 @@ validateCapabilities(Relation rel,
 	int totalCpu = options->cpuRateLimit;
 	int totalMem = options->memLimit;
 
-	sscan = systable_beginscan(rel, InvalidOid, false, SnapshotNow, 0, NULL);
+	sscan = systable_beginscan(rel, ResGroupCapabilityResgroupidIndexId, true, SnapshotNow, 0, NULL);
 
 	while (HeapTupleIsValid(tuple = systable_getnext(sscan)))
 	{
