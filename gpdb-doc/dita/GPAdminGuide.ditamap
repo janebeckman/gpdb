@@ -114,7 +114,7 @@
       id="perf_intro"/>
     <chapter href="admin_guide/perf_issues.xml" navtitle="Common Causes of Performance Issues"
       id="perf_issues"/>
-    <chapter href="admin_guide/wlmgmt_intro.xml" navtitle="Workload Management Resource Overview"
+    <chapter href="admin_guide/wlmgmt_intro.xml" navtitle="Greenplum Database Memory Overview"
       id="wlmgmt_intro"/>
     <chapter href="admin_guide/wlmgmt.xml" navtitle="Managing Workload and Resources"
       id="wlmgmt"/>
