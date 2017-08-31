@@ -79,7 +79,12 @@
 
       <p>The minimum <codeph>MEMORY_SHARED_QUOTA</codeph> you can specify is 0, the maximum is 100. The default <codeph>MEMORY_SHARED_QUOTA</codeph> is 20.</p>
 
-      <p>As mentioned previously, <codeph>CONCURRENCY</codeph> identifies the maximum number of concurrently running transactions permitted in the resource group. The fixed memory reserved by a resource group is divided into <codeph>CONCURRENCY</codeph> number of transaction slots. Each slot is allocated a fixed, equal amount of resource group memory. Greenplum Database guarantees this fixed memory to each transaction.</p> 
+      <p>As mentioned previously, <codeph>CONCURRENCY</codeph> identifies the maximum number of concurrently running transactions permitted in the resource group. The fixed memory reserved by a resource group is divided into <codeph>CONCURRENCY</codeph> number of transaction slots. Each slot is allocated a fixed, equal amount of resource group memory. Greenplum Database guarantees this fixed memory to each transaction.
+
+         <fig id="fig_py5_1sl_wlrg">
+            <title>Resource Group Memory Allotments</title>
+            <image href="graphics/resgroupmem.png" id="image_iqn_dsl_wlrg"/>
+          </fig></p>
 
       <p>When a query's memory usage exceeds the fixed per-transaction memory usage amount, Greenplum Database allocates available resource group shared memory to the query. The maximum amount of resource group memory available to a specific transaction slot is the sum of the transaction's fixed memory and the full resource group shared memory allotment.</p>
 
