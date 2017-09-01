@@ -4,7 +4,7 @@
 <topic id="topic1" xml:lang="en">
   <title id="iz173472">Using Resource Groups</title>
   <body>
-    <note>Resource group-based workload management is an experimental feature and is not intended for use in a production environment. Experimental features are subject to change without notice in future releases.</note>
+    <note type="warning">Resource group-based workload management is an experimental feature and is not intended for use in a production environment. Experimental features are subject to change without notice in future releases.</note>
     <p>You can use resource groups to manage the number of active queries that may execute concurrently in your Greenplum Database cluster. With resource groups, you can also manage the amount of CPU and memory resources Greenplum allocates to each query.</p>
 
     <p>When the user executes a query, Greenplum Database evaluates the query against a set of limits defined for the resource group. Greenplum Database executes the query immediately if the group's resource limits have not yet been reached and the query does not cause the group to exceed the concurrent transaction limit. If these conditions are not met, Greenplum Database queues the query. For example, if the maximum number of concurrent transactions for the resource group has already been reached, a subsequent query is queued and must wait until other queries complete before it runs.</p>
