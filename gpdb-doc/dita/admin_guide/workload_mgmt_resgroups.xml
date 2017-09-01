@@ -377,7 +377,7 @@ gpstart
   billy  | rg_light |  31905  |    t    | SELECT * FROM topten; | testdb</codeblock>
         <p>Use this output to identify the process id (<codeph>procpid</codeph>) of the transaction you want to cancel, and then cancel the process. For example, to cancel the pending query identified in the sample output above:</p>
         <p>
-          <codeblock>=# SELECT pg_cancel_backend(31905) </codeblock>
+          <codeblock>=# SELECT pg_cancel_backend(31905);</codeblock>
         </p>
         <p>You can provide an optional message in a second argument to <codeph>pg_cancel_backend()</codeph>
           to indicate to the user why the process was cancelled.</p>
