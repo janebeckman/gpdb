@@ -4,7 +4,7 @@
 <topic id="topic1" xml:lang="en">
   <title id="iz173472">Using Resource Groups</title>
   <body>
-    <note>Resource group-based workload management is an experimental feature and is not intended for use in a production environment. Experimental features are subject to change without notice in future releases.</note>
+    <note type="warning">Resource group-based workload management is an experimental feature and is not intended for use in a production environment. Experimental features are subject to change without notice in future releases.</note>
     <p>You can use resource groups to manage the number of active queries that may execute concurrently in your Greenplum Database cluster. With resource groups, you can also manage the amount of CPU and memory resources Greenplum allocates to each query.</p>
 
     <p>When the user executes a query, Greenplum Database evaluates the query against a set of limits defined for the resource group. Greenplum Database executes the query immediately if the group's resource limits have not yet been reached and the query does not cause the group to exceed the concurrent transaction limit. If these conditions are not met, Greenplum Database queues the query. For example, if the maximum number of concurrent transactions for the resource group has already been reached, a subsequent query is queued and must wait until other queries complete before it runs.</p>
@@ -39,7 +39,7 @@
             </row>
             <row>
               <entry colname="col1">MEMORY_SPILL_RATIO</entry>
-              <entry colname="col2">The memory usage threshold for memory-intensive operators in a transaction. When the transaction reaches this threshold, it spills to disk.</entry>
+              <entry colname="col2">The memory usage threshold for memory-intensive operators in a transaction. When a transaction reaches this threshold, it spills to disk.</entry>
             </row>
           </tbody>
         </tgroup>
@@ -52,7 +52,7 @@
     <body>
       <p>The <codeph>CONCURRENCY</codeph> limit controls the maximum number of concurrent transactions permitted for the resource group. Each resource group is logically divided into a fixed number of slots equal to the <codeph>CONCURRENCY</codeph> limit. Greenplum Database allocates these slots an equal, fixed percentage of memory resources.</p>
       <p>The default <codeph>CONCURRENCY</codeph> limit value for a resource group is 20.</p>
-      <p>Greenplum Database queues any transactions submitted after the resource group reaches its <codeph>CONCURRENCY</codeph> limit. When a running transaction completes, Greenplum Database un-queues and executes the earliest queued transaction if sufficient CPU and memory resources exist.</p>
+      <p>Greenplum Database queues any transactions submitted after the resource group reaches its <codeph>CONCURRENCY</codeph> limit. When a running transaction completes, Greenplum Database un-queues and executes the earliest queued transaction if sufficient memory resources exist.</p>
     </body>
   </topic>
 
@@ -179,7 +179,8 @@ gpconfig -c gp_resource_manager -v "group"
 </codeblock>
         </li>
         <li>Restart Greenplum Database:
-            <codeblock>gpstart
+            <codeblock>gpstop
+gpstart
 </codeblock>
         </li>
       </ol>
@@ -288,6 +289,7 @@ gpconfig -c gp_resource_manager -v "group"
           <li id="iz153669"> <xref href="#topic221" type="topic" format="dita"/> </li>
           <li id="iz153670"> <xref href="#topic23" type="topic" format="dita"/> </li>
           <li id="iz153671"> <xref href="#topic25" type="topic" format="dita"/> </li>
+          <li id="iz15367125"> <xref href="#topic252525" type="topic" format="dita"/> </li>
           <li id="iz153679"> <xref href="#topic27" type="topic" format="dita"/> </li>
         </ul>
         
@@ -307,7 +309,7 @@ gpconfig -c gp_resource_manager -v "group"
     <topic id="topic23" xml:lang="en">
       <title id="iz152239">Viewing Resource Group Query Status and CPU/Memory Usage</title>
       <body>
-        <p>The <codeph><xref href="../ref_guide/system_catalogs/gp_resgroup_status.xml" type="topic" format="dita"/></codeph> <codeph>gp_toolkit</codeph> system view enables you to view the status and activity of a resource group. The view displays the number of running and queued transactions. It also displays the real-time CPU and memory usage of the resource group, averaged over all segments. To view this information:</p>
+        <p>The <codeph><xref href="../ref_guide/system_catalogs/gp_resgroup_status.xml" type="topic" format="dita"/></codeph> <codeph>gp_toolkit</codeph> system view enables you to view the status and activity of a resource group. The view displays the number of running and queued transactions. It also displays the real-time CPU and memory usage of the resource group. To view this information:</p>
         <p>
           <codeblock>=# SELECT * FROM gp_toolkit.gp_resgroup_status;
 </codeblock>
@@ -324,6 +326,21 @@ gpconfig -c gp_resource_manager -v "group"
         <p>
           <codeblock>=# SELECT rolname, rsgname FROM pg_roles, pg_resgroup
      WHERE pg_roles.rolresgroup=pg_resgroup.oid;
+</codeblock>
+        </p>
+      </body>
+    </topic>
+
+    <topic id="topic252525" xml:lang="en">
+      <title id="iz15223925">Viewing a Resource Group's Running and Pending Queries</title>
+      <body>
+        <p>To view a resource group's running queries, pending queries, and how long
+            the pending queries have been queued, examine the
+            <codeph><xref href="../ref_guide/system_catalogs/pg_stat_activity.xml" type="topic" format="dita"/></codeph>
+            system catalog table:</p>
+        <p>
+          <codeblock>=# SELECT current_query, waiting, rsgname, rsgqueueduration 
+     FROM pg_stat_activity;
 </codeblock>
         </p>
       </body>
@@ -360,12 +377,12 @@ gpconfig -c gp_resource_manager -v "group"
   billy  | rg_light |  31905  |    t    | SELECT * FROM topten; | testdb</codeblock>
         <p>Use this output to identify the process id (<codeph>procpid</codeph>) of the transaction you want to cancel, and then cancel the process. For example, to cancel the pending query identified in the sample output above:</p>
         <p>
-          <codeblock>=# pg_cancel_backend(31905) </codeblock>
+          <codeblock>=# SELECT pg_cancel_backend(31905) </codeblock>
         </p>
         <p>You can provide an optional message in a second argument to <codeph>pg_cancel_backend()</codeph>
           to indicate to the user why the process was cancelled.</p>
         <note type="note">
-          <p>Do not use an operating system <codeph>KILL</codeph> command.</p>
+          <p>Do not use an operating system <codeph>KILL</codeph> command to cancel any Greenplum Database process.</p>
         </note>
       </body>
     </topic>
