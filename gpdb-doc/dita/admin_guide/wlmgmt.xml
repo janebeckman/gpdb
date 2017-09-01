@@ -39,13 +39,13 @@
             </row>
             <row>
               <entry colname="col1">Memory</entry>
-              <entry colname="col2">Managed at the operator level; users can over-subscribe</entry>
+              <entry colname="col2">Managed at the queue and operator level; users can over-subscribe</entry>
               <entry colname="col3">Managed at the transaction level, with enhanced allocation and tracking; users cannot over-subscribe</entry>
             </row>
             <row>
               <entry colname="col1">Memory Isolation</entry>
-              <entry colname="col2">None?</entry>
-              <entry colname="col3">Memory isolated between resource groups and between transactions within the same resource group</entry>
+              <entry colname="col2">None</entry>
+              <entry colname="col3">Memory is isolated between resource groups and between transactions within the same resource group</entry>
             </row>
             <row>
               <entry colname="col1">Users</entry>
