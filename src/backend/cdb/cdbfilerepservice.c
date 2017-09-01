@@ -1,9 +1,15 @@
-/*
- *  cdbfilerepservice.c
- *  
+/*-------------------------------------------------------------------------
  *
- *  Copyright 2009-2010 Greenplum Inc. All rights reserved.
+ * cdbfilerepservice.c
  *
+ * Portions Copyright (c) 2009-2010 Greenplum Inc. All rights reserved.
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/cdb/cdbfilerepservice.c
+ *
+ *-------------------------------------------------------------------------
  */
 
 #include "postgres.h"
@@ -35,6 +41,7 @@
 #include "utils/guc.h"
 #include "utils/memutils.h"
 #include "utils/ps_status.h"
+#include "utils/resowner.h"
 #include "utils/syscache.h"
 
 /*

@@ -4,6 +4,7 @@
  *	  Core support for opening external relations via a URL execute
  *
  * Portions Copyright (c) 2007-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  *
  * IDENTIFICATION
  *	  src/backend/access/external/url_execute.c
@@ -21,6 +22,7 @@
 #include "cdb/cdbtimer.h"
 #include "cdb/cdbvars.h"
 #include "libpq/pqsignal.h"
+#include "utils/resowner.h"
 
 #define EXEC_DATA_P 0 /* index to data pipe */
 #define EXEC_ERR_P 1 /* index to error pipe  */

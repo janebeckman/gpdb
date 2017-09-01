@@ -5,6 +5,7 @@
  *	  into a script file.
  *
  * Portions Copyright (c) 2005-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2008, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -69,6 +70,7 @@ int			optreset;
 extern char *optarg;
 extern int	optind,
 			opterr;
+
 
 typedef struct
 {
@@ -908,7 +910,7 @@ main(int argc, char **argv)
 	 * Collect dependency data to assist in ordering the objects.
 	 */
 	getDependencies();
-	
+
 	setExtPartDependency(tblinfo, numTables);
 
 	/*
@@ -9849,7 +9851,7 @@ dumpTableSchema(Archive *fout, TableInfo *tbinfo)
 	char	   *storage;
 	int			j,
 				k;
-	
+
 	/* Make sure we are in proper schema */
 	selectSourceSchema(tbinfo->dobj.namespace->dobj.name);
 

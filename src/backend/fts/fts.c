@@ -6,8 +6,13 @@
  *
  * Maintains an array in shared memory containing the state of each segment.
  *
- * Copyright (c) 2005-2010, Greenplum Inc.
- * Copyright (c) 2011, EMC Corp.
+ * Portions Copyright (c) 2005-2010, Greenplum Inc.
+ * Portions Copyright (c) 2011, EMC Corp.
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/fts/fts.c
  *
  *-------------------------------------------------------------------------
  */
@@ -85,7 +90,7 @@ static volatile sig_atomic_t got_SIGHUP = false;
 
 static char *probeDatabase = "postgres";
 
-static char failover_strategy='n';
+static char fault_strategy = GpFaultStrategyMirrorLess;
 
 /* struct holding segment configuration */
 static CdbComponentDatabases *cdb_component_dbs = NULL;
@@ -128,11 +133,6 @@ static uint32 transition
 
 static void updateConfiguration(FtsSegmentStatusChange *changes, int changeEntries);
 static bool probeUpdateConfig(FtsSegmentStatusChange *changes, int changeCount);
-
-static void getFailoverStrategy(char *strategy);
-static void FtsFailoverNull(FtsSegmentStatusChange *changes);
-
-
 
 /*
  * Main entry point for ftsprobe process.
@@ -480,7 +480,18 @@ void FtsLoop()
 			processing_fullscan = false;
 
 		readCdbComponentInfoAndUpdateStatus(probeContext);
-		getFailoverStrategy(&failover_strategy);
+		fault_strategy = get_gp_fault_strategy();
+
+		if (fault_strategy == GpFaultStrategyMirrorLess)
+		{
+			/* The dispatcher could have requested a scan so just ignore it and unblock the dispatcher */
+			if (processing_fullscan)
+			{
+				ftsProbeInfo->fts_statusVersion = ftsProbeInfo->fts_statusVersion + 1;
+				rescan_requested = false;
+			}
+			goto prober_sleep;
+		}
 
 		elog(DEBUG3, "FTS: starting %s scan with %d segments and %d contents",
 			 (processing_fullscan ? "full " : ""),
@@ -574,11 +585,14 @@ probePublishUpdate(uint8 *probe_results)
 	bool update_found = false;
 	int i;
 
-	if (failover_strategy == 'f')
-	{
-		/* preprocess probe results to decide what is the current segment state */
-		FtsPreprocessProbeResultsFilerep(cdb_component_dbs, probe_results);
-	}
+#ifdef USE_SEGWALREP
+	Assert(fault_strategy == GpFaultStrategyWalRepMirrored);
+#else
+	Assert(fault_strategy == GpFaultStrategyFileRepMirrored);
+#endif
+
+	/* preprocess probe results to decide what is the current segment state */
+	FtsPreprocessProbeResultsFilerep(cdb_component_dbs, probe_results);
 
 	for (i = 0; i < cdb_component_dbs->total_segment_dbs; i++)
 	{
@@ -599,27 +613,6 @@ probePublishUpdate(uint8 *probe_results)
 		CdbComponentDatabaseInfo *primary = segInfo;
 		CdbComponentDatabaseInfo *mirror = FtsGetPeerSegment(segInfo->segindex, segInfo->dbid);
 
-		if (failover_strategy == 'n')
-		{
-			Assert(SEGMENT_IS_ACTIVE_PRIMARY(segInfo));
-			Assert(FTS_STATUS_ISALIVE(segInfo->dbid, ftsProbeInfo->fts_status));
-			Assert(mirror == NULL);
-
-			/* no mirror available to failover */
-			if (!PROBE_IS_ALIVE(segInfo))
-			{
-				FtsSegmentStatusChange changes;
-				uint8 statusOld = ftsProbeInfo->fts_status[segInfo->dbid];
-				uint8 statusNew = statusOld & ~FTS_STATUS_ALIVE;
-
-				buildSegmentStateChange(segInfo, &changes, statusNew);
-
-				FtsFailoverNull(&changes);
-			}
-			continue;
-		}
-
-		Assert(failover_strategy == 'f');
 		Assert(mirror != NULL);
 
 		/* changes required for primary and mirror */
@@ -831,6 +824,12 @@ probeUpdateConfig(FtsSegmentStatusChange *changes, int changeCount)
 	int i;
 	char desc[SQL_CMD_BUF_SIZE];
 
+#ifdef USE_SEGWALREP
+	Assert(fault_strategy == GpFaultStrategyWalRepMirrored);
+#else
+	Assert(fault_strategy == GpFaultStrategyFileRepMirrored);
+#endif
+
 	/*
 	 * Commit/abort transaction below will destroy
 	 * CurrentResourceOwner.  We need it for catalog reads.
@@ -854,7 +853,6 @@ probeUpdateConfig(FtsSegmentStatusChange *changes, int changeCount)
 
 		if (changelogging)
 		{
-			Assert(failover_strategy == 'f');
 			Assert(primary && valid);
 		}
 
@@ -938,60 +936,20 @@ probeUpdateConfig(FtsSegmentStatusChange *changes, int changeCount)
 	return true;
 }
 
-static void
-getFailoverStrategy(char *strategy)
-{
-	Relation	strategy_rel;
-	HeapTuple	strategy_tup;
-	SysScanDesc sscan;
-
-	Assert(strategy != NULL);
-
-	strategy_rel = heap_open(GpFaultStrategyRelationId, AccessShareLock);
-
-	/*
-	 * SELECT * FROM gp_fault_strategy
-	 *
-	 * XXX XXX: only one of these?
-	 */
-	sscan = systable_beginscan(strategy_rel, InvalidOid, false, SnapshotNow, 0, NULL);
-	while (HeapTupleIsValid(strategy_tup = systable_getnext(sscan)))
-	{
-		Datum		strategy_datum;
-		bool		isNull = true;
-
-		strategy_datum = heap_getattr(strategy_tup, Anum_gp_fault_strategy_fault_strategy, RelationGetDescr(strategy_rel), &isNull);
-
-		if (isNull)
-			break;
-
-		*strategy = DatumGetChar(strategy_datum);
-	}
-
-	systable_endscan(sscan);
-	heap_close(strategy_rel, AccessShareLock);
-	return;
-}
-
-
 bool
 FtsIsSegmentAlive(CdbComponentDatabaseInfo *segInfo)
 {
-	switch (failover_strategy)
-	{
-		case 'f':
-			if (SEGMENT_IS_ACTIVE_MIRROR(segInfo) && SEGMENT_IS_ALIVE(segInfo))
-				return true;
-			/* fallthrough */
-		case 'n':
-		case 's':
-			if (SEGMENT_IS_ACTIVE_PRIMARY(segInfo))
-				return true;
-			break;
-		default:
-			write_log("segmentToProbe: invalid failover strategy (%c).", failover_strategy);
-			break;
-	}
+#ifdef USE_SEGWALREP
+	Assert(fault_strategy == GpFaultStrategyWalRepMirrored);
+#else
+	Assert(fault_strategy == GpFaultStrategyFileRepMirrored);
+#endif
+
+	if (SEGMENT_IS_ACTIVE_MIRROR(segInfo) && SEGMENT_IS_ALIVE(segInfo))
+		return true;
+
+	if (SEGMENT_IS_ACTIVE_PRIMARY(segInfo))
+		return true;
 
 	return false;
 }
@@ -1026,16 +984,6 @@ FtsDumpChanges(FtsSegmentStatusChange *changes, int changeEntries)
 			 (new_pri ? 'p' : 'm'));
 	}
 }
-
-static void
-FtsFailoverNull(FtsSegmentStatusChange *changePrimary)
-{
-	if (gp_log_fts >= GPVARS_VERBOSITY_VERBOSE)
-	{
-		FtsDumpChanges(changePrimary, 1);
-	}
-}
-
 
 /**
  * Marks the given db as in-sync in the segment configuration.

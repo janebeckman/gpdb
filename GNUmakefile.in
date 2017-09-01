@@ -28,6 +28,7 @@ all:
 	$(MAKE) -C contrib/indexscan all
 	$(MAKE) -C contrib/pg_upgrade_support all
 	$(MAKE) -C contrib/pg_upgrade all
+	$(MAKE) -C contrib/hstore all
 	$(MAKE) -C contrib/pgcrypto all
 	$(MAKE) -C gpAux/extensions all
 	$(MAKE) -C gpAux/gpperfmon all
@@ -53,6 +54,7 @@ install:
 	$(MAKE) -C contrib/indexscan $@ 
 	$(MAKE) -C contrib/pg_upgrade_support $@
 	$(MAKE) -C contrib/pg_upgrade $@
+	$(MAKE) -C contrib/hstore $@
 	$(MAKE) -C contrib/pgcrypto $@
 	$(MAKE) -C gpMgmt $@
 	$(MAKE) -C gpAux/extensions $@
@@ -79,6 +81,7 @@ installdirs uninstall:
 	$(MAKE) -C contrib/indexscan $@ 
 	$(MAKE) -C contrib/pg_upgrade_support $@
 	$(MAKE) -C contrib/pg_upgrade $@
+	$(MAKE) -C contrib/hstore $@
 	$(MAKE) -C contrib/pgcrypto $@
 
 distprep:
@@ -109,6 +112,7 @@ clean:
 	$(MAKE) -C contrib/indexscan $@
 	$(MAKE) -C contrib/pg_upgrade_support $@
 	$(MAKE) -C contrib/pg_upgrade $@
+	$(MAKE) -C contrib/hstore $@
 	$(MAKE) -C contrib/pgcrypto $@
 # leap over gpAux/Makefile into subdirectories to avoid circular dependency.
 # gpAux/Makefile is the entry point for the enterprise build, which ends up
@@ -150,14 +154,29 @@ installcheck-world:
 	$(MAKE) -C contrib/extprotocol installcheck
 	$(MAKE) -C contrib/dblink installcheck
 	$(MAKE) -C contrib/indexscan installcheck
+	$(MAKE) -C contrib/hstore installcheck
 	$(MAKE) -C contrib/pgcrypto installcheck
 	$(MAKE) -C gpAux/extensions installcheck
 	$(MAKE) -C src/bin/gpfdist installcheck
 	$(MAKE) -C src/interfaces/gppc installcheck
 	$(MAKE) -C src/test/kerberos installcheck
 	$(MAKE) -C gpMgmt/bin installcheck
+# The mirroring_matching test of gpcheckcat fails on a walrep cluster
+# because management tools do not yet understand the fault strategy
+# 'w'. Currently gpcheckcat does not allow us to exclude a single test
+# so we need to explicitly list all the tests.
+ifeq ($(enable_segwalrep), yes)
+	for test in "unique_index_violation" "duplicate" "missing_extraneous"\
+				"inconsistent" "foreign_key" "acl" "persistent" "pgclass"\
+				"namespace" "distribution_policy" "dependency" "owner"\
+				"part_integrity" "part_constraint" "duplicate_persistent";\
+	do \
+		gpcheckcat -R $$test -A;\
+	done;
+else
 	gpcheckcat -A
 	$(MAKE) -C contrib/pg_upgrade check
+endif
 
 installcheck-resgroup:
 	$(MAKE) -C src/test/isolation2 $@

@@ -12,6 +12,7 @@
  *
  *
  * Portions Copyright (c) 2005-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2008, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -100,17 +101,15 @@ _copyPlannedStmt(PlannedStmt *from)
 	COPY_SCALAR_FIELD(planGen);
 	COPY_SCALAR_FIELD(canSetTag);
 	COPY_SCALAR_FIELD(transientPlan);
-
 	COPY_NODE_FIELD(planTree);
 	COPY_NODE_FIELD(rtable);
 	COPY_NODE_FIELD(resultRelations);
-
 	COPY_NODE_FIELD(utilityStmt);
 	COPY_NODE_FIELD(intoClause);
 	COPY_NODE_FIELD(subplans);
 	COPY_BITMAPSET_FIELD(rewindPlanIDs);
 	COPY_NODE_FIELD(returningLists);
-	
+
 	COPY_NODE_FIELD(result_partitions);
 	COPY_NODE_FIELD(result_aosegnos);
 	COPY_NODE_FIELD(queryPartOids);
@@ -122,7 +121,7 @@ _copyPlannedStmt(PlannedStmt *from)
 	COPY_SCALAR_FIELD(nParamExec);
 	COPY_SCALAR_FIELD(nMotionNodes);
 	COPY_SCALAR_FIELD(nInitPlans);
-	
+
 	if (from->intoPolicy)
 	{
 		COPY_POINTER_FIELD(intoPolicy,sizeof(GpPolicy) + from->intoPolicy->nattrs*sizeof(from->intoPolicy->attrs[0]));
@@ -1034,7 +1033,6 @@ _copyTableFunctionScan(TableFunctionScan *from)
 	return newnode;
 }
 
-
 /*
  * _copyUnique
  */
@@ -1333,13 +1331,13 @@ static IntoClause *
 _copyIntoClause(IntoClause *from)
 {
 	IntoClause *newnode = makeNode(IntoClause);
-	
+
 	COPY_NODE_FIELD(rel);
 	COPY_NODE_FIELD(colNames);
 	COPY_NODE_FIELD(options);
 	COPY_SCALAR_FIELD(onCommit);
 	COPY_STRING_FIELD(tableSpaceName);
-	
+
 	return newnode;
 }
 

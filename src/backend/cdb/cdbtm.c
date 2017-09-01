@@ -3,7 +3,12 @@
  * cdbtm.c
  *	  Provides routines for performing distributed transaction
  *
- * Copyright (c) 2005-2009, Greenplum inc
+ * Portions Copyright (c) 2005-2009, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/cdb/cdbtm.c
  *
  *-------------------------------------------------------------------------
  */
@@ -2256,8 +2261,6 @@ initGxact(TMGXACT * gxact)
 	gxact->xminDistributedSnapshot = InvalidDistributedTransactionId;
 
 	gxact->badPrepareGangs = false;
-
-	gxact->retryPhase2RecursionStop = false;
 
 	gxact->directTransaction = false;
 	gxact->directTransactionContentId = 0;

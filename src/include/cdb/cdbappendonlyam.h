@@ -7,6 +7,11 @@
  * Portions Copyright (c) 1996-2006, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  * Portions Copyright (c) 2007, Greenplum Inc.
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/include/cdb/cdbappendonlyam.h
  *
  *-------------------------------------------------------------------------
  */
@@ -169,7 +174,6 @@ typedef struct AppendOnlyScanDescData
 	Index       aos_scanrelid;
 	int			aos_nkeys;			/* number of scan keys */
 	ScanKey		aos_key;			/* array of scan key descriptors */
-	bool		aos_notoast;		/* using toast for this relation? */
 	
 	/* file segment scan state */
 	int			aos_filenamepath_maxlen;

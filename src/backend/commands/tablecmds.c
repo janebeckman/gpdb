@@ -4,6 +4,7 @@
  *	  Commands for creating and altering table structures and settings
  *
  * Portions Copyright (c) 2005-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2008, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -1137,9 +1138,11 @@ ExecuteTruncate(TruncateStmt *stmt)
 					cell = lnext(cell);
 					rel = heap_openrv(rv, AccessExclusiveLock);
 					if (RelationIsExternal(rel))
-					{
-						elog(ERROR, "Cannot truncate table having external partition:\"%s\".", RelationGetRelationName(rel));
-					}
+						ereport(ERROR,
+								(errcode(ERRCODE_WRONG_OBJECT_TYPE),
+								 errmsg("cannot truncate table having external partition: \"%s\"",
+									    RelationGetRelationName(rel))));
+
 					heap_close(rel, NoLock);
 				}
 			}
@@ -13221,10 +13224,10 @@ ATPExecPartExchange(AlteredTableInfo *tab, Relation rel, AlterPartitionCmd *pc)
 
 		newrel = heap_open(newrelid, AccessExclusiveLock);
 		if (RelationIsExternal(newrel) && validate)
-		{
-			heap_close(newrel, NoLock);
-			elog(ERROR, "Validation of external tables not supported. Use WITHOUT VALIDATION.");
-		}
+			ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					 errmsg("validation of external tables not supported"),
+					 errhint("Use WITHOUT VALIDATION.")));
 
 		oldrel = heap_open(oldrelid, AccessExclusiveLock);
 
@@ -15366,10 +15369,10 @@ ATPExecPartTruncate(Relation rel,
 
 		rel2 = heap_open(prule->topRule->parchildrelid, AccessShareLock);
 		if (RelationIsExternal(rel2))
-		{
-			heap_close(rel2, NoLock);
-			elog(ERROR, "Cannot truncate external partition");
-		}
+			ereport(ERROR,
+					(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+					 errmsg("cannot truncate external partition")));
+
 		rv = makeRangeVar(get_namespace_name(RelationGetNamespace(rel2)),
 						  pstrdup(RelationGetRelationName(rel2)), -1);
 

@@ -25,6 +25,14 @@ function gen_env(){
 	make installcheck USE_PGXS=1
 
 	[ -s regression.diffs ] && cat regression.diffs && exit 1
+
+	export HADOOP_HOME=\${1}/singlecluster/hadoop
+	cd "\${1}/gpdb_src/gpAux/extensions/pxf/regression/integrate"
+	HADOOP_HOST=localhost HADOOP_PORT=8020 ./generate_hdfs_data.sh
+
+	cd "\${1}/gpdb_src/gpAux/extensions/pxf/regression"
+	GP_HADOOP_TARGET_VERSION=cdh4.1 HADOOP_HOST=localhost HADOOP_PORT=8020 ./run_pxf_regression.sh
+
 	exit 0
 	EOF
 
@@ -56,32 +64,26 @@ function setup_singlecluster() {
 	pushd singlecluster/bin
 	# set Standalone PXF mode without Hadoop
 	export PXFDEMO=true
+	export SLAVES=1
+	./init-gphd.sh
 	./init-pxf.sh
+	./start-hdfs.sh
 	./start-pxf.sh
 	popd
 }
 
 install_pxf() {
 	local hdfsrepo=$1
-	if [ -d pxf_tarball ]; then
-		echo "======================================================================"
-		echo "                            Install PXF"
-		echo "======================================================================"
-		pushd pxf_tarball > /dev/null
-		unpack_tarball ./*.tar.gz
-		for X in distributions/pxf-*.tar.gz; do
-			tar -xvzf ${X}
-		done
-		mkdir -p ${hdfsrepo}/pxf/conf
-		mv pxf-*/pxf-*.jar ${hdfsrepo}/pxf
-		mv pxf-*/pxf.war ${hdfsrepo}/pxf
-		mv pxf-*/conf/{pxf-public.classpath,pxf-profiles.xml,pxf-private.classpath} ${hdfsrepo}/pxf/conf
-		popd > /dev/null
-		pushd ${hdfsrepo}/pxf && for X in pxf-*-[0-9]*.jar; do \
-			ln -s ${X} $(echo ${X} | sed -e 's/-[a-zA-Z0-9.]*.jar/.jar/'); \
-		done
-		popd > /dev/null
-	fi
+	local pxfhome="/usr/local/greenplum-db-devel/pxf"
+	mkdir -p ${hdfsrepo}/pxf/conf
+	mv ${pxfhome}/lib/pxf-*.jar ${hdfsrepo}/pxf
+	mv ${pxfhome}/lib/pxf.war ${hdfsrepo}/pxf
+	mv ${pxfhome}/conf/pxf-profiles-default.xml ${hdfsrepo}/pxf/conf/pxf-profiles.xml
+	mv ${pxfhome}/conf/{pxf-public.classpath,pxf-private.classpath} ${hdfsrepo}/pxf/conf
+	pushd ${hdfsrepo}/pxf && for X in pxf-*-[0-9]*.jar; do \
+		ln -s ${X} $(echo ${X} | sed -e 's/-[a-zA-Z0-9.]*.jar/.jar/'); \
+	done
+	popd > /dev/null
 }
 
 function _main() {

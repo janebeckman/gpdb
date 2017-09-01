@@ -9,6 +9,8 @@ class HeapChecksum:
     """
 
     def __init__(self, gparray, num_workers=8, logger=None):
+        if num_workers <= 0:
+            raise Exception("number of workers must be greater than 0")
         self.gparray = gparray
         self.workers = num_workers
         self.logger = logger
@@ -30,7 +32,8 @@ class HeapChecksum:
         :return: the heap checksum setting (1 or 0) for the standby master
         """
         standbyMaster_gpdb = self.gparray.standbyMaster
-        cmd = PgControlData(name='run pg_controldata', datadir=standbyMaster_gpdb.getSegmentDataDirectory())
+        cmd = PgControlData(name='run pg_controldata', datadir=standbyMaster_gpdb.getSegmentDataDirectory(),
+                            ctxt=REMOTE, remoteHost=standbyMaster_gpdb.getSegmentHostName())
         cmd.run(validateAfter=True)
         value = cmd.get_value('Data page checksum version')
         return value

@@ -4,6 +4,7 @@
  *		Implements the COPY utility command
  *
  * Portions Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2009, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -1673,7 +1674,10 @@ DoCopyInternal(const CopyStmt *stmt, const char *queryString, CopyState cstate)
 			{
 				if (cstate->on_segment && gp_enable_segment_copy_checking && !partition_policies_equal(cstate->rel->rd_cdbpolicy, RelationBuildPartitionDesc(cstate->rel, false)))
 				{
-					elog(ERROR, "COPY FROM ON SEGMENT doesn't support checking distribution key restriction when the distribution policy of the partition table is different from the main table.\"SET gp_enable_segment_copy_checking=off\" can disable distribution key checking.");
+					ereport(ERROR,
+							(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+							 errmsg("COPY FROM ON SEGMENT doesn't support checking distribution key restriction when the distribution policy of the partition table is different from the main table"),
+							 errhint("\"SET gp_enable_segment_copy_checking=off\" can be used to disable distribution key checking.")));
 					return cstate->processed;
 				}
 				PartitionNode *pn = RelationBuildPartitionDesc(cstate->rel, false);
@@ -5074,7 +5078,10 @@ PROCESS_SEGMENT_DATA:
 					target_seg = get_target_seg(distData, values, nulls);
 					/*check distribution key if COPY FROM ON SEGMENT*/
 					if (GpIdentity.segindex != target_seg)
-						elog(ERROR, "Value of distribution key doesn't belong to segment with ID %d, it belongs to segment with ID %d.\"SET gp_enable_segment_copy_checking=off\" can disable distribution key checking.", GpIdentity.segindex, target_seg);
+						ereport(ERROR,
+								(errcode(ERRCODE_INTEGRITY_CONSTRAINT_VIOLATION),
+								 errmsg("value of distribution key doesn't belong to segment with ID %d, it belongs to segment with ID %d",
+										GpIdentity.segindex, target_seg)));
 				}
 
 				if (relstorage == RELSTORAGE_AOROWS)

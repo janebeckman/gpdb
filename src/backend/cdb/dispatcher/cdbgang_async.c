@@ -4,7 +4,12 @@
  * cdbgang_async.c
  *	  Functions for asynchronous implementation of creating gang.
  *
- * Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/cdb/dispatcher/cdbgang_async.c
  *
  *-------------------------------------------------------------------------
  */
@@ -27,6 +32,7 @@
 #include "cdb/cdbgang.h"
 #include "cdb/cdbvars.h"
 #include "miscadmin.h"
+#include "utils/resowner.h"
 
 static int getPollTimeout(const struct timeval* startTS);
 static Gang *createGang_async(GangType type, int gang_id, int size, int content);

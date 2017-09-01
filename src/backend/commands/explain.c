@@ -4,6 +4,7 @@
  *	  Explain query execution plans
  *
  * Portions Copyright (c) 2005-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2009, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994-5, Regents of the University of California
  *
@@ -372,7 +373,7 @@ ExplainOnePlan(PlannedStmt *plannedstmt, ParamListInfo params,
 	StringInfoData buf;
 	EState     *estate = NULL;
 	int			eflags;
-	int         nb;
+	char	   *settings;
 	MemoryContext explaincxt = CurrentMemoryContext;
 
 	/*
@@ -650,13 +651,10 @@ ExplainOnePlan(PlannedStmt *plannedstmt, ParamListInfo params,
     /*
      * Show non-default GUC settings that might have affected the plan.
      */
-    nb = gp_guc_list_show(&buf, "Settings:  ", "%s=%s; ", PGC_S_DEFAULT,
-                           gp_guc_list_for_explain);
-    if (nb > 0)
-    {
-        truncateStringInfo(&buf, buf.len - 2);  /* drop final "; " */
-        appendStringInfoChar(&buf, '\n');
-    }
+	settings = gp_guc_list_show(PGC_S_DEFAULT, gp_guc_list_for_explain);
+	if (*settings)
+		appendStringInfo(&buf, "Settings:  %s\n", settings);
+	pfree(settings);
 
     /* Display optimizer status: either 'legacy query optimizer' or Orca version number */
 	appendStringInfo(&buf, "Optimizer status: ");

@@ -4,11 +4,16 @@
  *	  GPDB resource group management code.
  *
  *
- * Copyright (c) 2006-2017, Greenplum inc.
+ * Portions Copyright (c) 2006-2010, Greenplum inc.
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  *
+ *
+ * IDENTIFICATION
+ *	    src/backend/utils/resgroup/resgroup.c
  *
  *-------------------------------------------------------------------------
  */
+
 #include "postgres.h"
 
 #include "access/genam.h"
@@ -183,8 +188,7 @@ static int32 slotGetMemSpill(const ResGroupCaps *caps);
 static void wakeupSlots(ResGroupData *group);
 static void wakeupGroups(Oid skipGroupId);
 static bool groupReleaseMemQuota(ResGroupData *group,
-								ResGroupSlotData *slot,
-								const ResGroupCaps *caps);
+								ResGroupSlotData *slot);
 static void groupAcquireMemQuota(ResGroupData *group, const ResGroupCaps *caps);
 static ResGroupData *ResGroupHashNew(Oid groupId);
 static ResGroupData *ResGroupHashFind(Oid groupId);
@@ -598,7 +602,7 @@ ResGroupGetStat(Oid groupId, ResGroupStatType type)
 	ResGroupData	*group;
 	Datum result;
 
-	Assert(IsResGroupEnabled());
+	Assert(IsResGroupActivated());
 
 	LWLockAcquire(ResGroupLock, LW_SHARED);
 
@@ -699,6 +703,12 @@ ResGroupReserveMemory(int32 memoryChunks, int32 overuseChunks, bool *waiverUsed)
 	ResGroupProcData	*procInfo = MyResGroupProcInfo;
 	ResGroupData		*sharedInfo = MyResGroupSharedInfo;
 
+	/*
+	 * Memories may be allocated before resource group is initialized,
+	 * however,we need to track those memories once resource group is
+	 * enabled, so we use IsResGroupEnabled() instead of
+	 * IsResGroupActivated() here.
+	 */
 	if (!IsResGroupEnabled())
 		return true;
 
@@ -792,7 +802,7 @@ ResGroupReleaseMemory(int32 memoryChunks)
 	ResGroupData		*sharedInfo = MyResGroupSharedInfo;
 	int32				oldUsage;
 
-	if (!IsResGroupEnabled())
+	if (!IsResGroupActivated())
 		return;
 
 	Assert(memoryChunks >= 0);
@@ -853,7 +863,7 @@ ResGroupDecideConcurrencyCaps(Oid groupId,
 	ResGroupData	*group;
 
 	/* If resource group is not in use we can always pick the new settings. */
-	if (!IsResGroupEnabled())
+	if (!IsResGroupActivated())
 	{
 		caps->concurrency.value = opts->concurrency;
 		caps->concurrency.proposed = opts->concurrency;
@@ -904,7 +914,7 @@ ResGroupDecideMemoryCaps(int groupId,
 	ResGroupCaps	capsNew;
 
 	/* If resource group is not in use we can always pick the new settings. */
-	if (!IsResGroupEnabled())
+	if (!IsResGroupActivated())
 	{
 		caps->memLimit.value = opts->memLimit;
 		caps->memLimit.proposed = opts->memLimit;
@@ -1223,7 +1233,7 @@ putSlot(ResGroupData *group, int slotId)
 								slot->memQuota);
 	Assert(memQuotaUsed >= 0);
 
-	shouldWakeUp = groupReleaseMemQuota(group, slot, &group->caps);
+	shouldWakeUp = groupReleaseMemQuota(group, slot);
 	if (shouldWakeUp)
 		wakeupGroups(group->groupId);
 
@@ -1661,13 +1671,14 @@ wakeupGroups(Oid skipGroupId)
  * * the group over-used shared quota
  */
 static bool 
-groupReleaseMemQuota(ResGroupData *group, ResGroupSlotData *slot, const ResGroupCaps *caps)
+groupReleaseMemQuota(ResGroupData *group, ResGroupSlotData *slot)
 {
 	int32		memQuotaNeedFree;
 	int32		memSharedNeeded;
 	int32		memQuotaToFree;
 	int32		memSharedToFree;
 	int32       memQuotaExpected;
+	ResGroupCaps *caps = &group->caps;
 
 	Assert(LWLockHeldExclusiveByMe(ResGroupLock));
 
@@ -1875,7 +1886,7 @@ DeserializeResGroupInfo(struct ResGroupCaps *capsOut,
 bool
 ShouldAssignResGroupOnMaster(void)
 {
-	return IsResGroupEnabled() &&
+	return IsResGroupActivated() &&
 		IsNormalProcessingMode() &&
 		Gp_role == GP_ROLE_DISPATCH &&
 		!AmIInSIGUSR1Handler();
@@ -2024,7 +2035,7 @@ SwitchResGroupOnSegment(const char *buf, int len)
 			prevSlot = &prevSharedInfo->slots[prevSlotId];
 			detachFromSlot(prevSharedInfo, prevSlot, procInfo);
 
-			groupReleaseMemQuota(prevSharedInfo, prevSlot, &caps);
+			groupReleaseMemQuota(prevSharedInfo, prevSlot);
 		}
 		else
 		{
@@ -2081,7 +2092,7 @@ SwitchResGroupOnSegment(const char *buf, int len)
 		{
 			Assert(prevSlot != NULL);
 			detachFromSlot(prevSharedInfo, prevSlot, procInfo);
-			groupReleaseMemQuota(prevSharedInfo, prevSlot, &prevSharedInfo->caps);
+			groupReleaseMemQuota(prevSharedInfo, prevSlot);
 		}
 
 		groupAcquireMemQuota(sharedInfo, &slot->caps);

@@ -3,7 +3,12 @@
  * ftsprobe.c
  *	  Implementation of segment probing interface
  *
- * Copyright (c) 2006-2011, Greenplum inc
+ * Portions Copyright (c) 2006-2011, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/fts/ftsprobe.c
  *
  *-------------------------------------------------------------------------
  */
@@ -42,7 +47,11 @@
  * CONSTANTS
  */
 
+#ifdef USE_SEGWALREP
+#define PROBE_RESPONSE_LEN  (4)         /* size of segment response message */
+#else
 #define PROBE_RESPONSE_LEN  (20)         /* size of segment response message */
+#endif
 #define PROBE_ERR_MSG_LEN   (256)        /* length of error message for errno */
 
 /*
@@ -699,10 +708,12 @@ probeProcessResponse(ProbeConnectionInfo *probeInfo)
 {
 	Assert(probeInfo->segmentStatus == PROBE_DEAD);
 
+#ifndef USE_SEGWALREP
 	PrimaryMirrorMode role;
 	SegmentState_e state;
 	DataState_e mode;
 	FaultType_e fault;
+#endif
 	uint32 bufInt;
 
 	memcpy(&bufInt, probeInfo->response, 4);
@@ -712,6 +723,18 @@ probeProcessResponse(ProbeConnectionInfo *probeInfo)
 		return false;
 	}
 
+#ifdef USE_SEGWALREP
+	/*
+	 * This is where the message sent by the primary through
+	 * sendPrimaryMirrorTransitionQuery is processed. If the message is
+	 * changed, this processing should be updated to reflect the change along
+	 * with the PROBE_RESPONSE_LEN.
+	 */
+	probeInfo->segmentStatus = PROBE_ALIVE;
+
+	write_log("FTS: segment (dbid=%d, content=%d) reported segmentstatus %x to the prober.",
+			  probeInfo->dbId, probeInfo->segmentId, probeInfo->segmentStatus);
+#else
 	memcpy(&bufInt, probeInfo->response + 4, sizeof(bufInt));
 	role = (PrimaryMirrorMode)ntohl(bufInt);
 
@@ -786,6 +809,7 @@ probeProcessResponse(ProbeConnectionInfo *probeInfo)
 		write_log("FTS: segment (dbid=%d, content=%d) reported fault %s segmentstatus %x to the prober.",
 				  probeInfo->dbId, probeInfo->segmentId, getFaultTypeLabel(fault), probeInfo->segmentStatus);
 	}
+#endif
 
 	return true;
 }

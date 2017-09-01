@@ -6,6 +6,7 @@
  * and merge with upstream.
  *
  * Portions Copyright (c) 2005-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Copyright (c) 2000-2009, PostgreSQL Global Development Group
  *
  * IDENTIFICATION
@@ -3314,7 +3315,7 @@ struct config_bool ConfigureNamesBool_gp[] =
 		{"gp_enable_segment_copy_checking", PGC_USERSET, CUSTOM_OPTIONS,
 			gettext_noop("Enable check the distribution key restriction on segment for command \"COPY FROM ON SEGMENT\"."),
 			NULL,
-			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE
+			GUC_NO_SHOW_ALL | GUC_NOT_IN_SAMPLE | GUC_GPDB_ADDOPT
 		},
 		&gp_enable_segment_copy_checking,
 		true, NULL, NULL

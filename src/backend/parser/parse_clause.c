@@ -4,6 +4,7 @@
  *	  handle clauses in parser
  *
  * Portions Copyright (c) 2006-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2008, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -689,13 +690,10 @@ transformWindowClause(ParseState *pstate, Query *qry)
 				nf->lead = e;
 			}
 
-			ParseCallbackState pcbstate;
-			setup_parser_errposition_callback(&pcbstate, pstate, newspec->location);
 			transformWindowFrameEdge(pstate, nf->trail, newspec, qry,
 									 nf->is_rows);
 			transformWindowFrameEdge(pstate, nf->lead, newspec, qry,
 									 nf->is_rows);
-			cancel_parser_errposition_callback(&pcbstate);
 			newspec->frame = nf;
 		}
 

@@ -4,6 +4,7 @@
  *	  buffer manager interface routines
  *
  * Portions Copyright (c) 2006-2009, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Portions Copyright (c) 1996-2009, PostgreSQL Global Development Group
  * Portions Copyright (c) 1994, Regents of the University of California
  *
@@ -2131,7 +2132,8 @@ BufferGetLSNAtomic(Buffer buffer)
 	/* Make sure we've got a real buffer, and that we hold a pin on it. */
 	Assert(BufferIsValid(buffer));
 	Assert(BufferIsPinned(buffer));
-
+	/* Caller should hold share lock on the buffer contents. */
+	Assert(LWLockHeldByMe(bufHdr->content_lock));
 	LockBufHdr(bufHdr);
 	lsn = PageGetLSN(page);
 	UnlockBufHdr(bufHdr);

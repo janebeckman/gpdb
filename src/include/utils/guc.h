@@ -5,6 +5,7 @@
  * backend/utils/misc/guc-file.l
  *
  * Portions Copyright (c) 2007-2010, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
  * Copyright (c) 2000-2008, PostgreSQL Global Development Group
  * Written by Peter Eisentraut <peter_e@gmx.net>.
  *
@@ -656,13 +657,7 @@ extern int	GUC_complaint_elevel(GucSource source);
 
 extern void pg_timezone_abbrev_initialize(void);
 
-extern int  gp_guc_list_show(struct StringInfoData    *buf,
-                              const char               *pfx,
-                              const char               *fmt,
-                              GucSource                 excluding,
-                              List                     *guclist)
-                /* This extension allows gcc to check the format string */
-                __attribute__((__format__(__printf__, 3, 0)));
+extern char *gp_guc_list_show(GucSource excluding, List *guclist);
 
 extern struct config_generic *find_option(const char *name,
 				bool create_placeholders, int elevel);

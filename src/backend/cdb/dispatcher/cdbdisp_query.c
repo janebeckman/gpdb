@@ -4,7 +4,12 @@
  *	  Functions to dispatch command string or plan to QExecutors.
  *
  *
- * Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/cdb/dispatcher/cdbdisp_query.c
  *
  *-------------------------------------------------------------------------
  */
@@ -997,7 +1002,7 @@ buildGpQueryString(struct CdbDispatcherState *ds,
 	char zero = 0;
 
 	initStringInfo(&resgroupInfo);
-	if (IsResGroupEnabled())
+	if (IsResGroupActivated())
 		SerializeResGroupInfo(&resgroupInfo);
 
 	total_query_len = 1 /* 'M' */ +

@@ -4,7 +4,12 @@
  * cdbgang_thread.c
  *	  Functions for multi-thread implementation of creating gang.
  *
- * Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2005-2008, Greenplum inc
+ * Portions Copyright (c) 2012-Present Pivotal Software, Inc.
+ *
+ *
+ * IDENTIFICATION
+ *	    src/backend/cdb/dispatcher/cdbgang_thread.c
  *
  *-------------------------------------------------------------------------
  */
@@ -21,6 +26,7 @@
 #include "cdb/cdbgang.h"
 #include "cdb/cdbvars.h"
 #include "miscadmin.h"
+#include "utils/resowner.h"
 /*
  * Parameter structure for the DoConnect threads
  */
