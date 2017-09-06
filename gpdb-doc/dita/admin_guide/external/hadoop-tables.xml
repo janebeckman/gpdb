@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_u14_wtd_dbb">
+  <title>Using Hadoop Distributed File System (HDFS) Tables</title>
+  <body>
+    <p>Greenplum Database leverages the parallel architecture of a Hadoop Distributed File System to
+      read and write data files efficiently using the <codeph>gphdfs</codeph> protocol or PXF
+      framework. <note>PXF is an experimental feature and is not recommended for production
+        use.</note></p>
+  </body>
+</topic>
