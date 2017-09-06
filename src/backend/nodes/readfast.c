@@ -228,7 +228,7 @@ _readQuery(void)
 	READ_INT_FIELD(resultRelation);
 	READ_NODE_FIELD(intoClause);
 	READ_BOOL_FIELD(hasAggs);
-	READ_BOOL_FIELD(hasWindFuncs);
+	READ_BOOL_FIELD(hasWindowFuncs);
 	READ_BOOL_FIELD(hasSubLinks);
 	READ_BOOL_FIELD(hasDynamicFunctions);
 	READ_NODE_FIELD(rtable);
@@ -665,29 +665,6 @@ _readUpdateStmt(void)
 	READ_NODE_FIELD(targetList);
 	READ_NODE_FIELD(whereClause);
 	READ_NODE_FIELD(returningList);
-	READ_DONE();
-}
-
-/*
- * _readFuncCall
- *
- * This parsenode is transformed during parse_analyze.
- * It not stored in views = no upgrade implication for changes
- */
-static FuncCall *
-_readFuncCall(void)
-{
-	READ_LOCALS(FuncCall);
-
-	READ_NODE_FIELD(funcname);
-	READ_NODE_FIELD(args);
-    READ_NODE_FIELD(agg_order);
-	READ_BOOL_FIELD(agg_star);
-	READ_BOOL_FIELD(agg_distinct);
-	READ_BOOL_FIELD(func_variadic);
-	READ_NODE_FIELD(over);
-	READ_INT_FIELD(location);
-	READ_NODE_FIELD(agg_filter);
 	READ_DONE();
 }
 

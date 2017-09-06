@@ -16,6 +16,7 @@
          </li>
       </ul>
       <p>For information about importing custom data from HDFS, see <xref
-            href="g-reading-and-writing-custom-formatted-hdfs-data.xml#topic25"/>.</p>
+            href="../../external/g-reading-and-writing-custom-formatted-hdfs-data.xml#topic25"
+         />.</p>
    </body>
 </topic>
