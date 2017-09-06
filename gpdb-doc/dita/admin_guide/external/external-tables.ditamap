@@ -11,10 +11,7 @@
   <topicref href="g-s3-protocol.xml"/>
   <topicref href="g-accessing-ext-files-custom-protocol.xml"/>
   <topicref href="g-handling-errors-ext-table-data.xml"/>
-  <topicref href="g-creating-and-using-web-external-tables.xml" type="topic">
-   <topicref href="g-command-based-web-external-tables.xml" type="topic"/>
-   <topicref href="g-url-based-web-external-tables.xml" type="topic"/>
-  </topicref>
+  <topicref href="g-creating-and-using-web-external-tables.xml" type="topic"/>
   <topicref href="g-creating-external-tables---examples.xml" type="topic">
    <topicref href="g-example-1-single-gpfdist-instance-on-single-nic-machine.xml"/>
    <topicref href="g-example-2-multiple-gpfdist-instances.xml" type="topic"/>
