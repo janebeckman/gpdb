@@ -41,13 +41,8 @@
          </ul>
          <fig id="du165882">
             <title>External Tables Using Multiple gpfdist Instances with Multiple NICs</title>
-<<<<<<< HEAD
             <image href="../graphics/ext_tables.jpg" placement="break" width="467px"
                height="282px" id="image_ukb_plg_bbb"/>
-=======
-            <image href="../graphics/ext_tables.jpg" placement="break" width="467px" height="282px"
-               id="image_ukb_plg_bbb"/>
->>>>>>> load-unload-reorg
          </fig>
          <note type="note">Use pipes (|) to separate formatted text when you submit files to
                <cmdname>gpfdist</cmdname>. Greenplum Database encloses comma-separated text strings
