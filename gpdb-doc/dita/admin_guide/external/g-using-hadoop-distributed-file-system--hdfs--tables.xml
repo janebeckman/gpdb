@@ -20,10 +20,5 @@
       <p otherprops="op-print">For information about  using Greenplum Database external tables with
          Amazon EMR when Greenplum Database is installed on Amazon Web Services (AWS), also see
             <xref href="g-hdfs-emr-config.xml#amazon-emr"/>.</p>
-      <p otherprops="op-print">For HDFS, Greenplum Database supports these additional HDFS-specific
-         file formats:<ul id="ul_rvl_tnk_bt">
-            <li><xref href="g-hdfs-avro-format.xml#topic_fstrm">Avro File Format</xref></li>
-            <li><xref href="g-hdfs-parquet-format.xml#topic_fstrm">Parquet File Format</xref></li>
-         </ul></p>
    </body>
 </topic>
