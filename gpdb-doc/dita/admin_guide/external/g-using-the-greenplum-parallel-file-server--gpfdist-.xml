@@ -3,9 +3,10 @@
   PUBLIC "-//OASIS//DTD DITA Composite//EN" "ditabase.dtd">
 <topic id="topic13">
    <title>Using the Greenplum Parallel File Server (gpfdist)</title>
+   <shortdesc>The <cmdname>gpfdist</cmdname> protocol provides the best performance and is the
+      easiest to set up. <cmdname>gpfdist</cmdname> ensures optimum use of all segments in your
+      Greenplum Database system for external table reads.</shortdesc>
    <body>
-      <p>The <cmdname>gpfdist</cmdname> protocol provides the best performance and is the easiest to
-         set up. <cmdname>gpfdist</cmdname> ensures optimum use of all segments in your Greenplum Database system for external table reads.</p>
       <p>This topic describes the setup and management tasks for using <cmdname>gpfdist</cmdname>
          with external tables.</p>
       <ul id="ul_krw_tmg_bbb">
