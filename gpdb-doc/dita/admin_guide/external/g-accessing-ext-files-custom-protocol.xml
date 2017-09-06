@@ -9,6 +9,7 @@
     <p>Creating a custom protocol requires that you implement a set of C functions with specified
       interfaces, declare the functions in Greenplum Database, and then use the
         <codeph>CREATE TRUSTED PROTOCOL</codeph> command to enable the protocol in the database.</p>
-    <p>See <xref href="g-example-custom-data-access-protocol.xml#topic103"/> for an example.</p>
+    <p>See <xref href="../load/topics/g-example-custom-data-access-protocol.xml#topic103"/> for an
+      example.</p>
   </body>
 </topic>

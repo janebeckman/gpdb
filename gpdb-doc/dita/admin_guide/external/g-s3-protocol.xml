@@ -131,7 +131,7 @@
          <note id="s3-prefix-note">Although the <varname>S3_prefix</varname> is an optional part of
             the syntax, you should always include an S3 prefix for both writable and read-only S3
             tables to separate datasets as part of the <codeph><xref
-                  href="../../../ref_guide/sql_commands/CREATE_EXTERNAL_TABLE.xml#topic1">CREATE
+                  href="../../ref_guide/sql_commands/CREATE_EXTERNAL_TABLE.xml#topic1">CREATE
                   EXTERNAL TABLE</xref></codeph> syntax.</note>
          <p>For writable S3 tables, the <codeph>s3</codeph> protocol URL specifies the endpoint and
             bucket name where Greenplum Database uploads data files for the table. The S3 bucket
@@ -436,8 +436,7 @@ chunksize = 67108864</codeblock></p>
                         <codeph>socks_proxy</codeph> (and the environment variables
                         <codeph>all_proxy</codeph> and <codeph>no_proxy</codeph>). The environment
                      variable that S3 uses depends on the protocol. For information about the
-                     environment variables, see <xref
-                        href="../../../admin_guide/load/topics/g-s3-protocol.xml#amazon-emr/s3_proxy"
+                     environment variables, see <xref href="g-s3-protocol.xml#amazon-emr/s3_proxy"
                         format="dita" scope="peer">s3 Protocol Proxy Support</xref><ph
                         otherprops="op-print"> in the <cite>Greenplum Database Administrator
                            Guide</cite></ph>.</pd>
@@ -513,7 +512,7 @@ chunksize = 67108864</codeblock></p>
                      chunksize</codeph> memory on each segment host when uploading or downloading S3
                   files. Consider this <codeph>s3</codeph> protocol memory requirement when you
                   configure overall Greenplum Database memory, and increase the value of <xref
-                     href="../../../ref_guide/config_params/guc-list.xml#gp_vmem_protect_limit"
+                     href="../../ref_guide/config_params/guc-list.xml#gp_vmem_protect_limit"
                      >gp_vmem_protect_limit</xref> as necessary.</ph>
             </note>
          </sectiondiv>
