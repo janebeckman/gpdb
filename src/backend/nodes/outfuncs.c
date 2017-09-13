@@ -293,6 +293,7 @@ _outPlannedStmt(StringInfo str, PlannedStmt *node)
 	WRITE_ENUM_FIELD(planGen, PlanGenerator);
 	WRITE_BOOL_FIELD(canSetTag);
 	WRITE_BOOL_FIELD(transientPlan);
+	WRITE_BOOL_FIELD(oneoffPlan);
 	WRITE_NODE_FIELD(planTree);
 	WRITE_NODE_FIELD(rtable);
 	WRITE_NODE_FIELD(resultRelations);
@@ -1257,8 +1258,10 @@ _outWindowRef(StringInfo str, WindowRef *node)
 	WRITE_OID_FIELD(winfnoid);
 	WRITE_OID_FIELD(restype);
 	WRITE_NODE_FIELD(args);
+	WRITE_UINT_FIELD(winref);
+	WRITE_BOOL_FIELD(winstar);
+	WRITE_BOOL_FIELD(winagg);
 	WRITE_BOOL_FIELD(windistinct);
-	WRITE_UINT_FIELD(winspec);
 	WRITE_UINT_FIELD(winindex);
 	WRITE_ENUM_FIELD(winstage, WinStage);
 	WRITE_UINT_FIELD(winlevel);
@@ -1979,6 +1982,7 @@ _outPlannerGlobal(StringInfo str, PlannerGlobal *node)
 	WRITE_NODE_FIELD(relationOids);
 	WRITE_NODE_FIELD(invalItems);
 	WRITE_BOOL_FIELD(transientPlan);
+	WRITE_BOOL_FIELD(oneoffPlan);
 	WRITE_NODE_FIELD(share.motStack);
 	WRITE_NODE_FIELD(share.qdShares);
 	WRITE_NODE_FIELD(share.qdSlices);
@@ -3059,6 +3063,7 @@ _outCopyStmt(StringInfo str, CopyStmt *node)
 	WRITE_NODE_FIELD(relation);
 	WRITE_NODE_FIELD(attlist);
 	WRITE_BOOL_FIELD(is_from);
+	WRITE_BOOL_FIELD(is_program);
 	WRITE_BOOL_FIELD(skip_ext_partition);
 	WRITE_STRING_FIELD(filename);
 	WRITE_NODE_FIELD(options);
@@ -3500,7 +3505,6 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_NODE_FIELD(scatterClause);
 	WRITE_NODE_FIELD(cteList);
 	WRITE_BOOL_FIELD(hasRecursive);
-	WRITE_BOOL_FIELD(hasModifyingCTE);
 	WRITE_NODE_FIELD(limitOffset);
 	WRITE_NODE_FIELD(limitCount);
 	WRITE_NODE_FIELD(rowMarks);
@@ -3560,19 +3564,6 @@ _outGroupId(StringInfo str, GroupId *node __attribute__((unused)))
 }
 
 static void
-_outWindowSpec(StringInfo str, WindowSpec *node)
-{
-	WRITE_NODE_TYPE("WINDOWSPEC");
-
-	WRITE_STRING_FIELD(name);
-	WRITE_STRING_FIELD(parent);
-	WRITE_NODE_FIELD(partition);
-	WRITE_NODE_FIELD(order);
-	WRITE_NODE_FIELD(frame);
-	WRITE_LOCATION_FIELD(location);
-}
-
-static void
 _outWindowFrame(StringInfo str, WindowFrame *node)
 {
 	WRITE_NODE_TYPE("WINDOWFRAME");
@@ -3581,7 +3572,6 @@ _outWindowFrame(StringInfo str, WindowFrame *node)
 	WRITE_BOOL_FIELD(is_between);
 	WRITE_NODE_FIELD(trail);
 	WRITE_NODE_FIELD(lead);
-	WRITE_ENUM_FIELD(exclude, WindowExclusion);
 }
 
 static void
@@ -3606,6 +3596,21 @@ _outPercentileExpr(StringInfo str, PercentileExpr *node)
 	WRITE_NODE_FIELD(pcExpr);
 	WRITE_NODE_FIELD(tcExpr);
 	WRITE_LOCATION_FIELD(location);
+}
+
+static void
+_outWindowClause(StringInfo str, WindowClause *node)
+{
+	WRITE_NODE_TYPE("WINDOWCLAUSE");
+
+	WRITE_STRING_FIELD(name);
+	WRITE_STRING_FIELD(refname);
+	WRITE_NODE_FIELD(partitionClause);
+	WRITE_NODE_FIELD(orderClause);
+	WRITE_INT_FIELD(frameOptions);
+	WRITE_UINT_FIELD(winref);
+	WRITE_NODE_FIELD(frame);
+	WRITE_BOOL_FIELD(copiedOrder);
 }
 
 static void
@@ -3919,6 +3924,21 @@ _outSortBy(StringInfo str, SortBy *node)
 }
 
 #ifndef COMPILING_BINARY_FUNCS
+static void
+_outWindowDef(StringInfo str, WindowDef *node)
+{
+	WRITE_NODE_TYPE("WINDOWDEF");
+
+	WRITE_STRING_FIELD(name);
+	WRITE_STRING_FIELD(refname);
+	WRITE_NODE_FIELD(partitionClause);
+	WRITE_NODE_FIELD(orderClause);
+	WRITE_INT_FIELD(frameOptions);
+	WRITE_NODE_FIELD(startOffset);
+	WRITE_NODE_FIELD(endOffset);
+	WRITE_LOCATION_FIELD(location);
+}
+
 static void
 _outRangeSubselect(StringInfo str, RangeSubselect *node)
 {
@@ -4987,6 +5007,9 @@ _outNode(StringInfo str, void *obj)
 			case T_SortBy:
 				_outSortBy(str, obj);
 				break;
+			case T_WindowDef:
+				_outWindowDef(str, obj);
+				break;
 			case T_TypeCast:
 				_outTypeCast(str, obj);
 				break;
@@ -5014,9 +5037,6 @@ _outNode(StringInfo str, void *obj)
 			case T_GroupId:
 				_outGroupId(str, obj);
 				break;
-			case T_WindowSpec:
-				_outWindowSpec(str, obj);
-				break;
 			case T_WindowFrame:
 				_outWindowFrame(str, obj);
 				break;
@@ -5025,6 +5045,9 @@ _outNode(StringInfo str, void *obj)
 				break;
 			case T_PercentileExpr:
 				_outPercentileExpr(str, obj);
+				break;
+			case T_WindowClause:
+				_outWindowClause(str, obj);
 				break;
 			case T_RowMarkClause:
 				_outRowMarkClause(str, obj);

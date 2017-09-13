@@ -12,6 +12,7 @@ groups:
   - icw_gporca_centos7
   - icw_gporca_sles11
   - icw_planner_ictcp_centos6
+  - mpp_resource_group
   - MU_check_centos
   - MM_gpperfmon
   - MM_gpcheck
@@ -70,7 +71,9 @@ groups:
   jobs:
   - cs_walrep_1
   - cs_walrep_2
+  - mpp_resource_group
   - DPM_backup-restore
+  - MM_gpcheckcat
   - MM_gppkg
   - MM_gprecoverseg
   - DPM_backup_43_restore_5
@@ -451,6 +454,14 @@ resources:
     start: 6:00 AM
     stop: 7:00 AM
 
+- name: reduced-frequency-trigger
+  type: time
+  source:
+    location: America/Los_Angeles
+    days: [Sunday, Monday, Tuesday, Wednesday, Thursday, Friday]
+    start: {{reduced-frequency-trigger-start}}
+    stop: {{reduced-frequency-trigger-stop}}
+
 ## ======================================================================
 ## reusable anchors
 ## ======================================================================
@@ -501,8 +512,10 @@ jobs:
 - name: compile_gpdb_centos6
   plan:
   - aggregate:
+    - get: reduced-frequency-trigger
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src
-      trigger: true
+      trigger: {{gpdb_src-trigger-flag}}
     - get: gpaddon_src
     - get: pxf_src
       trigger: true
@@ -534,8 +547,10 @@ jobs:
   public: true
   plan:
   - aggregate:
+    - get: reduced-frequency-trigger
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src
-      trigger: true
+      trigger: {{gpdb_src-trigger-flag}}
     - get: centos-gpdb-dev-6
   - task: compile_gpdb
     file: gpdb_src/concourse/tasks/compile_gpdb_open_source.yml
@@ -546,8 +561,10 @@ jobs:
 - name: compile_gpdb_centos7
   plan:
   - aggregate:
+    - get: reduced-frequency-trigger
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src
-      trigger: true
+      trigger: {{gpdb_src-trigger-flag}}
     - get: gpaddon_src
     - get: pxf_src
       trigger: true
@@ -578,8 +595,10 @@ jobs:
 - name: compile_gpdb_sles11
   plan:
   - aggregate:
+    - get: reduced-frequency-trigger
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src
-      trigger: true
+      trigger: {{gpdb_src-trigger-flag}}
     - get: gpaddon_src
     - get: pxf_src
     - get: sles-gpdb-dev-11-beta
@@ -608,8 +627,10 @@ jobs:
 - name: compile_gpdb_windows_cl
   plan:
   - aggregate:
+    - get: reduced-frequency-trigger
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src
-      trigger: true
+      trigger: {{gpdb_src-trigger-flag}}
     - get: gpaddon_src
     - get: pxf_src
     - get: centos-mingw
@@ -763,6 +784,33 @@ jobs:
       BLDWRAP_POSTGRES_CONF_ADDONS: "fsync=off"
       TEST_OS: centos
 
+- name: mpp_resource_group
+  plan:
+  - aggregate:
+    - get: gpdb_src
+      passed: [compile_gpdb_centos6]
+    - get: bin_gpdb
+      resource: bin_gpdb_centos6
+      passed: [compile_gpdb_centos6]
+      trigger: true
+    - get: ccp_src
+    - get: centos-gpdb-dev-6
+  - put: terraform
+    params:
+      <<: *ccp_create_params
+  - task: gen_cluster
+    file: ccp_src/ci/tasks/gen_cluster.yml
+    input_mapping:
+      gpdb_binary: bin_gpdb
+    on_failure:
+      <<: *ccp_destroy
+  - task: run_tests
+    file: gpdb_src/concourse/tasks/ic_gpdb_resgroup.yml
+    image: centos-gpdb-dev-6
+    on_failure:
+      <<: *debug_sleep
+  - *ccp_destroy
+
 - name: MU_check_centos
   plan:
   - aggregate:
@@ -890,7 +938,7 @@ jobs:
 - name: DPM_backup_43_restore_5
   plan:
   - get: nightly-trigger
-    trigger: true
+    trigger: {{nightly-trigger-flag}}
   - aggregate:
     - get: gpdb_src
       params:
@@ -900,6 +948,7 @@ jobs:
     - get: gpdb_binary
       resource: bin_gpdb_centos6
       passed: [compile_gpdb_centos6]
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb4_binary
       resource: bin_gpdb4_centos6
     - get: ccp_src
@@ -1416,12 +1465,13 @@ jobs:
 - name: DPM_netbackup77
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: &post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: &post_packaging_gets_trigger_based_on_flag
     - get: gpdb_src
       params: {submodules: none}
       tags: ["gpdb5-pulse-worker"]
       passed: [gpdb_rc_packaging_centos]
+      trigger: {{reduced-frequency-trigger-flag}}
     - get: gpdb_src_tinc_tarball
       tags: ["gpdb5-pulse-worker"]
       passed: [gpdb_rc_packaging_centos]
@@ -1456,8 +1506,8 @@ jobs:
 - name: DPM_backup-restore-ddboost
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: *post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: *post_packaging_gets_trigger_based_on_flag
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1475,38 +1525,33 @@ jobs:
 
 - name: MM_gpcheckcat
   plan:
-  - aggregate: &post_packaging_gets_trigger_true
+  - aggregate:
     - get: gpdb_src
-      params: {submodules: none}
-      tags: ["gpdb5-pulse-worker"]
-      passed: [gpdb_rc_packaging_centos]
+      params:
+        submodules:
+        - gpMgmt/bin/pythonSrc/ext
+      passed: [compile_gpdb_centos6]
+    - get: gpdb_binary
+      resource: bin_gpdb_centos6
+      passed: [compile_gpdb_centos6]
       trigger: true
-    - get: gpdb_src_tinc_tarball
-      tags: ["gpdb5-pulse-worker"]
-      passed: [gpdb_rc_packaging_centos]
-    - get: installer_rhel6_gpdb_rc
-      tags: ["gpdb5-pulse-worker"]
-      passed: [gpdb_rc_packaging_centos]
-    - get: qautils_rhel6_tarball
-      tags: ["gpdb5-pulse-worker"]
-      passed: [gpdb_rc_packaging_centos]
-    - get: gpdb_src_behave_tarball
-      tags: ["gpdb5-pulse-worker"]
-      passed: [gpdb_rc_packaging_centos]
-  - task: trigger_pulse
-    tags: ["gpdb5-pulse-worker"]
-    file: gpdb_src/ci/pulse/api/trigger_pulse.yml
-    input_mapping: *input_mappings
+    - get: ccp_src
+    - get: centos-gpdb-dev-6
+  - put: terraform
     params:
-      <<: *pulse_properties
-      PULSE_PROJECT_NAME: "GPDB-BehaveGPCheckcat"
-  - task: monitor_pulse
-    attempts: 2
-    tags: ["gpdb5-pulse-worker"]
-    file: gpdb_src/ci/pulse/api/monitor_pulse.yml
+      <<: *ccp_create_params
+  - task: gen_cluster
+    file: ccp_src/ci/tasks/gen_cluster.yml
+    on_failure:
+      <<: *ccp_destroy
+  - task: run_tests
+    file: gpdb_src/concourse/tasks/run_behave.yml
+    image: centos-gpdb-dev-6
     params:
-      <<: *pulse_properties
-      PULSE_PROJECT_NAME: "GPDB-BehaveGPCheckcat"
+      BEHAVE_FLAGS: --tags=gpcheckcat
+    on_failure:
+      <<: *debug_sleep
+  - *ccp_destroy
 
 - name: MM_gprecoverseg
   plan:
@@ -1541,8 +1586,8 @@ jobs:
 - name: MM_gpexpand
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: *post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: *post_packaging_gets_trigger_based_on_flag
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1561,8 +1606,8 @@ jobs:
 - name: DPM_gptransfer-43x-to-5x
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: *post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: *post_packaging_gets_trigger_based_on_flag
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1580,7 +1625,24 @@ jobs:
 
 - name: DPM_gptransfer-5x-to-5x
   plan:
-  - aggregate: *post_packaging_gets_trigger_true
+  - aggregate: &post_packaging_gets_trigger_true
+    - get: gpdb_src
+      params: {submodules: none}
+      tags: ["gpdb5-pulse-worker"]
+      passed: [gpdb_rc_packaging_centos]
+      trigger: true
+    - get: gpdb_src_tinc_tarball
+      tags: ["gpdb5-pulse-worker"]
+      passed: [gpdb_rc_packaging_centos]
+    - get: installer_rhel6_gpdb_rc
+      tags: ["gpdb5-pulse-worker"]
+      passed: [gpdb_rc_packaging_centos]
+    - get: qautils_rhel6_tarball
+      tags: ["gpdb5-pulse-worker"]
+      passed: [gpdb_rc_packaging_centos]
+    - get: gpdb_src_behave_tarball
+      tags: ["gpdb5-pulse-worker"]
+      passed: [gpdb_rc_packaging_centos]
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1636,8 +1698,8 @@ jobs:
 - name: cs-filerep-end-to-end
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: *post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: *post_packaging_gets_trigger_based_on_flag
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1656,8 +1718,8 @@ jobs:
 - name: cs-aoco-compression
   plan:
   - get: nightly-trigger
-    trigger: true
-  - aggregate: *post_packaging_gets_trigger_false
+    trigger: {{nightly-trigger-flag}}
+  - aggregate: *post_packaging_gets_trigger_based_on_flag
   - task: trigger_pulse
     tags: ["gpdb5-pulse-worker"]
     file: gpdb_src/ci/pulse/api/trigger_pulse.yml
@@ -1766,6 +1828,7 @@ jobs:
     - icw_gporca_centos7
     - icw_gporca_sles11
     - icw_planner_ictcp_centos6
+    - mpp_resource_group
     - MU_check_centos
     - MM_analyzedb
     - MM_gpinitsystem

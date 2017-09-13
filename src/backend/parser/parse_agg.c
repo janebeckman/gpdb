@@ -43,94 +43,63 @@ static void check_ungrouped_columns(Node *node, ParseState *pstate,
 						List *groupClauses, bool have_non_var_grouping);
 static bool check_ungrouped_columns_walker(Node *node,
 							   check_ungrouped_columns_context *context);
-static List *check_aggregate_ingroup(Node *grpcl, ParseState *pstate,
-						List *targetList, List *groupClauses);
 static List* get_groupclause_exprs(Node *grpcl, List *targetList);
 
-/*
- * Worker for transformAggregateCall() and transformWindowCall(). We need to
- * determine which query level the aggregate or function belongs to and
- * set that in the node's levelsup field. We also test some important rules:
- * aggregates cannot take aggregates or window functions are arguments.
- * Window functions can take aggregates as arguments but not window
- * functions.
- */
 
-static void
-check_call(ParseState *pstate, Node *call)
+/*
+ * transformAggregateCall -
+ *		Finish initial transformation of an aggregate call
+ *
+ * parse_func.c has recognized the function as an aggregate, and has set
+ * up all the fields of the Aggref except agglevelsup.  Here we must
+ * determine which query level the aggregate actually belongs to, set
+ * agglevelsup accordingly, and mark p_hasAggs true in the corresponding
+ * pstate level.
+ *
+ * GPDB: the passed-in aggorder list hasn't been transformed yet. We
+ * do it here.
+ */
+void
+transformAggregateCall(ParseState *pstate, Aggref *agg, List *agg_order)
 {
-	int			min_varlevel = -1;
-	bool		is_agg = IsA(call, Aggref);
+	int			min_varlevel;
 
 	/*
-	 * The call's level is the same as the level of the lowest-level
+	 * The aggregate's level is the same as the level of the lowest-level
 	 * variable or aggregate in its arguments; or if it contains no variables
 	 * at all, we presume it to be local.
 	 */
-	if (is_agg)
-		min_varlevel = find_minimum_var_level((Node *) ((Aggref *)call)->args);
-	else
-		min_varlevel = find_minimum_var_level((Node *)((WindowRef *)call)->args);
+	min_varlevel = find_minimum_var_level((Node *) agg->args);
 
 	/*
 	 * An aggregate can't directly contain another aggregate call of the same
-	 * level (though outer aggs are okay).	We can skip this check if we
+	 * level (though outer aggs are okay).  We can skip this check if we
 	 * didn't find any local vars or aggs.
 	 */
-	if (min_varlevel == 0 && is_agg)
+	if (min_varlevel == 0)
 	{
-		Aggref *agg = (Aggref *) call;
-
-		if (checkExprHasAggs((Node *) agg->args))
+		if (pstate->p_hasAggs &&
+			checkExprHasAggs((Node *) agg->args))
 			ereport(ERROR,
 					(errcode(ERRCODE_GROUPING_ERROR),
 					 errmsg("aggregate function calls cannot be nested"),
 					 parser_errposition(pstate,
 							   locate_agg_of_level((Node *) agg->args, 0))));
-
-		if (checkExprHasWindowFuncs((Node *) agg->args))
-			ereport(ERROR,
-					(errcode(ERRCODE_GROUPING_ERROR),
-					 errmsg("window functions may not be used as arguments to aggregates")));
 	}
 
-	/*
-	 * Window functions, on the other hand, may contain nested aggregates
-	 * but not nested window refs.
-	 */
-	if (min_varlevel == 0 && !is_agg)
-	{
-		if (checkExprHasWindowFuncs((Node *)((WindowRef *)call)->args))
-		{
-			ereport(ERROR,
-					(errcode(ERRCODE_GROUPING_ERROR),
-					 errmsg("cannot use window function as an argument to another window function")));
-		}
-	}
+	/* It can't contain window functions either */
+	if (pstate->p_hasWindowFuncs &&
+		checkExprHasWindowFuncs((Node *) agg->args))
+		ereport(ERROR,
+				(errcode(ERRCODE_GROUPING_ERROR),
+				 errmsg("aggregate function calls cannot contain window function calls"),
+				 parser_errposition(pstate,
+									locate_windowfunc((Node *) agg->args))));
 
 	if (min_varlevel < 0)
 		min_varlevel = 0;
+	agg->agglevelsup = min_varlevel;
 
-	if (is_agg)	
-		((Aggref *)call)->agglevelsup = min_varlevel;
-	
-	/* Mark the correct pstate as having aggregates */
-	while (min_varlevel-- > 0)
-		pstate = pstate->parentParseState;
-
-	if (is_agg)
-		pstate->p_hasAggs = true;
-	else 
-		pstate->p_hasWindowFuncs = true;
-}
-
-/*
- * transformAggregateCall -
- *		Finish initial transformation of an aggregate call
- */
-void
-transformAggregateCall(ParseState *pstate, Aggref *agg, List *agg_order)
-{
     /* 
      * Transform the aggregate order by, if any.
      *
@@ -175,42 +144,117 @@ transformAggregateCall(ParseState *pstate, Aggref *agg, List *agg_order)
         agg->aggorder = aggorder;
     }
 
-    /* shared code with window functions */
-	check_call(pstate, (Node *)agg);
+	/* Mark the correct pstate as having aggregates */
+	while (min_varlevel-- > 0)
+		pstate = pstate->parentParseState;
+	pstate->p_hasAggs = true;
 }
 
 void
 transformWindowFuncCall(ParseState *pstate, WindowRef *wind,
-						WindowSpec *over)
+						WindowDef *windef)
 {
-	int			winspec = 0;
-	ListCell   *over_lc;
+	char	   *name;
 
-	transformWindowSpec(pstate, over);
+	transformWindowDef(pstate, windef);
 
 	/*
-	 * Find if this "over" clause has already existed. If so,
-	 * We let the "winspec" for this WindowRef point to
-	 * the existing "over" clause. In this way, we will be able
-	 * to determine if two WindowRef nodes are actually equal,
-	 * see MPP-4268.
+	 * A window function call can't contain another one (but aggs are OK). XXX
+	 * is this required by spec, or just an unimplemented feature?
 	 */
-	foreach (over_lc, pstate->p_win_clauses)
+	if (pstate->p_hasWindowFuncs &&
+		checkExprHasWindowFuncs((Node *) wind->args))
+		ereport(ERROR,
+				(errcode(ERRCODE_WINDOWING_ERROR),
+				 errmsg("window function calls cannot be nested"),
+				 parser_errposition(pstate,
+								  locate_windowfunc((Node *) wind->args))));
+
+	/*
+	 * If the OVER clause just specifies a window name, find that WINDOW
+	 * clause (which had better be present).  Otherwise, try to match all the
+	 * properties of the OVER clause, and make a new entry in the p_windowdefs
+	 * list if no luck.
+	 *
+	 * In PostgreSQL, the syntax for this is "agg() OVER w". In GPDB, we also
+	 * accept "agg() OVER (w)", with the extra parens.
+	 */
+	if (windef->name)
 	{
-		Node	   *over1 = lfirst(over_lc);
+		name = windef->name;
 
-		if (equal(over1, over))
-		{
-			break;
-		}
-		winspec++;
+		Assert(windef->refname == NULL &&
+			   windef->partitionClause == NIL &&
+			   windef->orderClause == NIL &&
+			   windef->frameOptions == FRAMEOPTION_DEFAULTS);
 	}
+	else if (windef->refname &&
+			 !windef->partitionClause &&
+			 !windef->orderClause &&
+			 (windef->frameOptions & FRAMEOPTION_NONDEFAULT) == 0)
+	{
+		/* This is "agg() OVER (w)" */
+		name = windef->refname;
+	}
+	else
+		name = NULL;
 
-	if (over_lc == NULL)
-		pstate->p_win_clauses = lappend(pstate->p_win_clauses, over);
-	wind->winspec = winspec;
+	if (name)
+	{
+		Index		winref = 0;
+		ListCell   *lc;
 
-	check_call(pstate, (Node *)wind);
+		foreach(lc, pstate->p_windowdefs)
+		{
+			WindowDef  *refwin = (WindowDef *) lfirst(lc);
+
+			winref++;
+			if (refwin->name && strcmp(refwin->name, name) == 0)
+			{
+				wind->winref = winref;
+				break;
+			}
+		}
+		if (lc == NULL)			/* didn't find it? */
+			ereport(ERROR,
+					(errcode(ERRCODE_UNDEFINED_OBJECT),
+					 errmsg("window \"%s\" does not exist", windef->name),
+					 parser_errposition(pstate, windef->location)));
+	}
+	else
+	{
+		Index		winref = 0;
+		ListCell   *lc;
+
+		foreach(lc, pstate->p_windowdefs)
+		{
+			WindowDef  *refwin = (WindowDef *) lfirst(lc);
+
+			winref++;
+			if (refwin->refname && windef->refname &&
+				strcmp(refwin->refname, windef->refname) == 0)
+				 /* matched on refname */ ;
+			else if (!refwin->refname && !windef->refname)
+				 /* matched, no refname */ ;
+			else
+				continue;
+			if (equal(refwin->partitionClause, windef->partitionClause) &&
+				equal(refwin->orderClause, windef->orderClause) &&
+				refwin->frameOptions == windef->frameOptions &&
+				equal(refwin->startOffset, windef->startOffset) &&
+				equal(refwin->endOffset, windef->endOffset))
+			{
+				/* found a duplicate window specification */
+				wind->winref = winref;
+				break;
+			}
+		}
+		if (lc == NULL)			/* didn't find it? */
+		{
+			pstate->p_windowdefs = lappend(pstate->p_windowdefs, windef);
+			wind->winref = list_length(pstate->p_windowdefs);
+		}
+	}
 
 	pstate->p_hasWindowFuncs = true;
 }
@@ -254,7 +298,7 @@ parseCheckAggregates(ParseState *pstate, Query *qry)
 	}
 
 	/*
-	 * Aggregates and window functions must never appear in WHERE or 
+	 * Aggregates and window functions must never appear in WHERE or
 	 * JOIN/ON clauses.  Window function must never appear in HAVING
 	 * clauses.
 	 *
@@ -276,18 +320,6 @@ parseCheckAggregates(ParseState *pstate, Query *qry)
 				 parser_errposition(pstate,
 				 locate_agg_of_level((Node *) qry->jointree->fromlist, 0))));
 
-	if (checkExprHasWindowFuncs(qry->jointree->quals))
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("window functions not allowed in WHERE clause")));
-	if (checkExprHasWindowFuncs((Node *) qry->jointree->fromlist))
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("window functions not allowed in JOIN conditions")));
-	if (checkExprHasWindowFuncs((Node *) qry->havingQual))
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("window functions not allowed in HAVING conditions")));
 	/*
 	 * No aggregates allowed in GROUP BY clauses, either.
 	 *
@@ -296,8 +328,34 @@ parseCheckAggregates(ParseState *pstate, Query *qry)
 	 */
 	foreach(l, qry->groupClause)
 	{
-		groupClauses =
-			check_aggregate_ingroup((Node*)lfirst(l), pstate, qry->targetList, groupClauses);
+		Node	   *grpcl = lfirst(l);
+		List	   *exprs;
+		ListCell   *l2;
+
+		if (grpcl == NULL)
+			continue;
+
+		Assert(IsA(grpcl, GroupClause) || IsA(grpcl, GroupingClause));
+
+		exprs = get_groupclause_exprs(grpcl, qry->targetList);
+
+		foreach(l2, exprs)
+		{
+			Node	   *expr = (Node *) lfirst(l2);
+
+			if (checkExprHasAggs(expr))
+				ereport(ERROR,
+						(errcode(ERRCODE_GROUPING_ERROR),
+						 errmsg("aggregates not allowed in GROUP BY clause"),
+						 parser_errposition(pstate,
+											locate_agg_of_level(expr, 0))));
+
+			if (checkExprHasGroupExtFuncs(expr))
+				ereport(ERROR,
+						(errcode(ERRCODE_GROUPING_ERROR),
+						 errmsg("grouping() or group_id() not allowed in GROUP BY clause")));
+			groupClauses = lcons(expr, groupClauses);
+		}
 	}
 
 	/*
@@ -379,6 +437,59 @@ parseCheckAggregates(ParseState *pstate, Query *qry)
 									locate_agg_of_level((Node *) qry, 0))));
 }
 
+/*
+ * parseCheckWindowFuncs
+ *	Check for window functions where they shouldn't be.
+ *
+ *	We have to forbid window functions in WHERE, JOIN/ON, HAVING, GROUP BY,
+ *	and window specifications.  (Other clauses, such as RETURNING and LIMIT,
+ *	have already been checked.)  Transformation of all these clauses must
+ *	be completed already.
+ */
+void
+parseCheckWindowFuncs(ParseState *pstate, Query *qry)
+{
+	ListCell   *l;
+
+	/* This should only be called if we found window functions */
+	Assert(pstate->p_hasWindowFuncs);
+
+	if (checkExprHasWindowFuncs(qry->jointree->quals))
+		ereport(ERROR,
+				(errcode(ERRCODE_WINDOWING_ERROR),
+				 errmsg("window functions not allowed in WHERE clause"),
+				 parser_errposition(pstate,
+								  locate_windowfunc(qry->jointree->quals))));
+	if (checkExprHasWindowFuncs((Node *) qry->jointree->fromlist))
+		ereport(ERROR,
+				(errcode(ERRCODE_WINDOWING_ERROR),
+				 errmsg("window functions not allowed in JOIN conditions"),
+				 parser_errposition(pstate,
+					  locate_windowfunc((Node *) qry->jointree->fromlist))));
+	if (checkExprHasWindowFuncs(qry->havingQual))
+		ereport(ERROR,
+				(errcode(ERRCODE_WINDOWING_ERROR),
+				 errmsg("window functions not allowed in HAVING clause"),
+				 parser_errposition(pstate,
+									locate_windowfunc(qry->havingQual))));
+
+	foreach(l, qry->groupClause)
+	{
+		Node	   *grpcl = lfirst(l);
+		Node	   *expr;
+
+		Assert(IsA(grpcl, GroupClause) || IsA(grpcl, GroupingClause));
+
+		expr = (Node *) get_groupclause_exprs(grpcl, qry->targetList);
+
+		if (checkExprHasWindowFuncs(expr))
+			ereport(ERROR,
+					(errcode(ERRCODE_WINDOWING_ERROR),
+				   errmsg("window functions not allowed in GROUP BY clause"),
+					 parser_errposition(pstate,
+										locate_windowfunc(expr))));
+	}
+}
 
 /*
  * check_ungrouped_columns -
@@ -510,7 +621,6 @@ check_ungrouped_columns_walker(Node *node,
 					 errmsg("subquery uses ungrouped column \"%s.%s\" from outer query",
 							rte->eref->aliasname, attname),
 					 parser_errposition(context->pstate, var->location)));
-
 	}
 
 	if (IsA(node, Query))
@@ -732,56 +842,6 @@ get_groupclause_exprs(Node *grpcl, List *targetList)
 	return result;
 }
 
-/*
- * check_aggregate_ingroup -
- *     Check if any aggregates are appeared in a given GroupClause or
- *     GroupingClause. Report an error if this is the case.
- *
- * All relevant expressions defined in the given GroupClause or
- * GroupingClause are returned as a list.
- */
-static List *
-check_aggregate_ingroup(Node *grpcl, ParseState *pstate, List *targetList, List *groupClauses)
-{
-	List *exprs;
-	ListCell *l;
-	List *result = groupClauses;
-
-	if (grpcl == NULL)
-		return result;
-
-	Assert(IsA(grpcl, GroupClause) || IsA(grpcl, GroupingClause));
-
-	exprs = get_groupclause_exprs(grpcl, targetList);
-
-	foreach(l, exprs)
-	{
-		Node *expr = (Node*)lfirst(l);
-
-		if (expr == NULL)
-			continue;          /* probably cannot happen */
-		if (checkExprHasAggs(expr))
-			ereport(ERROR,
-					(errcode(ERRCODE_GROUPING_ERROR),
-					 errmsg("aggregates not allowed in GROUP BY clause"),
-					 parser_errposition(pstate,
-										locate_agg_of_level(expr, 0))));
-
-		if (checkExprHasGroupExtFuncs(expr))
-			ereport(ERROR,
-					(errcode(ERRCODE_GROUPING_ERROR),
-					 errmsg("grouping() or group_id() not allowed in GROUP BY clause")));
-
-		if (checkExprHasWindowFuncs(expr))
-			ereport(ERROR,
-					(errcode(ERRCODE_SYNTAX_ERROR),
-					 errmsg("window functions not allowed in GROUP BY clause")));
-		result = lcons(expr, result);
-	}
-
-	return result;
-}
-
 static bool
 checkExprHasGroupExtFuncs_walker(Node *node, checkHasGroupExtFuncs_context *context)
 {
@@ -837,104 +897,65 @@ checkExprHasGroupExtFuncs(Node *node)
 }
 
 /*
- * transformWindowSpec
+ * transformWindowDef
  *
- * Transform the expression inside a "WindowSpec" structure.
+ * Transform the expression inside a "WindowDef" structure.
  */
 void
-transformWindowSpec(ParseState *pstate, WindowSpec *spec)
+transformWindowDef(ParseState *pstate, WindowDef *spec)
 {
 	ListCell *lc2;
 	List *new = NIL;
 
-	foreach(lc2, spec->partition)
-		{
-			Node *n = (Node *)lfirst(lc2);
-			SortBy *sb;
+	foreach(lc2, spec->partitionClause)
+	{
+		Node *n = (Node *)lfirst(lc2);
+		SortBy *sb;
 
-			Assert(IsA(n, SortBy));
+		Assert(IsA(n, SortBy));
 
-			sb = (SortBy *)n;
+		sb = (SortBy *)n;
 
-			sb->node = (Node *)transformExpr(pstate, sb->node);
-			new = lappend(new, (void *)sb);
-		}
-	spec->partition = new;
+		sb->node = (Node *)transformExpr(pstate, sb->node);
+		new = lappend(new, (void *)sb);
+	}
+	spec->partitionClause = new;
 		
 	new = NIL;
-	foreach(lc2, spec->order)
-		{
-			Node *n = (Node *)lfirst(lc2);
-			SortBy *sb;
-
-			Assert(IsA(n, SortBy));
-
-			sb = (SortBy *)n;
-
-			sb->node = (Node *)transformExpr(pstate, sb->node);
-			new = lappend(new, (void *)sb);
-		}
-	spec->order = new;
-
-	if (spec->frame)
+	foreach(lc2, spec->orderClause)
 	{
-		WindowFrame *frame = spec->frame;
+		Node *n = (Node *) lfirst(lc2);
+		SortBy *sb;
 
-		if (frame->trail)
-			frame->trail->val = transformExpr(pstate, frame->trail->val);
-		if (frame->lead)
-			frame->lead->val = transformExpr(pstate, frame->lead->val);
+		Assert(IsA(n, SortBy));
 
+		sb = (SortBy *) n;
+
+		sb->node = (Node *) transformExpr(pstate, sb->node);
+		new = lappend(new, (void *) sb);
 	}
+	spec->orderClause = new;
+
+	if (spec->startOffset)
+		spec->startOffset = transformExpr(pstate, spec->startOffset);
+	if (spec->endOffset)
+		spec->endOffset = transformExpr(pstate, spec->endOffset);
 }
 
 /*
- * transformWindowSpecExprs
+ * transformWindowDefExprs
  *
- * Do a quick pre-process of WindowSpecs to transform expressions into
+ * Do a quick pre-process of WindowDefs to transform expressions into
  * something the rest of the parser is going to recognise.
  */
 void
-transformWindowSpecExprs(ParseState *pstate)
+transformWindowDefExprs(ParseState *pstate)
 {
 	ListCell *lc;
 
-	foreach(lc, pstate->p_win_clauses)
+	foreach(lc, pstate->p_windowdefs)
 	{
-		WindowSpec *s = (WindowSpec *)lfirst(lc);
-		transformWindowSpec(pstate, s);
+		WindowDef *wdef = (WindowDef *)lfirst(lc);
+		transformWindowDef(pstate, wdef);
 	}
-}
-
-/*
- * parseProcessWindFuncs
- *
- * Do some final checks on window functions and do post processing
- * on queries with grouping and window functions.
- */
-void
-parseProcessWindFuncs(ParseState *pstate, Query *qry)
-{
-	/* This should only be called if we found window functions */
-	Assert(pstate->p_hasWindowFuncs);
-
-	/*
-	 * Window functions must never appear in WHERE or 
-	 * JOIN/ON clauses.
-	 *
-	 * (Note this check should appear first to deliver an appropriate error
-	 * message; otherwise we are likely to complain about some innocent
-	 * variable in the target list, which is outright misleading if the
-	 * problem is in WHERE.)
-	 */
-
-	if (checkExprHasWindowFuncs(qry->jointree->quals))
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("window functions not allowed in WHERE clause")));
-/*	if (checkExprHasAggs((Node *) qry->jointree->fromlist)) */
-	if (checkExprHasWindowFuncs((Node *) qry->jointree->fromlist))
-		ereport(ERROR,
-				(errcode(ERRCODE_SYNTAX_ERROR),
-				 errmsg("window functions not allowed in JOIN conditions")));
 }

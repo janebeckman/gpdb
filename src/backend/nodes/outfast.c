@@ -314,6 +314,7 @@ _outPlannedStmt(StringInfo str, PlannedStmt *node)
 	WRITE_ENUM_FIELD(planGen, PlanGenerator);
 	WRITE_BOOL_FIELD(canSetTag);
 	WRITE_BOOL_FIELD(transientPlan);
+	WRITE_BOOL_FIELD(oneoffPlan);
 
 	WRITE_NODE_FIELD(planTree);
 
@@ -367,6 +368,7 @@ _outCopyStmt(StringInfo str, CopyStmt *node)
 	WRITE_NODE_FIELD(relation);
 	WRITE_NODE_FIELD(attlist);
 	WRITE_BOOL_FIELD(is_from);
+	WRITE_BOOL_FIELD(is_program);
 	WRITE_BOOL_FIELD(skip_ext_partition);
 	WRITE_STRING_FIELD(filename);
 	WRITE_NODE_FIELD(options);
@@ -909,7 +911,6 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_NODE_FIELD(scatterClause);
 	WRITE_NODE_FIELD(cteList);
 	WRITE_BOOL_FIELD(hasRecursive);
-	WRITE_BOOL_FIELD(hasModifyingCTE);
 	WRITE_NODE_FIELD(limitOffset);
 	WRITE_NODE_FIELD(limitCount);
 	WRITE_NODE_FIELD(rowMarks);
@@ -1855,9 +1856,6 @@ _outNode(StringInfo str, void *obj)
 			case T_GroupId:
 				_outGroupId(str, obj);
 				break;
-			case T_WindowSpec:
-				_outWindowSpec(str, obj);
-				break;
 			case T_WindowFrame:
 				_outWindowFrame(str, obj);
 				break;
@@ -1866,6 +1864,9 @@ _outNode(StringInfo str, void *obj)
 				break;
 			case T_PercentileExpr:
 				_outPercentileExpr(str, obj);
+				break;
+			case T_WindowClause:
+				_outWindowClause(str, obj);
 				break;
 			case T_RowMarkClause:
 				_outRowMarkClause(str, obj);

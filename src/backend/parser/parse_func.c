@@ -138,7 +138,7 @@ agg_is_ordered(Oid funcid)
 Node *
 ParseFuncOrColumn(ParseState *pstate, List *funcname, List *fargs,
 				  List *agg_order, bool agg_star, bool agg_distinct,
-				  bool func_variadic, bool is_column, WindowSpec *over,
+				  bool func_variadic, bool is_column, WindowDef *over,
 				  int location, Node *agg_filter)
 {
 	Oid			rettype;
@@ -624,6 +624,8 @@ ParseFuncOrColumn(ParseState *pstate, List *funcname, List *fargs,
 		winref->restype = rettype;
 		winref->args = fargs;
 		/* winref will be set by transformWindowFuncCall */
+		winref->winstar = agg_star;
+		winref->winagg = (fdresult == FUNCDETAIL_AGGREGATE);
 		winref->windistinct = agg_distinct;
 		winref->location = location;
 

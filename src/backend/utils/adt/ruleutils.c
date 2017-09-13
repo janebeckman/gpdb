@@ -9,7 +9,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/utils/adt/ruleutils.c,v 1.285 2008/10/04 21:56:54 tgl Exp $
+ *	  $PostgreSQL: pgsql/src/backend/utils/adt/ruleutils.c,v 1.287 2008/10/06 20:29:38 tgl Exp $
  *
  *-------------------------------------------------------------------------
  */
@@ -86,10 +86,12 @@ typedef struct
 {
 	StringInfo	buf;			/* output buffer to append to */
 	List	   *namespaces;		/* List of deparse_namespace nodes */
+	List	   *windowClause;	/* Current query level's WINDOW clause */
+	List	   *windowTList;	/* targetlist for resolving WINDOW clause */
+	List	   *groupClause;	/* Current query level's GROUP BY clause */
 	int			prettyFlags;	/* enabling of pretty-print functions */
 	int			indentLevel;	/* current indent level for prettyprint */
 	bool		varprefix;		/* TRUE to print prefixes on Vars */
-	Query	   *query;
 } deparse_context;
 
 /*
@@ -97,15 +99,19 @@ typedef struct
  * A Var having varlevelsup=N refers to the N'th item (counting from 0) in
  * the current context's namespaces list.
  *
- * The rangetable is the list of actual RTEs from the query tree.
+ * The rangetable is the list of actual RTEs from the query tree, and the
+ * cte list is the list of actual CTEs.
  *
  * For deparsing plan trees, we provide for outer and inner subplan nodes.
  * The tlists of these nodes are used to resolve OUTER and INNER varnos.
+ * Also, in the plan-tree case we don't have access to the parse-time CTE
+ * list, so we need a list of subplans instead.
  */
 typedef struct
 {
 	List	   *rtable;			/* List of RangeTblEntry nodes */
 	List	   *ctes;			/* List of CommonTableExpr nodes */
+	List	   *subplans;		/* List of subplans, in plan-tree case */
 	Plan	   *outer_plan;		/* OUTER subplan, or NULL if none */
 	Plan	   *inner_plan;		/* INNER subplan, or NULL if none */
 } deparse_namespace;
@@ -173,7 +179,10 @@ static void get_rule_groupingclause(GroupingClause *grp, List *tlist,
 static Node *get_rule_sortgroupclause(SortClause *srt, List *tlist,
 						 bool force_colno,
 						 deparse_context *context);
-static char *get_variable(Var *var, int levelsup, bool istoplevel,
+static void get_rule_windowspec(WindowClause *wc, List *targetList,
+					deparse_context *context);
+static void push_plan(deparse_namespace *dpns, Plan *subplan);
+static char *get_variable(Var *var, int levelsup, bool showstar,
 			 deparse_context *context);
 static RangeTblEntry *find_rte_by_refname(const char *refname,
 					deparse_context *context);
@@ -194,7 +203,6 @@ static void get_windowedge_expr(WindowFrameEdge *edge,
 								deparse_context *context);
 static void get_sortlist_expr(List *l, List *targetList, bool force_colno,
                               deparse_context *context, char *keyword_clause);
-static void get_windowspec_expr(WindowSpec *spec, deparse_context *context);
 static void get_windowref_expr(WindowRef *wref, deparse_context *context);
 static void get_coercion_expr(Node *arg, deparse_context *context,
 				  Oid resulttype, int32 resulttypmod,
@@ -1721,10 +1729,12 @@ deparse_expression_pretty(Node *expr, List *dpcontext,
 	initStringInfo(&buf);
 	context.buf = &buf;
 	context.namespaces = dpcontext;
+	context.groupClause = NIL;
+	context.windowClause = NIL;
+	context.windowTList = NIL;
 	context.varprefix = forceprefix;
 	context.prettyFlags = prettyFlags;
 	context.indentLevel = startIndent;
-	context.query = NULL;
 
 	get_rule_expr(expr, &context, showimplicit);
 
@@ -1758,6 +1768,7 @@ deparse_context_for(const char *aliasname, Oid relid)
 	/* Build one-element rtable */
 	dpns->rtable = list_make1(rte);
 	dpns->ctes = NIL;
+	dpns->subplans = NIL;
 	dpns->outer_plan = dpns->inner_plan = NULL;
 
 	/* Return a one-deep namespace stack */
@@ -1768,21 +1779,27 @@ deparse_context_for(const char *aliasname, Oid relid)
  * deparse_context_for_plan		- Build deparse context for a plan node
  *
  * When deparsing an expression in a Plan tree, we might have to resolve
- * OUTER or INNER references.  Pass the plan nodes whose targetlists define
- * such references, or NULL when none are expected.  (outer_plan and
- * inner_plan really ought to be declared as "Plan *", but we use "Node *"
- * to avoid having to include plannodes.h in builtins.h.)
+ * OUTER or INNER references.  To do this, the caller must provide the
+ * parent Plan node.  In the normal case of a join plan node, OUTER and
+ * INNER references can be resolved by drilling down into the left and
+ * right child plans.  A special case is that a nestloop inner indexscan
+ * might have OUTER Vars, but the outer side of the join is not a child
+ * plan node.  To handle such cases the outer plan node must be passed
+ * separately.  (Pass NULL for outer_plan otherwise.)
  *
- * As a special case, when deparsing a SubqueryScan plan, pass the subplan
- * as inner_plan (there won't be any regular innerPlan() in this case).
+ * Note: plan and outer_plan really ought to be declared as "Plan *", but
+ * we use "Node *" to avoid having to include plannodes.h in builtins.h.
  *
  * The plan's rangetable list must also be passed.  We actually prefer to use
- * the rangetable to resolve simple Vars, but the subplan inputs are needed
+ * the rangetable to resolve simple Vars, but the plan inputs are necessary
  * for Vars that reference expressions computed in subplan target lists.
+ *
+ * We also need the list of subplans associated with the Plan tree; this
+ * is for resolving references to CTE subplans.
  */
 List *
-deparse_context_for_plan(Node *outer_plan, Node *inner_plan,
-						 List *rtable)
+deparse_context_for_plan(Node *plan, Node *outer_plan,
+						 List *rtable, List *subplans)
 {
 	deparse_namespace *dpns;
 
@@ -1790,8 +1807,35 @@ deparse_context_for_plan(Node *outer_plan, Node *inner_plan,
 
 	dpns->rtable = rtable;
 	dpns->ctes = NIL;
-	dpns->outer_plan = (Plan *) outer_plan;
-	dpns->inner_plan = (Plan *) inner_plan;
+	dpns->subplans = subplans;
+	dpns->inner_plan = NULL;
+	/*
+	 * Set up outer_plan and inner_plan from the Plan node (this includes
+	 * various special cases for particular Plan types).
+	 */
+	push_plan(dpns, (Plan *) plan);
+
+	/*
+	 * If outer_plan is given, that overrides whatever we got from the plan.
+	 */
+	if (outer_plan)
+		dpns->outer_plan = (Plan *) outer_plan;
+
+	/*
+	 * Previously, this function was called from explain_partition_selector with
+	 * the Parent node for both Node arguments. A change to the function
+	 * signature requires us to first set the innerplan and detect that it is
+	 * indeed a PartitionSelector in order to then set both outer_plan and
+	 * inner_plan to the parent. A simple check of the parent->lefttree is not
+	 * sufficient since a Sequence operator will have the child nodes in its
+	 * subplans list. Thus, we allow push_plans to assign inner and outer plan
+	 * as usual and then add a check here
+	 */
+	if (dpns->inner_plan && IsA(dpns->inner_plan, PartitionSelector))
+	{
+		dpns->inner_plan = (Plan *) plan;
+		dpns->outer_plan = (Plan *) plan;
+	}
 
 	/* Return a one-deep namespace stack */
 	return list_make1(dpns);
@@ -1935,11 +1979,15 @@ make_ruledef(StringInfo buf, HeapTuple ruletup, TupleDesc rulettc,
 
 		context.buf = buf;
 		context.namespaces = list_make1(&dpns);
+		context.groupClause = NIL;
+		context.windowClause = NIL;
+		context.windowTList = NIL;
 		context.varprefix = (list_length(query->rtable) != 1);
 		context.prettyFlags = prettyFlags;
 		context.indentLevel = PRETTYINDENT_STD;
 		dpns.rtable = query->rtable;
 		dpns.ctes = query->cteList;
+		dpns.subplans = NIL;
 		dpns.outer_plan = dpns.inner_plan = NULL;
 
 		get_rule_expr(qual, &context, false);
@@ -2085,14 +2133,17 @@ get_query_def(Query *query, StringInfo buf, List *parentnamespace,
 
 	context.buf = buf;
 	context.namespaces = lcons(&dpns, list_copy(parentnamespace));
+	context.groupClause = NIL;
+	context.windowClause = NIL;
+	context.windowTList = NIL;
 	context.varprefix = (parentnamespace != NIL ||
 						 list_length(query->rtable) != 1);
 	context.prettyFlags = prettyFlags;
 	context.indentLevel = startIndent;
-	context.query = query;
 
 	dpns.rtable = query->rtable;
 	dpns.ctes = query->cteList;
+	dpns.subplans = NIL;
 	dpns.outer_plan = dpns.inner_plan = NULL;
 
 	switch (query->commandType)
@@ -2249,11 +2300,22 @@ get_select_query_def(Query *query, deparse_context *context,
 					 TupleDesc resultDesc)
 {
 	StringInfo	buf = context->buf;
+	List	   *save_windowclause;
+	List	   *save_windowtlist;
+	List	   *save_groupclause;
 	bool		force_colno;
 	ListCell   *l;
 
 	/* Insert the WITH clause if given */
 	get_with_clause(query, context);
+
+	/* Set up context for possible window functions */
+	save_windowclause = context->windowClause;
+	context->windowClause = query->windowClause;
+	save_windowtlist = context->windowTList;
+	context->windowTList = query->targetList;
+	save_groupclause = context->groupClause;
+	context->groupClause = query->groupClause;
 
 	/*
 	 * If the Query node has a setOperations tree, then it's the top level of
@@ -2345,6 +2407,10 @@ get_select_query_def(Query *query, deparse_context *context,
 		if (rc->noWait)
 			appendStringInfo(buf, " NOWAIT");
 	}
+
+	context->windowClause = save_windowclause;
+	context->windowTList = save_windowtlist;
+	context->groupClause = save_groupclause;
 }
 
 static void
@@ -2446,10 +2512,10 @@ get_basic_select_query(Query *query, deparse_context *context,
 		bool first = true;
 		foreach(l, query->windowClause)
 		{
-			WindowSpec *spec = (WindowSpec *) lfirst(l);
+			WindowClause *wc = (WindowClause *) lfirst(l);
 
 			/* unnamed windows will be displayed in the target list */
-			if (!spec->name)
+			if (!wc->name)
 				continue;
 
 			if (first)
@@ -2461,8 +2527,8 @@ get_basic_select_query(Query *query, deparse_context *context,
 			else
 				appendStringInfoString(buf, ",");
 
-			appendStringInfo(buf, " %s AS ", quote_identifier(spec->name));
-			get_windowspec_expr(spec, context);
+			appendStringInfo(buf, " %s AS ", quote_identifier(wc->name));
+			get_rule_windowspec(wc, context->windowTList, context);
 		}
 	}
 }
@@ -2760,6 +2826,97 @@ get_rule_sortgroupclause(SortClause *srt, List *tlist, bool force_colno,
 		get_rule_expr(expr, context, true);
 
 	return expr;
+}
+
+
+/*
+ * Display a window definition
+ */
+static void
+get_rule_windowspec(WindowClause *wc, List *targetList,
+					deparse_context *context)
+{
+	StringInfo	buf = context->buf;
+	bool		needspace = false;
+
+	appendStringInfoChar(buf, '(');
+
+	if (wc->refname)
+	{
+		appendStringInfoString(buf, quote_identifier(wc->refname));
+		needspace = true;
+	}
+	/* partition clauses are always inherited, so only print if no refname */
+	if (wc->partitionClause && !wc->refname)
+	{
+		if (needspace)
+			appendStringInfoChar(buf, ' ');
+		get_sortlist_expr(wc->partitionClause,
+						  targetList,
+						  false,  /* force_colno */
+						  context,
+						  "PARTITION BY ");
+		needspace = true;
+	}
+	/* print ordering clause only if not inherited */
+	if (wc->orderClause && !wc->copiedOrder)
+	{
+		if (needspace)
+			appendStringInfoChar(buf, ' ');
+		get_sortlist_expr(wc->orderClause,
+						  targetList,
+						  false,  /* force_colno */
+						  context,
+						  "ORDER BY ");
+		needspace = true;
+	}
+
+	if (wc->frame)
+	{
+		WindowFrame *f = wc->frame;
+
+		/*
+		 * Like the ORDER-BY clause, if spec has a parent and that
+		 * parent defines framing, don't display the frame clause
+		 * here.
+		 */
+		bool display_frame = true;
+
+		if (wc->refname)
+		{
+			ListCell *l;
+			foreach(l, context->windowClause)
+			{
+				WindowClause *tmp = (WindowClause *) lfirst(l);
+
+				if (tmp->name && strcmp(wc->refname, tmp->name) == 0 &&
+					tmp->frame)
+				{
+					display_frame = false;
+					break;
+				}
+			}
+		}
+
+		if (display_frame)
+		{
+			if (needspace)
+				appendStringInfoChar(buf, ' ');
+			appendStringInfo(buf, "%s ", f->is_rows ? "ROWS" : "RANGE");
+			if (f->is_between)
+			{
+				appendStringInfo(buf, "BETWEEN ");
+				get_windowedge_expr(f->trail, context);
+				appendStringInfo(buf, " AND ");
+				get_windowedge_expr(f->lead, context);
+			}
+			else
+			{
+				get_windowedge_expr(f->trail, context);
+			}
+		}
+	}
+	appendStringInfoChar(buf, ')');
 }
 
 /* ----------
@@ -3078,6 +3235,8 @@ get_utility_query_def(Query *query, deparse_context *context)
  * (although in a Plan tree there really shouldn't be any).
  *
  * Caller must save and restore outer_plan and inner_plan around this.
+ *
+ * We also use this to initialize the fields during deparse_context_for_plan.
  */
 static void
 push_plan(deparse_namespace *dpns, Plan *subplan)
@@ -3105,9 +3264,30 @@ push_plan(deparse_namespace *dpns, Plan *subplan)
 	/*
 	 * For a SubqueryScan, pretend the subplan is INNER referent.  (We don't
 	 * use OUTER because that could someday conflict with the normal meaning.)
+	 * Likewise, for a CteScan, pretend the subquery's plan is INNER referent.
 	 */
 	if (IsA(subplan, SubqueryScan))
 		dpns->inner_plan = ((SubqueryScan *) subplan)->subplan;
+	else if (IsA(subplan, CteScan))
+	{
+		int		ctePlanId = ((CteScan *) subplan)->ctePlanId;
+
+		if (ctePlanId > 0 && ctePlanId <= list_length(dpns->subplans))
+			dpns->inner_plan = list_nth(dpns->subplans, ctePlanId - 1);
+		else
+			dpns->inner_plan = NULL;
+	}
+	else if (IsA(subplan, Sequence))
+	{
+		/*
+		 * Set the inner_plan to a sequences first child only if it is a
+		 * partition selector. This is a specific fix to enable Explain's of
+		 * query plans that have a Partition Selector
+		 */
+		Plan *node = (Plan *) linitial(((Sequence *) subplan)->subplans);
+		if (IsA(node, PartitionSelector))
+			dpns->inner_plan = node;
+	}
 	else
 		dpns->inner_plan = innerPlan(subplan);
 }
@@ -3478,8 +3658,8 @@ get_name_for_var_field(Var *var, int fieldno,
 	 * This part has essentially the same logic as the parser's
 	 * expandRecordVariable() function, but we are dealing with a different
 	 * representation of the input context, and we only need one field name
-	 * not a TupleDesc.  Also, we need a special case for deparsing Plan
-	 * trees, because the subquery field has been removed from SUBQUERY RTEs.
+	 * not a TupleDesc.  Also, we need special cases for finding subquery
+	 * and CTE subplans when deparsing Plan trees.
 	 */
 	expr = (Node *) var;		/* default if we can't drill down */
 
@@ -3496,10 +3676,10 @@ get_name_for_var_field(Var *var, int fieldno,
 			 */
 			break;
 		case RTE_SUBQUERY:
+			/* Subselect-in-FROM: examine sub-select's output expr */
 			{
 				if (rte->subquery)
 				{
-					/* Subselect-in-FROM: examine sub-select's output expr */
 					TargetEntry *ste = get_tle_by_resno(rte->subquery->targetList,
 														attnum);
 
@@ -3519,6 +3699,8 @@ get_name_for_var_field(Var *var, int fieldno,
 						const char *result;
 
 						mydpns.rtable = rte->subquery->rtable;
+						mydpns.ctes = rte->subquery->cteList;
+						mydpns.subplans = NIL;
 						mydpns.outer_plan = mydpns.inner_plan = NULL;
 
 						context->namespaces = lcons(&mydpns,
@@ -3538,10 +3720,10 @@ get_name_for_var_field(Var *var, int fieldno,
 				{
 					/*
 					 * We're deparsing a Plan tree so we don't have complete
-					 * RTE entries.  But the only place we'd see a Var
-					 * directly referencing a SUBQUERY RTE is in a
-					 * SubqueryScan plan node, and we can look into the child
-					 * plan's tlist instead.
+					 * RTE entries (in particular, rte->subquery is NULL).
+					 * But the only place we'd see a Var directly referencing
+					 * a SUBQUERY RTE is in a SubqueryScan plan node, and we
+					 * can look into the child plan's tlist instead.
 					 */
 					TargetEntry *tle;
 					Plan	   *save_outer;
@@ -3600,7 +3782,7 @@ get_name_for_var_field(Var *var, int fieldno,
 				/*
 				 * Try to find the referenced CTE using the namespace stack.
 				 */
-				ctelevelsup = rte->ctelevelsup + levelsup;
+				ctelevelsup = rte->ctelevelsup + netlevelsup;
 				if (ctelevelsup >= list_length(context->namespaces))
 					lc = NULL;
 				else
@@ -3623,22 +3805,17 @@ get_name_for_var_field(Var *var, int fieldno,
 														attnum);
 
 					if (ste == NULL || ste->resjunk)
-					{
-						ereport(WARNING, (errcode(ERRCODE_INTERNAL_ERROR),
-										  errmsg_internal("bogus var: varno=%d varattno=%d",
-														  var->varno, var->varattno) ));
-						return "*BOGUS*";
-					}
-
+						elog(ERROR, "subquery %s does not have attribute %d",
+							 rte->eref->aliasname, attnum);
 					expr = (Node *) ste->expr;
 					if (IsA(expr, Var))
 					{
 						/*
-						 * Recurse into the CTE to see what its Var refers to.
-						 * We have to build an additional level of namespace
-						 * to keep in step with varlevelsup in the CTE.
-						 * Furthermore it could be an outer CTE, so we may
-						 * have to delete some levels of namespace.
+						 * Recurse into the CTE to see what its Var refers
+						 * to.  We have to build an additional level of
+						 * namespace to keep in step with varlevelsup in the
+						 * CTE.  Furthermore it could be an outer CTE, so
+						 * we may have to delete some levels of namespace.
 						 */
 						List	   *save_nslist = context->namespaces;
 						List	   *new_nslist;
@@ -3647,9 +3824,7 @@ get_name_for_var_field(Var *var, int fieldno,
 
 						mydpns.rtable = ctequery->rtable;
 						mydpns.ctes = ctequery->cteList;
-#if 0					/* GPDB_84_FIXME: we'll get subplans in 8.4 */
 						mydpns.subplans = NIL;
-#endif
 						mydpns.outer_plan = mydpns.inner_plan = NULL;
 
 						new_nslist = list_copy_tail(context->namespaces,
@@ -3664,6 +3839,39 @@ get_name_for_var_field(Var *var, int fieldno,
 						return result;
 					}
 					/* else fall through to inspect the expression */
+				}
+				else
+				{
+					/*
+					 * We're deparsing a Plan tree so we don't have a CTE
+					 * list.  But the only place we'd see a Var directly
+					 * referencing a CTE RTE is in a CteScan plan node, and
+					 * we can look into the subplan's tlist instead.
+					 */
+					TargetEntry *tle;
+					Plan	   *save_outer;
+					Plan	   *save_inner;
+					const char *result;
+
+					if (!dpns->inner_plan)
+						elog(ERROR, "failed to find plan for CTE %s",
+							 rte->eref->aliasname);
+					tle = get_tle_by_resno(dpns->inner_plan->targetlist,
+										   attnum);
+					if (!tle)
+						elog(ERROR, "bogus varattno for subquery var: %d",
+							 attnum);
+					Assert(netlevelsup == 0);
+					save_outer = dpns->outer_plan;
+					save_inner = dpns->inner_plan;
+					push_plan(dpns, dpns->inner_plan);
+
+					result = get_name_for_var_field((Var *) tle->expr, fieldno,
+													levelsup, context);
+
+					dpns->outer_plan = save_outer;
+					dpns->inner_plan = save_inner;
+					return result;
 				}
 			}
 			break;
@@ -5108,21 +5316,22 @@ get_groupingfunc_expr(GroupingFunc *grpfunc, deparse_context *context)
 	ListCell *lc;
 	char *sep = "";
 	List *group_exprs;
-	if (context->query == NULL)
+
+	if (!context->groupClause)
 	{
 		appendStringInfoString(buf, "grouping");
 		return;
 	}
 
-	group_exprs = get_grouplist_exprs(context->query->groupClause,
-									  context->query->targetList);
+	group_exprs = get_grouplist_exprs(context->groupClause,
+									  context->windowTList);
 
 	appendStringInfoString(buf, "grouping(");
 	foreach (lc, grpfunc->args)
 	{
 		int entry_no = (int)intVal(lfirst(lc));
 		Node *expr;
-		Assert (entry_no < list_length(context->query->targetList));
+		Assert (entry_no < list_length(context->windowTList));
 
 		expr = (Node *)list_nth(group_exprs, entry_no);
 		appendStringInfoString(buf, sep);
@@ -5287,128 +5496,6 @@ get_sortlist_expr(List *l, List *targetList, bool force_colno,
 	}
 }
 
-static void
-get_windowspec_expr(WindowSpec *spec, deparse_context *context)
-{
-	StringInfo buf = context->buf;
-
-	appendStringInfoChar(buf, '(');
-
-	if (spec->parent)
-	{
-		appendStringInfo(buf, "%s", quote_identifier(spec->parent));
-	}
-	else
-	{
-		/* parent and partition are mutually exclusive */
-		if (spec->partition)
-			get_sortlist_expr(spec->partition, 
-                              context->query->targetList,
-                              false,  /* force_colno */
-                              context, 
-                              "PARTITION BY ");
-	}	
-	
-	if (spec->order)
-	{
-		/* 
-		 * If spec has a parent and that parent defines ordering, don't
-		 * display the order here.
-		 */
-		bool display_order = true;
-		
-		if (spec->parent)
-		{
-			ListCell *l;
-			foreach(l, context->query->windowClause)
-			{
-				WindowSpec *tmp = (WindowSpec *)lfirst(l);
-
-				if (tmp->name && strcmp(spec->parent, tmp->name) == 0 &&
-					tmp->order)
-				{
-					display_order = false;
-					break;
-				}
-			}
-		}
-		if (display_order)
-		{
-			get_sortlist_expr(spec->order, 
-                              context->query->targetList,
-                              false,  /* force_colno */
-                              context, 
-                              " ORDER BY ");
-		}
-	}
-	
-	if (spec->frame)
-	{
-		WindowFrame *f = spec->frame;
-
-		/*
-		 * Like the ORDER-BY clause, if spec has a parent and that
-		 * parent defines framing, don't display the frame clause
-		 * here.
-		 */
-		bool display_frame = true;
-		
-		if (spec->parent)
-		{
-			ListCell *l;
-			foreach(l, context->query->windowClause)
-			{
-				WindowSpec *tmp = (WindowSpec *)lfirst(l);
-
-				if (tmp->name && strcmp(spec->parent, tmp->name) == 0 &&
-					tmp->frame)
-				{
-					display_frame = false;
-					break;
-				}
-			}
-		}
-
-		if (display_frame)
-		{
-			appendStringInfo(buf, " %s ", f->is_rows ? "ROWS" : "RANGE");
-			if (f->is_between)
-			{
-				appendStringInfo(buf, "BETWEEN ");
-				get_windowedge_expr(f->trail, context);
-				appendStringInfo(buf, " AND ");
-				get_windowedge_expr(f->lead, context);
-			}
-			else
-			{
-				get_windowedge_expr(f->trail, context);
-			}
-		}
-
-		/* exclusion statement */
-		switch(f->exclude)
-		{
-			case WINDOW_EXCLUSION_NULL:
-				break;
-			case WINDOW_EXCLUSION_CUR_ROW:
-				appendStringInfo(buf, " EXCLUDE CURRENT ROW");
-		   		break;
-			case WINDOW_EXCLUSION_GROUP:
-				appendStringInfo(buf, " EXCLUDE GROUP");
-				break;
-			case WINDOW_EXCLUSION_TIES:
-				appendStringInfo(buf, " EXCLUDE TIES");
-				break;
-			case WINDOW_EXCLUSION_NO_OTHERS:
-				appendStringInfo(buf, " EXCLUDE NO OTHERS");
-				break;
-			default:
-				elog(ERROR, "invalid exclusion type: %i", f->exclude);
-		}
-	}
-	appendStringInfoChar(buf, ')');
-}
-
 /*
  * get_windowref_expr			- Parse back a WindowRef node
  */
@@ -5419,7 +5506,6 @@ get_windowref_expr(WindowRef *wref, deparse_context *context)
 	Oid			argtypes[FUNC_MAX_ARGS];
 	int			nargs;
 	ListCell   *l;
-	WindowSpec *spec;
 
 	if (list_length(wref->args) >= FUNC_MAX_ARGS)
 		ereport(ERROR,
@@ -5432,41 +5518,40 @@ get_windowref_expr(WindowRef *wref, deparse_context *context)
 		nargs++;
 	}
 
-	appendStringInfo(buf, "%s(",
+	appendStringInfo(buf, "%s(%s",
 					 generate_function_name(wref->winfnoid,
-											nargs, argtypes, NULL));
-
-	get_rule_expr((Node *) wref->args, context, true);
-	appendStringInfoChar(buf, ')');
-
-	/*
-	 * context->query can be NULL when called from explain.
-	 * In such cases, we do not attempt to extract OVER clause
-	 * details: MPP-20672.
-	 */
-	if (context->query == NULL)
-	{
-		return;
-	}
-
-	/* now for the OVER clause */
-	appendStringInfo(buf, " OVER");
-
-	spec = (WindowSpec *)list_nth(context->query->windowClause, wref->winspec);
-
-	/*
-	 * If the spec has a name, it must be in the WINDOW clause, which is
-	 * displayed later. We shouldn't actually encounter such a window
-	 * ref.
-	 */
-	if (spec->name)
-	{
-		/* XXX: change this to an assertion later */
-		elog(ERROR, "internal error");
-	}
+											nargs, argtypes, NULL), "");
+	/* winstar can be set only in zero-argument aggregates */
+	if (wref->winstar)
+		appendStringInfoChar(buf, '*');
 	else
+		get_rule_expr((Node *) wref->args, context, true);
+	appendStringInfoString(buf, ") OVER ");
+
+	foreach(l, context->windowClause)
 	{
-		get_windowspec_expr(spec, context);
+		WindowClause *wc = (WindowClause *) lfirst(l);
+
+		if (wc->winref == wref->winref)
+		{
+			if (wc->name)
+				appendStringInfo(buf, "(%s)", quote_identifier(wc->name));
+			else
+				get_rule_windowspec(wc, context->windowTList, context);
+			break;
+		}
+	}
+	if (l == NULL)
+	{
+		if (context->windowClause)
+			elog(ERROR, "could not find window clause for winref %u",
+				 wref->winref);
+
+		/*
+		 * In EXPLAIN, we don't have window context information available, so
+		 * we have to settle for this:
+		 */
+		appendStringInfoString(buf, "(?)");
 	}
 }
 
@@ -6508,7 +6593,6 @@ generate_relation_name(Oid relid, List *namespaces)
 	if (!need_qual)
 		need_qual = !RelationIsVisible(relid);
 
-	/* Qualify the name if not visible in search path */
 	if (need_qual)
 		nspname = get_namespace_name(reltup->relnamespace);
 	else

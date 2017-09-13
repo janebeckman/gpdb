@@ -3704,6 +3704,14 @@ SELECT sum(g) OVER (ORDER BY g  ROWS BETWEEN UNBOUNDED PRECEDING AND retneg() FO
 
 drop function retneg();
 
+
+-- Overriding a window frame (i.e. ROWS BETWEEN ...) in the OVER clause,
+-- when a frame already given in the WINDOW definition, is not allowed.
+select avg(a) over (w rows between 1 preceding and 1 following)
+from generate_series(1,5) a
+window w as (order by a rows between unbounded preceding and unbounded following);
+
+
 -- start_ignore
 CREATE TABLE filter_test (i int, j int) DISTRIBUTED BY (i);
 INSERT INTO filter_test VALUES (1, 1);
@@ -3729,10 +3737,43 @@ SELECT ntile(0) over (order by i) FROM filter_test;
 
 -- start_ignore
 DROP TABLE filter_test;
+-- end_ignore
+
+
+-- Test use of window functions in places they shouldn't be allowed: MPP-2382
+-- CHECK constraints
+CREATE TABLE wintest_for_window_seq (i int check (i < count(*) over (order by i)));
+
+CREATE TABLE wintest_for_window_seq (i int default count(*) over (order by i));
+
+-- index expression and function
+CREATE TABLE wintest_for_window_seq (i int);
+insert into wintest_for_window_seq values(1);
+CREATE INDEX wintest_idx_for_window_seq on wintest_for_window_seq (i) where i < count(*) over (order by i);
+CREATE INDEX wintest_idx_for_window_seq on wintest_for_window_seq (sum(i) over (order by i));
+CREATE INDEX wintest_idx_for_window_seq on wintest_for_window_seq ((sum(i) over (order by i)));
+-- alter table
+ALTER TABLE wintest_for_window_seq alter i set default count(*) over (order by i);
+alter table wintest_for_window_seq alter column i type float using count(*) over (order by
+i)::float;
+
+-- select
+select * from wintest_for_window_seq where count(*) over (order by i) > 0;
+
+-- update
+update wintest_for_window_seq set i = count(*) over (order by i);
+update wintest_for_window_seq set i = 1 where count(*) over (order by i) > 0;
+
+-- delete
+delete from wintest_for_window_seq where count(*) over (order by i) > 0;
+
+drop table wintest_for_window_seq;
+
 
 --
 -- STANDARD DATA FOR olap_* TESTS.
 --
+-- start_ignore
 drop table cf_olap_windowerr_customer;
 drop table cf_olap_windowerr_vendor;
 drop table cf_olap_windowerr_product;

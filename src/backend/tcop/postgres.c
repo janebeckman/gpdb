@@ -8,7 +8,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/tcop/postgres.c,v 1.542.2.5 2009/06/18 10:09:34 heikki Exp $
+ *	  $PostgreSQL: pgsql/src/backend/tcop/postgres.c,v 1.543 2008/02/17 04:21:05 tgl Exp $
  *
  * NOTES
  *	  this is the "main" module of the postgres backend and
@@ -2520,19 +2520,7 @@ exec_bind_message(StringInfo input_message)
 		 * destruction.
 		 */
 		cplan = RevalidateCachedPlan(psrc, false);
-
-		/*
-		 * Make a copy of the plan in portal's memory context, because GPDB
-		 * would modify the plan tree later in exec_make_plan_constant before
-		 * dispatching, and the modification would make another copy of the plan
-		 * from the same memory context of the plan tree, so if we use the
-		 * cached plan directly here, the copy in exec_make_plan_constant would
-		 * be allocated in CachedPlan context, which lives for the whole life
-		 * span of the process and can cause memory leak.
-		 */
-		oldContext = MemoryContextSwitchTo(PortalGetHeapMemory(portal));
-		plan_list = copyObject(cplan->stmt_list);
-		MemoryContextSwitchTo(oldContext);
+		plan_list = cplan->stmt_list;
 	}
 	else
 	{

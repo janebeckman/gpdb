@@ -127,7 +127,7 @@
 
 /* Read a bytea field */
 #define READ_BYTEA_FIELD(fldname) \
-	local_node->fldname = DatumGetPointer(readDatum(false))
+	local_node->fldname = (bytea *) DatumGetPointer(readDatum(false))
 
 /* Read a dummy field */
 #define READ_DUMMY_FIELD(fldname,fldvalue) \
@@ -243,7 +243,6 @@ _readQuery(void)
 	READ_NODE_FIELD(scatterClause);
 	READ_NODE_FIELD(cteList);
 	READ_BOOL_FIELD(hasRecursive);
-	READ_BOOL_FIELD(hasModifyingCTE);
 	READ_NODE_FIELD(limitOffset);
 	READ_NODE_FIELD(limitCount);
 	READ_NODE_FIELD(rowMarks);
@@ -1363,6 +1362,7 @@ _readCopyStmt(void)
 	READ_NODE_FIELD(relation);
 	READ_NODE_FIELD(attlist);
 	READ_BOOL_FIELD(is_from);
+	READ_BOOL_FIELD(is_program);
 	READ_BOOL_FIELD(skip_ext_partition);
 	READ_STRING_FIELD(filename);
 	READ_NODE_FIELD(options);
@@ -1427,6 +1427,7 @@ _readPlannedStmt(void)
 	READ_ENUM_FIELD(planGen, PlanGenerator);
 	READ_BOOL_FIELD(canSetTag);
 	READ_BOOL_FIELD(transientPlan);
+	READ_BOOL_FIELD(oneoffPlan);
 	READ_NODE_FIELD(planTree);
 	READ_NODE_FIELD(rtable);
 	READ_NODE_FIELD(resultRelations);
@@ -1538,6 +1539,18 @@ _readAppend(void)
 	READ_NODE_FIELD(appendplans);
 	READ_BOOL_FIELD(isTarget);
 	READ_BOOL_FIELD(isZapped);
+
+	READ_DONE();
+}
+
+static RecursiveUnion *
+_readRecursiveUnion(void)
+{
+	READ_LOCALS(RecursiveUnion);
+
+	readPlanInfo((Plan *)local_node);
+
+	READ_INT_FIELD(wtParam);
 
 	READ_DONE();
 }
@@ -1773,6 +1786,18 @@ _readBitmapTableScan(void)
 	readScanInfo((Scan *)local_node);
 
 	READ_NODE_FIELD(bitmapqualorig);
+
+	READ_DONE();
+}
+
+static WorkTableScan *
+_readWorkTableScan(void)
+{
+	READ_LOCALS(WorkTableScan);
+
+	readScanInfo((Scan *)local_node);
+
+	READ_INT_FIELD(wtParam);
 
 	READ_DONE();
 }
@@ -2732,6 +2757,9 @@ readNodeBinary(void)
 			case T_Append:
 				return_value = _readAppend();
 				break;
+			case T_RecursiveUnion:
+				return_value = _readRecursiveUnion();
+				break;
 			case T_Sequence:
 				return_value = _readSequence();
 				break;
@@ -2779,6 +2807,9 @@ readNodeBinary(void)
 				break;
 			case T_BitmapTableScan:
 				return_value = _readBitmapTableScan();
+				break;
+			case T_WorkTableScan:
+				return_value = _readWorkTableScan();
 				break;
 			case T_TidScan:
 				return_value = _readTidScan();
@@ -3268,9 +3299,6 @@ readNodeBinary(void)
 			case T_GroupId:
 				return_value = _readGroupId();
 				break;
-			case T_WindowSpec:
-				return_value = _readWindowSpec();
-				break;
 			case T_WindowFrame:
 				return_value = _readWindowFrame();
 				break;
@@ -3303,6 +3331,9 @@ readNodeBinary(void)
 				break;
 			case T_PartListNullTestExpr:
 				return_value = _readPartListNullTestExpr();
+				break;
+			case T_WindowClause:
+				return_value = _readWindowClause();
 				break;
 			case T_RowMarkClause:
 				return_value = _readRowMarkClause();

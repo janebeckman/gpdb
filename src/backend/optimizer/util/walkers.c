@@ -448,9 +448,25 @@ expression_tree_walker(Node *node,
 		case T_Grouping:
 		case T_GroupId:
 		case T_GroupClause:
-		case T_SortClause: /* occurs in WindowSpec lists */
+		case T_SortClause: /* occurs in WindowClause lists */
 			{
 				/* do nothing */
+			}
+			break;
+		case T_WindowDef:
+			{
+				WindowDef  *wd = (WindowDef *) node;
+
+				if (expression_tree_walker((Node *) wd->partitionClause, walker,
+										   context))
+					return true;
+				if (expression_tree_walker((Node *) wd->orderClause, walker,
+										   context))
+					return true;
+				if (walker((Node *) wd->startOffset, context))
+					return true;
+				if (walker((Node *) wd->endOffset, context))
+					return true;
 			}
 			break;
 		case T_TypeCast:
@@ -468,17 +484,17 @@ expression_tree_walker(Node *node,
 				return walker(expr->subquery, context);
 			}
 			break;
-		case T_WindowSpec:
+		case T_WindowClause:
 			{
-				WindowSpec *wspec = (WindowSpec *)node;
+				WindowClause *wc = (WindowClause *) node;
 
-				if (expression_tree_walker((Node *) wspec->partition, walker,
+				if (expression_tree_walker((Node *) wc->partitionClause, walker,
 										   context))
 					return true;
-				if (expression_tree_walker((Node *) wspec->order, walker,
+				if (expression_tree_walker((Node *) wc->orderClause, walker,
 										   context))
 					return true;
-				if (expression_tree_walker((Node *) wspec->frame,
+				if (expression_tree_walker((Node *) wc->frame,
 										   walker, context))
 					return true;
 				return false;
@@ -892,6 +908,11 @@ plan_tree_walker(Node *node,
 				return true;
 			break;
 
+		case T_RecursiveUnion:
+			if (walk_plan_node_fields((Plan *) node, walker, context))
+				return true;
+			break;
+
 		case T_Sequence:
 			if (walk_plan_node_fields((Plan *) node, walker, context))
 				return true;
@@ -927,6 +948,7 @@ plan_tree_walker(Node *node,
 		case T_BitmapTableScan:
 		case T_TableFunctionScan:
 		case T_ValuesScan:
+		case T_WorkTableScan:
 			if (walk_scan_node_fields((Scan *) node, walker, context))
 				return true;
 			break;
@@ -1682,6 +1704,20 @@ raw_expression_tree_walker(Node *node, bool (*walker) (), void *context)
 			break;
 		case T_SortBy:
 			return walker(((SortBy *) node)->node, context);
+		case T_WindowDef:
+			{
+				WindowDef  *wd = (WindowDef *) node;
+
+				if (walker(wd->partitionClause, context))
+					return true;
+				if (walker(wd->orderClause, context))
+					return true;
+				if (walker((Node *) wd->startOffset, context))
+					return true;
+				if (walker((Node *) wd->endOffset, context))
+					return true;
+			}
+			break;
 		case T_RangeSubselect:
 			{
 				RangeSubselect *rs = (RangeSubselect *) node;
