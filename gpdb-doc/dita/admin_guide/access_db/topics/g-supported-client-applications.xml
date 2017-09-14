@@ -13,7 +13,7 @@
 <!--
       <li id="io155276">
         <xref href="g-pgadmin-iii-for-greenplum-database.xml#topic6"/> is an enhanced version of the
-        popular management tool pgAdmin III. Since version 1.10.0, the pgAdmin III client available
+        popular management tool pgAdmin 4. Since version 1.10.0, the pgAdmin client available
         from PostgreSQL Tools includes support for Greenplum-specific
         features. Installation packages are available for download from the <xref
           href="https://www.pgadmin.org/download/" scope="external" format="html"> pgAdmin download
