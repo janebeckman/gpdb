@@ -99,9 +99,6 @@ static Node *transformFrameOffset(ParseState *pstate, int frameOptions,
 								  Node *clause,
 								  List *orderClause, List *targetlist, bool isFollowing,
 								  int location);
-static WindowFrame *constructWindowFrame(int frameOptions,
-										 Node *startOffset,
-										 Node *endOffset);
 
 typedef struct grouping_rewrite_ctx
 {
@@ -2204,44 +2201,20 @@ transformGroupClause(ParseState *pstate, List *grouplist,
 	 * extensions.
 	 */
 	{
-		List *grp_tles = NIL;
 		ListCell *lc;
-		grouping_rewrite_ctx ctx;
 
-		/* Find all unique target entries appeared in reorder_grouplist. */
+		/*
+		 * Find all unique target entries appeared in reorder_grouplist.
+		 * We stash them in the ParseState, to be processed later by
+		 * processExtendedGrouping().
+		 */
 		foreach (lc, reorder_grouplist)
 		{
-			grp_tles = list_concat_unique(
-				grp_tles,
+			pstate->p_grp_tles = list_concat_unique(
+				pstate->p_grp_tles,
 				findListTargetlistEntries(pstate, lfirst(lc),
 										  targetlist, false, true, useSQL99));
 		}
-
-		/*
-		 * For each GROUPING function, check if its argument(s) appear in the
-		 * GROUP BY clause. We also set ngrpcols, nargs and grpargs values for
-		 * each GROUPING function here. These values are used together with
-		 * GROUPING_ID to calculate the final value for each GROUPING function
-		 * in the executor.
-		 */
-
-		ctx.grp_tles = grp_tles;
-		ctx.pstate = pstate;
-		expression_tree_walker((Node *)*targetlist, grouping_rewrite_walker,
-							   (void *)&ctx);
-
-		/*
-		 * The expression might be present in a window clause as well
-		 * so process those.
-		 */
-		expression_tree_walker((Node *)pstate->p_windowdefs,
-							   grouping_rewrite_walker, (void *)&ctx);
-
-		/*
-		 * The expression might be present in the having clause as well.
-		 */
-		expression_tree_walker(pstate->having_qual,
-							   grouping_rewrite_walker, (void *)&ctx);
 	}
 
 	list_free(tle_list);
@@ -2249,6 +2222,42 @@ transformGroupClause(ParseState *pstate, List *grouplist,
 	freeGroupList(reorder_grouplist);
 
 	return result;
+}
+
+void
+processExtendedGrouping(ParseState *pstate,
+						Node *havingQual,
+						List *windowClause,
+						List *targetlist)
+{
+	grouping_rewrite_ctx ctx;
+
+	/*
+	 * For each GROUPING function, check if its argument(s) appear in the
+	 * GROUP BY clause. We also set ngrpcols, nargs and grpargs values for
+	 * each GROUPING function here. These values are used together with
+	 * GROUPING_ID to calculate the final value for each GROUPING function
+	 * in the executor.
+	 */
+	ctx.pstate = pstate;
+	ctx.grp_tles = pstate->p_grp_tles;
+	pstate->p_grp_tles = NIL;
+
+	expression_tree_walker((Node *) targetlist, grouping_rewrite_walker,
+						   (void *)&ctx);
+
+	/*
+	 * The expression might be present in a window clause as well
+	 * so process those.
+	 */
+	expression_tree_walker((Node *) windowClause,
+						   grouping_rewrite_walker, (void *)&ctx);
+
+	/*
+	 * The expression might be present in the having clause as well.
+	 */
+	expression_tree_walker(havingQual,
+						   grouping_rewrite_walker, (void *)&ctx);
 }
 
 /*
@@ -2365,13 +2374,13 @@ transformWindowDefinitions(ParseState *pstate,
 								windef->orderClause,
 								targetlist,
 								true /* fix unknowns */ ,
-								false /* use SQL92 rules */ );
+								true /* force SQL99 rules */ );
 		partitionClause =
 			transformSortClause(pstate,
 								windef->partitionClause,
 								targetlist,
 								true /* fix unknowns */ ,
-								false /* use SQL92 rules */ );
+								true /* force SQL99 rules */ );
 
 		/*
 		 * And prepare the new WindowClause.
@@ -2480,9 +2489,6 @@ transformWindowDefinitions(ParseState *pstate,
 		/* Process frame offset expressions */
 		if ((windef->frameOptions & FRAMEOPTION_NONDEFAULT) != 0)
 		{
-			Node	   *startOffset;
-			Node	   *endOffset;
-
 			/*
 			 * Framing is only supported on specifications with an ordering
 			 * clause.
@@ -2493,25 +2499,22 @@ transformWindowDefinitions(ParseState *pstate,
 						 errmsg("window specifications with a framing clause must have an ORDER BY clause"),
 						 parser_errposition(pstate, windef->location)));
 
-			startOffset = transformFrameOffset(pstate, wc->frameOptions,
-											   windef->startOffset, wc->orderClause,
-											   *targetlist,
-											   (windef->frameOptions & FRAMEOPTION_START_VALUE_FOLLOWING) != 0,
-				windef->location);
-			endOffset = transformFrameOffset(pstate, wc->frameOptions,
-											 windef->endOffset, wc->orderClause,
-											 *targetlist,
-											 (windef->frameOptions & FRAMEOPTION_END_VALUE_FOLLOWING) != 0,
-				windef->location);
-			wc->frame = constructWindowFrame(wc->frameOptions,
-												  startOffset,
-												  endOffset);
+			wc->startOffset = transformFrameOffset(pstate, wc->frameOptions,
+												   windef->startOffset, wc->orderClause,
+												   *targetlist,
+												   (windef->frameOptions & FRAMEOPTION_START_VALUE_FOLLOWING) != 0,
+												   windef->location);
+			wc->endOffset = transformFrameOffset(pstate, wc->frameOptions,
+												 windef->endOffset, wc->orderClause,
+												 *targetlist,
+												 (windef->frameOptions & FRAMEOPTION_END_VALUE_FOLLOWING) != 0,
+												 windef->location);
 		}
 
 		/* finally, check function restriction with this spec. */
 		winref_checkspec(pstate, *targetlist, winref,
 						 PointerIsValid(wc->orderClause),
-						 PointerIsValid(wc->frame));
+						 wc->frameOptions != FRAMEOPTION_DEFAULTS);
 
 		result = lappend(result, wc);
 	}
@@ -3458,52 +3461,4 @@ transformFrameOffset(ParseState *pstate, int frameOptions, Node *clause,
 #endif
 
 	return node;
-}
-
-/*
- * Convert the PostgreSQL-style frameOptions+startOffset+endOffset
- * representation of the frame specification, i.e "ROWS/RANGE BETWEEN a
- * AND b", into the legacy GPDB WindowFrame node. This will go away, once
- * we convert the rest of the codebase to deal with the PostgreSQL
- * representation and get rid of the WindowFrame struct.
- */
-static WindowFrame *
-constructWindowFrame(int frameOptions, Node *startOffset, Node *endOffset)
-{
-	WindowFrame *wf;
-
-	if ((frameOptions & FRAMEOPTION_NONDEFAULT) == 0)
-		return NULL;
-
-	wf = makeNode(WindowFrame);
-	wf->is_rows = (frameOptions & FRAMEOPTION_ROWS) != 0;
-	wf->is_between =  (frameOptions & FRAMEOPTION_BETWEEN) != 0;
-
-	wf->trail = makeNode(WindowFrameEdge);
-	if ((frameOptions & FRAMEOPTION_START_UNBOUNDED_PRECEDING) != 0)
-		wf->trail->kind = WINDOW_UNBOUND_PRECEDING;
-	else if ((frameOptions & FRAMEOPTION_START_CURRENT_ROW) != 0)
-		wf->trail->kind = WINDOW_CURRENT_ROW;
-	else if ((frameOptions & FRAMEOPTION_START_VALUE_PRECEDING) != 0)
-		wf->trail->kind = WINDOW_BOUND_PRECEDING;
-	else if ((frameOptions & FRAMEOPTION_START_VALUE_FOLLOWING) != 0)
-		wf->trail->kind = WINDOW_BOUND_FOLLOWING;
-	else
-		elog(ERROR, "unexpected window frame start");
-	wf->trail->val = startOffset; /* already transformed */
-
-	wf->lead = makeNode(WindowFrameEdge);
-	if ((frameOptions & FRAMEOPTION_END_UNBOUNDED_FOLLOWING) != 0)
-		wf->lead->kind = WINDOW_UNBOUND_FOLLOWING;
-	else if ((frameOptions & FRAMEOPTION_END_CURRENT_ROW) != 0)
-		wf->lead->kind = WINDOW_CURRENT_ROW;
-	else if ((frameOptions & FRAMEOPTION_END_VALUE_PRECEDING) != 0)
-		wf->lead->kind = WINDOW_BOUND_PRECEDING;
-	else if ((frameOptions & FRAMEOPTION_END_VALUE_FOLLOWING) != 0)
-		wf->lead->kind = WINDOW_BOUND_FOLLOWING;
-	else
-		elog(ERROR, "unexpected window frame end");
-	wf->lead->val = endOffset; /* already transformed */
-
-	return wf;
 }

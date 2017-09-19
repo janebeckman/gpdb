@@ -126,6 +126,10 @@ namespace gpdxl
 			static
 			const CWStringConst *PstrSystemColName(AttrNumber attno);
 
+			// returns the length for the system column with given attno number
+			static
+			const ULONG UlSystemColLength(AttrNumber attno);
+
 			// translate the join type from its GPDB representation into the DXL one
 			static
 			EdxlJoinType EdxljtFromJoinType(JoinType jt);
@@ -211,10 +215,6 @@ namespace gpdxl
 			// return the dxl representation of the set operation
 			static
 			EdxlSetOpType Edxlsetop(SetOperation setop, BOOL fAll);
-
-			// return the GPDB frame boundary kind from its corresponding DXL representation
-			static
-			WindowBoundingKind Windowboundkind(EdxlFrameBoundary edxlfb);
 
 			// construct a dynamic array of sets of column attnos corresponding
 			// to the group by clause

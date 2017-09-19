@@ -22,6 +22,7 @@
 #include "catalog/pg_type.h"
 #include "catalog/pg_proc.h"
 #include "catalog/pg_trigger.h"
+#include "catalog/pg_statistic.h"
 #include "optimizer/walkers.h"
 #include "utils/rel.h"
 
@@ -35,6 +36,7 @@
 #include "gpos/string/CWStringDynamic.h"
 #include "gpopt/translate/CTranslatorUtils.h"
 #include "gpopt/translate/CDXLTranslateContext.h"
+#include "gpopt/translate/CTranslatorRelcacheToDXL.h"
 
 #include "naucrates/dxl/CDXLUtils.h"
 #include "naucrates/dxl/xml/dxltokens.h"
@@ -154,7 +156,10 @@ CTranslatorUtils::Pdxltabdesc
 			// the fact that catalog tables (master-only) are not analyzed often and will result in Orca producing
 			// inferior plans.
 
-			GPOS_RAISE(gpdxl::ExmaDXL, gpdxl::ExmiQuery2DXLUnsupportedFeature, GPOS_WSZ_LIT("Queries on master-only tables"));
+			GPOS_THROW_EXCEPTION(gpdxl::ExmaDXL, // ulMajor
+								 gpdxl::ExmiQuery2DXLUnsupportedFeature, // ulMinor
+								 CException::ExsevDebug1, // ulSeverityLevel mapped to GPDB severity level
+								 GPOS_WSZ_LIT("Queries on master-only tables"));
 		}
 
 	// add columns from md cache relation object to table descriptor
@@ -876,6 +881,49 @@ CTranslatorUtils::PmdidSystemColType
 	}
 }
 
+
+// Returns the length for the system column with given attno number
+const ULONG
+CTranslatorUtils::UlSystemColLength
+	(
+	AttrNumber attno
+	)
+{
+	GPOS_ASSERT(FirstLowInvalidHeapAttributeNumber < attno && 0 > attno);
+
+	switch (attno)
+	{
+		case SelfItemPointerAttributeNumber:
+			// tid type
+			return 6;
+
+		case ObjectIdAttributeNumber:
+		case TableOidAttributeNumber:
+			// OID type
+
+		case MinTransactionIdAttributeNumber:
+		case MaxTransactionIdAttributeNumber:
+			// xid type
+
+		case MinCommandIdAttributeNumber:
+		case MaxCommandIdAttributeNumber:
+			// cid type
+
+		case GpSegmentIdAttributeNumber:
+			// int4
+			return 4;
+
+		default:
+			GPOS_RAISE
+				(
+				gpdxl::ExmaDXL,
+				gpdxl::ExmiPlStmt2DXLConversion,
+				GPOS_WSZ_LIT("Invalid attribute number")
+				);
+			return ULONG_MAX;
+	}
+}
+
 //---------------------------------------------------------------------------
 //	@function:
 //		CTranslatorUtils::Scandirection
@@ -1015,54 +1063,6 @@ CTranslatorUtils::Edxlsetop
 	GPOS_ASSERT(!"Unrecognized set operator type");
 	return EdxlsetopSentinel;
 }
-
-//---------------------------------------------------------------------------
-//	@function:
-//		CTranslatorUtils::Windowboundkind
-//
-//	@doc:
-//		Return the GPDB frame boundary kind from its corresponding
-//		DXL representation
-//
-//---------------------------------------------------------------------------
-WindowBoundingKind
-CTranslatorUtils::Windowboundkind
-	(
-	EdxlFrameBoundary edxlfb
-	)
-{
-	GPOS_ASSERT(EdxlfbSentinel > edxlfb);
-
-	ULONG rgrgulMapping[][2] =
-			{
-			{EdxlfbUnboundedPreceding, WINDOW_UNBOUND_PRECEDING},
-			{EdxlfbBoundedPreceding, WINDOW_BOUND_PRECEDING},
-			{EdxlfbCurrentRow, WINDOW_CURRENT_ROW},
-			{EdxlfbBoundedFollowing, WINDOW_BOUND_FOLLOWING},
-			{EdxlfbUnboundedFollowing, WINDOW_UNBOUND_FOLLOWING},
-	// We don't distinguish between the delayed and undelayed versions
-	// beoynd this point. Executor will make that decision without our
-	// help.
-			{EdxlfbDelayedBoundedPreceding, WINDOW_BOUND_PRECEDING},
-			{EdxlfbDelayedBoundedFollowing, WINDOW_BOUND_FOLLOWING}
-			};
-
-	const ULONG ulArity = GPOS_ARRAY_SIZE(rgrgulMapping);
-	WindowBoundingKind wbk = WINDOW_UNBOUND_PRECEDING;
-	for (ULONG ul = 0; ul < ulArity; ul++)
-	{
-		ULONG *pulElem = rgrgulMapping[ul];
-		if ((ULONG) edxlfb == pulElem[0])
-		{
-			wbk = (WindowBoundingKind) pulElem[1];
-			break;
-		}
-	}
-	GPOS_ASSERT(WINDOW_BOUND_FOLLOWING >= wbk && "Invalid window frame boundary");
-
-	return wbk;
-}
-
 
 //---------------------------------------------------------------------------
 //	@function:

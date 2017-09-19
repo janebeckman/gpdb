@@ -520,7 +520,7 @@ _equalArrayExpr(ArrayExpr *a, ArrayExpr *b)
 	COMPARE_SCALAR_FIELD(element_typeid);
 	COMPARE_NODE_FIELD(elements);
 	COMPARE_SCALAR_FIELD(multidims);
-	/* COMPARE_LOCATION_FIELD(location); */
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2027,7 +2027,7 @@ _equalAExpr(A_Expr *a, A_Expr *b)
 	COMPARE_NODE_FIELD(name);
 	COMPARE_NODE_FIELD(lexpr);
 	COMPARE_NODE_FIELD(rexpr);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2036,7 +2036,7 @@ static bool
 _equalColumnRef(ColumnRef *a, ColumnRef *b)
 {
 	COMPARE_NODE_FIELD(fields);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2072,7 +2072,7 @@ _equalFuncCall(FuncCall *a, FuncCall *b)
 	COMPARE_SCALAR_FIELD(agg_distinct);
 	COMPARE_SCALAR_FIELD(func_variadic);
 	COMPARE_NODE_FIELD(over);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2110,7 +2110,7 @@ _equalResTarget(ResTarget *a, ResTarget *b)
 	COMPARE_STRING_FIELD(name);
 	COMPARE_NODE_FIELD(indirection);
 	COMPARE_NODE_FIELD(val);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2126,7 +2126,7 @@ _equalTypeName(TypeName *a, TypeName *b)
 	COMPARE_NODE_FIELD(typmods);
 	COMPARE_SCALAR_FIELD(typemod);
 	COMPARE_NODE_FIELD(arrayBounds);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 
 	return true;
 }
@@ -2317,26 +2317,6 @@ _equalGroupId(GroupId *a __attribute__((unused)), GroupId *b __attribute__((unus
 }
 
 static bool
-_equalWindowFrame(WindowFrame *a, WindowFrame *b)
-{
-	COMPARE_SCALAR_FIELD(is_rows);
-	COMPARE_SCALAR_FIELD(is_between);
-	COMPARE_NODE_FIELD(trail);
-	COMPARE_NODE_FIELD(lead);
-
-	return true;
-}
-
-static bool
-_equalWindowFrameEdge(WindowFrameEdge *a, WindowFrameEdge *b)
-{
-	COMPARE_SCALAR_FIELD(kind);
-	COMPARE_NODE_FIELD(val);
-
-	return true;
-}
-
-static bool
 _equalPercentileExpr(PercentileExpr *a, PercentileExpr *b)
 {
 	COMPARE_SCALAR_FIELD(perctype);
@@ -2359,8 +2339,9 @@ _equalWindowClause(WindowClause *a, WindowClause *b)
 	COMPARE_NODE_FIELD(partitionClause);
 	COMPARE_NODE_FIELD(orderClause);
 	COMPARE_SCALAR_FIELD(frameOptions);
+	COMPARE_NODE_FIELD(startOffset);
+	COMPARE_NODE_FIELD(endOffset);
 	COMPARE_SCALAR_FIELD(winref);
-	COMPARE_NODE_FIELD(frame);
 	COMPARE_SCALAR_FIELD(copiedOrder);
 
 	return true;
@@ -2381,7 +2362,7 @@ _equalWithClause(WithClause *a, WithClause *b)
 {
 	COMPARE_NODE_FIELD(ctes);
 	COMPARE_SCALAR_FIELD(recursive);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 	
 	return true;
 }
@@ -2392,7 +2373,7 @@ _equalCommonTableExpr(CommonTableExpr *a, CommonTableExpr *b)
 	COMPARE_STRING_FIELD(ctename);
 	COMPARE_NODE_FIELD(aliascolnames);
 	COMPARE_NODE_FIELD(ctequery);
-	COMPARE_SCALAR_FIELD(location);
+	COMPARE_LOCATION_FIELD(location);
 	COMPARE_SCALAR_FIELD(cterecursive);
 	COMPARE_SCALAR_FIELD(cterefcount);
 	COMPARE_NODE_FIELD(ctecolnames);
@@ -3127,12 +3108,6 @@ equal(void *a, void *b)
 			break;
 		case T_GroupId:
 			retval = _equalGroupId(a, b);
-			break;
-		case T_WindowFrame:
-			retval = _equalWindowFrame(a, b);
-			break;
-		case T_WindowFrameEdge:
-			retval = _equalWindowFrameEdge(a, b);
 			break;
 		case T_PercentileExpr:
 			retval = _equalPercentileExpr(a, b);
