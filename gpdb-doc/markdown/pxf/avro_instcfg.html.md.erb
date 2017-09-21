@@ -1,0 +1,44 @@
+---
+title: Preparing to Access Avro Files
+---
+
+The PXF HDFS connector supports the Avro file format. If you plan to access Avro format files, you must download a required JAR file, copy the JAR to each Greenplum Database segment host, and restart PXF on each segment host. 
+
+
+## <a id="use-avro-steps"></a>Procedure
+Perform the following procedure to install and configure PXF for Avro on each segment node in your Greenplum Database cluster. You will use the `gpssh` command where possible to run a command on multiple hosts.
+
+1. Log in to your Greenplum Database master node and set up the environment:
+
+    ``` shell
+    $ ssh gpadmin@<gpmaster>
+    gpadmin@gpmaster$ . /usr/local/greenplum-db/greenplum_path.sh
+    ```
+
+2. Create a text file that lists your Greenplum Database segment hosts, one host name per line. Ensure that there are no blank lines or extra spaces in the file. For example, a file named `seghostfile` may include:
+
+    ``` pre
+    seghost1
+    seghost2
+    seghost3
+    ```
+    
+3. Download the Avro JAR file required by PXF:
+
+    ``` shell
+    gpadmin@gpmaster$ wget "http://central.maven.org/maven2/org/apache/avro/avro-mapred/1.7.1/avro-mapred-1.7.1.jar"
+    ```
+
+4. Copy the Avro JAR file to each Greenplum Database segment host. You must copy the file to the XXX directory. For example:
+
+    ``` shell
+    gpadmin@gpmaster$ gpssh -f seghostfile avro-mapred-*.jar =:/
+    ```
+
+5. *If you have not yet initialized and started PXF, skip the rest of the steps in this procedure.*
+
+6. You have previously initialized and started PXF in your Greenplum Database cluster. Execute the `pxf restart` command to restart PXF on each segment host. For example:
+
+    ```shell
+    $ gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf restart"
+    ```

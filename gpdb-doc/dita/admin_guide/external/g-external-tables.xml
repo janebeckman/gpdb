@@ -25,6 +25,8 @@
                      href="g-hdfs-emr-config.xml#amazon-emr"/>.</p></li>
             <li><codeph>s3://</codeph> accesses files in an Amazon S3 bucket. See <xref
                   href="g-s3-protocol.xml#amazon-emr"/>.</li>
+
+            <li>The <codeph>pxf://</codeph> protocol accesses external HDFS files using the PXF Extension Framework. See <xref href="../../pxf/using_pxf.html" type="topic" format="markdown">Using PXF</xref></li>
          </ul></p>
       <p>External tables access external files from within the database as if they are regular
          database tables. External tables defined with the

@@ -1,0 +1,68 @@
+---
+title: Installing and Configuring the Hadoop Client for PXF
+---
+
+You use the PXF HDFS connector to access HDFS file data. PXF requires a Hadoop client installation on each Greenplum Database node. This topic describes how to install and configure HDFS for PXF access. 
+
+
+## <a id="hadoop-pxf-prereq"></a>Prerequisites
+Ensure that you:
+
+- Have access to a running Hadoop cluster.
+- Identify and note the URI location of your HDFS NameNode. You can locate this information in the `core-site.xml` file on your NameNode host.
+
+
+## <a id="hadoop-pxf-config-steps"></a>Procedure
+Perform the following procedure to configure Hadoop and PXF on each segment node in your Greenplum Database cluster. You will use the `gpssh` command where possible to run a command on multiple hosts.
+
+1. Create a text file that lists your Greenplum Database segment hosts, one host name per line. Ensure that there are no blank lines or extra spaces in the file. For example, a file named `seghostfile` may include:
+
+    ``` pre
+    seghost1
+    seghost2
+    seghost3
+    ```
+    
+2. Install Java 1.8 on each Greenplum Database segment host.
+
+    ``` shell
+    root@node$ gpssh -f seghostfile sudo yum -y install java-1.8.0-openjdk-1.8.0*
+    ```
+
+3. Identify the Java base install directory. Update the `gpadmin` user's `.bash_profile` file on each segment host to include this `$JAVA_HOME` setting. For example:
+
+    ``` shell
+    root@node$ gpssh -f seghostfile “echo ‘export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.144-0.b01.el7_4.x86_64/jre’ > /home/gpadmin/.bash_profile”
+    ```
+
+4. Install a compatible Hadoop client on each Greenplum Database segment host. Refer to the [Cloudera Installation Guide](https://www.cloudera.com/documentation/cdh/5-0-x/CDH5-Installation-Guide/CDH5-Installation-Guide.html) for instructions.
+
+5. Locate the base install directory of the Hadoop client. Edit the `gpadmin` user's `.bash_profile` file on each segment host to include this `$HADOOP_HOME` setting. For example: 
+
+    ``` shell
+    root@node$ gpssh -f seghostfile “echo ‘export HADOOP_HOME=/usr/local/hadoop-2.6.0’ > /home/gpadmin/.bash_profile”
+    ```
+
+6. Manually configure the HDFS NameNode URI on **each** segment host:
+
+    1. Log in to the segment host:
+
+        ``` shell
+        $ ssh gpadmin@<seg-host>
+        gpadmin@seg-host$ 
+        ```
+
+    2. Edit the `$HADOOP_HOME/etc/hadoop/core-site.xml` file:
+
+        ``` pre
+        gpadmin@seg-host$ vi $HADOOP_HOME/etc/hadoop/core-site.xml
+        ```
+    
+    3. Add or update the `fs.defaultFS` property in `core-site.xml`. The `ds.defaultFS` property value must identify the URI location of your HDFS NameNode. For example:
+
+        ``` pre
+        <property>
+        <name>fs.defaultFS</name>
+        <value>hdfs://namenode.domain:8020</value>
+        </property>
+        ```

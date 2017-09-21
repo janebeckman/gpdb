@@ -1,0 +1,132 @@
+---
+title: Configuring, Initializing, and Starting PXF
+---
+
+<!--
+Licensed to the Apache Software Foundation (ASF) under one
+or more contributor license agreements.  See the NOTICE file
+distributed with this work for additional information
+regarding copyright ownership.  The ASF licenses this file
+to you under the Apache License, Version 2.0 (the
+"License"); you may not use this file except in compliance
+with the License.  You may obtain a copy of the License at
+
+  http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing,
+software distributed under the License is distributed on an
+"AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+KIND, either express or implied.  See the License for the
+specific language governing permissions and limitations
+under the License.
+-->
+
+The Pivotal Greenplum Database PXF Extension Framework XXX.
+
+PXF is a Greenplum Database protocol packaged as an extension. This topic describes how to configure, initialize, and start the PXF Extension Framework. 
+
+## <a id="install_info"></a>Installing PXF
+
+The PXF Extension Framework is installed on your master node when you install Greenplum Database. You install PXF on your Greenplum Database segment hosts when you invoke the `gpseginstall` command.
+
+You must explicitly intialize and start PXF to use the framework. You must also explicitly enable PXF in each database in which you plan to use it.
+
+### <a id="pxf-install-dirs"></a>PXF Install Files/Directories
+
+The following PXF files and directories are installed in your Greenplum Database cluster. These files/directories are relative to `$GPHOME`:
+
+| Directory                      | Description                                                                                                                                                                                                                                |
+|--------------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `pxf`                 | The PXF installation directory.  |
+| `pxf/apache-tomcat`      | XXX.  |
+| `pxf/bin`                 | The PXF script and executable directory.                                                                                                                                                                                                                       |
+| `pxf/conf`                | The PXF configuration directory. This directory contains the `pxf-private.classpath` and `pxf-profiles.xml` configuration files. |
+| `pxf/conf-templates`                | XXX. |
+| `pxf/lib`                 | The PXF library directory.                                                                                                                                                                                                                       |
+| `pxf/logs` | The PXF log file directory. This directory includes `pxf-service.log` and Tomcat-related logs including `catalina.out`. Logs are owned by user:group `gpadmin`:`XXX`. Other users have read access.  
+| `pxf/pxf-service`         | After initializing PXF, the PXF service instance directory.                                                                                                                                                                                                              |
+| `pxf/run`         | After initializing PXF, the PXF catalina process id.                                                                                                                                                                                                              |
+| `pxf/tomcat-templates` | XXX.                                                                          |
+
+
+## <a id="external_instcfg"></a>Configuring HDFS for PXF Access
+
+If you plan to use the PXF HDFS connector, you must:
+
+- Install a Hadoop client on each Greenplum Database segment host. Refer to [Installing and Configuring the Hadoop Client for PXF](hdfsclient_instcfg.html) for instructions.
+- Grant the `gpadmin` operating system user read permission to your HDFS file system.
+
+
+## <a id="init_pxf"></a>Initializing PXF
+
+You must explicitly initialize the PXF service instance. This initialization creates the PXF service web application and updates PXF configuration files to include information specific to your Hadoop cluster configuration.
+
+### <a id="init-pxf-prereq"></a>Prerequisites
+
+Before initializing PXF in your Greenplum Database cluster, ensure that you:
+
+- Have installed and configured the required Hadoop client on each Greenplum Database segment host. The Hadoop install directory must be the same on each segment host.
+- Locate and note the full file system path to the base install directory of the Hadoop client, `$HADOOP_HOME`.
+ 
+### <a id="init-pxf-steps"></a>Procedure
+
+Perform the following procedure to initialize PXF on each node in your Greenplum Database cluster. You will use the `gpssh` utility when possible to run a command on multiple hosts.
+
+1. Log in to the Greenplum Database master node and set up your environment:
+
+    ``` shell
+    $ ssh gpadmin@<gpmaster>
+    gpadmin@gpmaster$ . /usr/local/greenplum-db/greenplum_path.sh
+    ```
+
+2. Create a text file that lists your Greenplum Database segment hosts, one host name per line. Ensure that there are no blank lines or extra spaces in the file. For example, a file named `seghostfile` may include:
+
+    ``` pre
+    seghost1
+    seghost2
+    seghost3
+    ```
+
+3. Install the `unzip` package on each segment host:
+
+    ``` shell
+    gpadmin@gpmaster$ gpssh -f seghostfile "sudo yum install unzip"
+    ```
+
+4. Run the `pxf init` command to initialize the PXF service on each segment host. Provide your Hadoop base install directory in the `--hadoop-home` option value. For example:
+
+    ``` shell
+    gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf init --hadoop-home /usr/local/hadoop-2.6.0"
+    ```
+    
+    The `init` command creates and initializes the PXF web application. It also updates the `pxf-private.classpath` file to include entries for your Hadoop distribution JAR files.
+
+
+### <a id="init-pxf-other"></a>Other Considerations
+PXF requires that you run Tomcat on the host machine. Tomcat reserves ports 8005, 8080, and 8009. If you have configured Oozie JXM reporting on any Greenplum Database segment host, make sure that the reporting service uses a port other than 8005. This helps to prevent port conflict errors from occurring when you start the PXF service.
+
+
+## <a id="start_pxf"></a>Starting/Stopping PXF
+
+After initializing PXF, you must explicitly start PXF on each segment in your Greenplum Database cluster. The `pxf` command supports `start`, `stop`, `restart`, and `status` operations in addition to `init`.
+
+### <a id="init-pxf-prereq"></a>Prerequisites
+
+Before starting PXF in your Greenplum Database cluster, ensure that you have configured and initialized PXF as described above.
+ 
+### <a id="init-pxf-steps"></a>Procedure
+
+Perform the following procedure to start PXF on each segment host in your Greenplum Database cluster.  You will use the `gpssh` command and `seghostfile` when possible to run a command on multiple hosts.
+
+1. Log in to the Greenplum Database master node and set up your environment:
+
+    ``` shell
+    $ ssh gpadmin@<gpmaster>
+    gpadmin@gpmaster$ . /usr/local/greenplum-db/greenplum_path.sh
+    ```
+
+3. Run the `pxf start` command to start PXF on each segment host. For example:
+
+    ```shell
+    $ gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf start"
+    ```

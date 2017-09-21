@@ -9,6 +9,7 @@
   <topicref href="g-gpfdists-protocol.xml"/>
   <topicref href="g-gphdfs-protocol.xml"/>
   <topicref href="g-s3-protocol.xml"/>
+  <topicref href="../../pxf/using_pxf.html" format="markdown" navtitle="pxf:// Protocol"/>
   <topicref href="g-accessing-ext-files-custom-protocol.xml"/>
   <topicref href="g-handling-errors-ext-table-data.xml"/>
   <topicref href="g-creating-and-using-web-external-tables.xml" type="topic"/>
@@ -26,6 +27,7 @@
     type="topic"/>
   </topicref>
  </topicref>
+<topicref href="../../pxf/overview_pxf.html" format="markdown" navtitle="Using PXF with External Data"/>
  <topicref href="g-using-hadoop-distributed-file-system--hdfs--tables.xml" type="topic">
   <topicref href="g-one-time-hdfs-protocol-installation.xml" type="topic"/>
   <topicref href="g-grant-privileges-for-the-hdfs-protocol.xml" type="topic"/>
@@ -36,5 +38,6 @@
   <topicref href="g-reading-and-writing-custom-formatted-hdfs-data.xml" type="topic"/>
   <topicref href="g-hdfs-emr-config.xml"/>
  </topicref>
+  <topicref href="../../pxf/hdfs_read_pxf.html" format="markdown" navtitle="Accessing HDFS Data with PXF"/>
  <topicref href="g-using-the-greenplum-parallel-file-server--gpfdist-.xml"/>
 </map>
