@@ -7,15 +7,13 @@
   <topicref href="topics/g-supported-client-applications.xml"/>
   <topicref href="topics/g-greenplum-database-client-applications.xml"/>
 
- <topicref href="topics/g-connecting-with-psql.xml"/>
-<!--
+ <topicref href="topics/g-connecting-with-psql.xml"/> 
  <topicref href="topics/g-pgadmin-for-greenplum-database.xml">
   <topicref href="topics/g-installing-pgadmin-for-greenplum-database.xml"/>
-  <topicref href="topics/g-performing-administrative-tasks-with-pgadmin-.xml">
+  <topicref href="topics/g-performing-administrative-tasks-with-pgadmin.xml">
    <topicref href="topics/g-viewing-a-graphical-query-plan.dita"/>
   </topicref>
  </topicref>
--->
   <topicref href="topics/pgbouncer.xml"/>
  <topicref href="topics/g-database-application-interfaces.xml"/>
  <topicref href="topics/g-troubleshooting-connection-problems.xml"/>
