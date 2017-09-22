@@ -16,10 +16,10 @@
             <note>Only limited functionality for Greenplum partitioned tables is available with
                pgAdmin 4.</note></li>
       </ul>
+      <note/>
       <fig id="io149932">
-         <title>Greenplum Options in pgAdmin 4</title>
-         <image href="../../graphics/pg_admin_III_callout.png" placement="break" width="499px"
-            height="444px" id="image_b3v_t5k_jp"/>
+         <title>Greenplum Version of  pgAdmin 4</title>
       </fig>
+      <image href="../../../graphics/pgAdmin4_ddl.png" id="image_c5v_5gq_hbb"/>
    </body>
 </topic>

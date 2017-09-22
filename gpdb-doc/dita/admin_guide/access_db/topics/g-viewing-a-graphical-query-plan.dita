@@ -49,12 +49,16 @@
                         <uicontrol>Explain</uicontrol>
                     </menucascade>.</cmd>
                 <stepresult>The query plan displays in the Output pane at the bottom of the screen.
-                    Select the Explain tab to view the graphical output. For example:<fig
-                        id="io149084">
+                    Select the <uicontrol>Explain</uicontrol> tab to view the graphical output. For
+                        example:<fig id="io149084">
                         <title>Graphical Query Plan in pgAdmin 4</title>
-                        <image href="../../graphics/pg3_queryplan.png" placement="break"
-                            width="499px" height="379px" id="image_e2n_pyp_g4"/>
                         <image href="../../../graphics/queryscreen.png" id="image_zjf_wk2_fbb"/>
+                    </fig>You can also view the history of the queries you have run by simply
+                    clicking on the <uicontrol>Query History</uicontrol> tab to view the result.<fig
+                        id="fig_uwm_vwp_hbb">
+                        <title>Viewing Query History</title>
+                        <image href="../../../graphics/pgAdmin4_query_history.png"
+                            id="image_el5_ywp_hbb"/>
                     </fig></stepresult>
             </step>
         </steps>
