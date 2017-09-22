@@ -10,7 +10,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/commands/copy.c,v 1.295 2008/01/01 19:45:48 momjian Exp $
+ *	  $PostgreSQL: pgsql/src/backend/commands/copy.c,v 1.298 2008/03/26 18:48:59 alvherre Exp $
  *
  *-------------------------------------------------------------------------
  */
@@ -51,12 +51,13 @@
 #include "utils/builtins.h"
 #include "utils/lsyscache.h"
 #include "utils/memutils.h"
-#include "utils/resscheduler.h"
+#include "utils/snapmgr.h"
 
 #include "cdb/cdbvars.h"
 #include "cdb/cdbcopy.h"
 #include "cdb/cdbsreh.h"
 #include "postmaster/autostats.h"
+#include "utils/resscheduler.h"
 
 /* DestReceiver for COPY (SELECT) TO */
 typedef struct
@@ -2016,6 +2017,15 @@ DoCopyTo(CopyState cstate)
 					(errcode(ERRCODE_WRONG_OBJECT_TYPE),
 					 errmsg("COPY ignores external partition(s)")));
 			}
+		}
+	}else
+	{
+		/* Report error because COPY ON SEGMENT don't know the data location of the result of SELECT query.*/
+		if(cstate->on_segment)
+		{
+			ereport(ERROR,
+					(errcode(ERRCODE_WRONG_OBJECT_TYPE),
+						errmsg("'COPY (SELECT ...) TO' doesn't support 'ON SEGMENT'.")));
 		}
 	}
 
@@ -6205,6 +6215,10 @@ CopyReadAttributesText(CopyState cstate, bool * __restrict nulls,
  * the pre-de-escaped input string (thus if it is quoted it is not a NULL).
  *----------
  */
+// GPDB_84_MERGE_FIXME: This was refactored for performance in upstream,
+// in commit 95c238d941. However, the GPDB version was so heavily modified
+// that I was not able to merge that commit. So this is still based on
+// the slower pre-8.4 version.
 void
 CopyReadAttributesCSV(CopyState cstate, bool *nulls, int *attr_offsets,
 					  int num_phys_attrs, Form_pg_attribute *attr)

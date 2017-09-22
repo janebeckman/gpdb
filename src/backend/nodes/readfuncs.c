@@ -325,6 +325,7 @@ _readQuery(void)
 	READ_BOOL_FIELD(hasWindowFuncs);
 	READ_BOOL_FIELD(hasSubLinks);
 	READ_BOOL_FIELD(hasDynamicFunctions);
+	READ_BOOL_FIELD(hasFuncsWithExecRestrictions);
 	READ_NODE_FIELD(rtable);
 	READ_NODE_FIELD(jointree);
 	READ_NODE_FIELD(targetList);
@@ -372,7 +373,6 @@ _readDeclareCursorStmt(void)
 	READ_STRING_FIELD(portalname);
 	READ_INT_FIELD(options);
 	READ_NODE_FIELD(query);
-	READ_BOOL_FIELD(is_simply_updatable);
 
 	READ_DONE();
 }
@@ -386,9 +386,9 @@ _readCurrentOfExpr(void)
 {
 	READ_LOCALS(CurrentOfExpr);
 
+	READ_INT_FIELD(cvarno);
 	READ_STRING_FIELD(cursor_name);
 	READ_INT_FIELD(cursor_param);
-	READ_INT_FIELD(cvarno);
 	READ_OID_FIELD(target_relid);
 
 	/* some attributes omitted as they're bound only just before executor dispatch */
@@ -1647,7 +1647,7 @@ _readA_ArrayExpr(void)
 	READ_LOCALS(A_ArrayExpr);
 
 	READ_NODE_FIELD(elements);
-/*	READ_LOCATION_FIELD(location); */
+	READ_LOCATION_FIELD(location);
 
 	READ_DONE();
 }
@@ -1947,7 +1947,6 @@ _readTypeName(void)
 
 	READ_NODE_FIELD(names);
 	READ_OID_FIELD(typid);
-	READ_BOOL_FIELD(timezone);
 	READ_BOOL_FIELD(setof);
 	READ_BOOL_FIELD(pct_type);
 	READ_NODE_FIELD(typmods);

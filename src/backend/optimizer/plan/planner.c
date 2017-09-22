@@ -10,7 +10,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/optimizer/plan/planner.c,v 1.244 2008/10/04 21:56:53 tgl Exp $
+ *	  $PostgreSQL: pgsql/src/backend/optimizer/plan/planner.c,v 1.231 2008/04/01 00:48:33 tgl Exp $
  *
  *-------------------------------------------------------------------------
  */
@@ -42,11 +42,13 @@
 #endif
 #include "parser/parse_expr.h"
 #include "parser/parse_oper.h"
+#include "parser/parse_relation.h"
 #include "parser/parsetree.h"
 #include "utils/lsyscache.h"
 #include "utils/selfuncs.h"
 #include "utils/syscache.h"
 
+#include "catalog/pg_proc.h"
 #include "cdb/cdbllize.h"
 #include "cdb/cdbmutate.h"		/* apply_shareinput */
 #include "cdb/cdbpartition.h"
@@ -120,6 +122,8 @@ static void sort_canonical_gs_list(List *gs, int *p_nsets, Bitmapset ***p_sets);
 
 static Plan *pushdown_preliminary_limit(Plan *plan, Node *limitCount, int64 count_est, Node *limitOffset, int64 offset_est);
 static bool is_dummy_plan(Plan *plan);
+
+static bool isSimplyUpdatableQuery(Query *query);
 
 
 /*****************************************************************************
@@ -223,7 +227,12 @@ standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	/* Cursor options may come from caller or from DECLARE CURSOR stmt */
 	if (parse->utilityStmt &&
 		IsA(parse->utilityStmt, DeclareCursorStmt))
+	{
 		cursorOptions |= ((DeclareCursorStmt *) parse->utilityStmt)->options;
+
+		/* Also try to make any cursor declared with DECLARE CURSOR updatable. */
+		cursorOptions |= CURSOR_OPT_UPDATABLE;
+	}
 
 	/*
 	 * Set up global state for this planner invocation.  This data is needed
@@ -251,6 +260,11 @@ standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	glob->share.qdShares = NIL;
 	glob->share.qdSlices = NIL;
 	glob->share.nextPlanId = 0;
+
+	if ((cursorOptions & CURSOR_OPT_UPDATABLE) != 0)
+		glob->simplyUpdatable = isSimplyUpdatableQuery(parse);
+	else
+		glob->simplyUpdatable = false;
 
 	/* Determine what fraction of the plan is likely to be scanned */
 	if (cursorOptions & CURSOR_OPT_FAST_PLAN)
@@ -415,6 +429,8 @@ standard_planner(Query *parse, int cursorOptions, ParamListInfo boundParams)
 	result->queryPartsMetadata = NIL;
 	result->numSelectorsPerScanId = NIL;
 
+	result->simplyUpdatable = glob->simplyUpdatable;
+
 	{
 		ListCell *lc;
 
@@ -557,11 +573,18 @@ subquery_planner(PlannerGlobal *glob, Query *parse,
 	/*
 	 * Look for IN clauses at the top level of WHERE, and transform them into
 	 * joins.  Note that this step only handles IN clauses originally at top
-	 * level of WHERE; if we pull up any subqueries in the next step, their
-	 * INs are processed just before pulling them up.
+	 * level of WHERE; if we pull up any subqueries below, their INs are
+	 * processed just before pulling them up.
 	 */
 	if (parse->hasSubLinks)
 		cdbsubselect_flatten_sublinks(root, (Node *) parse);
+
+	/*
+	 * Scan the rangetable for set-returning functions, and inline them
+	 * if possible (producing subqueries that might get pulled up next).
+	 * Recursion issues here are handled in the same way as for IN clauses.
+	 */
+	inline_set_returning_functions(root);
 
 	/*
 	 * Check to see if any subqueries in the rangetable can be merged into
@@ -838,6 +861,35 @@ preprocess_expression(PlannerInfo *root, Node *expr, int kind)
 	 */
 	if (root->hasJoinRTEs && kind != EXPRKIND_VALUES)
 		expr = flatten_join_alias_vars(root, expr);
+
+	if (root->parse->hasFuncsWithExecRestrictions)
+	{
+		if (kind == EXPRKIND_RTFUNC)
+		{
+			/* allowed */
+		}
+		else if (kind == EXPRKIND_TARGET)
+		{
+			/*
+			 * Allowed in simple cases with no range table. For example,
+			 * "SELECT func()" is allowed, but "SELECT func() FROM foo" is not.
+			 */
+			if (root->parse->rtable &&
+				check_execute_on_functions((Node *) root->parse->targetList) != PROEXECLOCATION_ANY)
+			{
+				ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						 errmsg("function with EXECUTE ON restrictions cannot be used in the SELECT list of a query with FROM")));
+			}
+		}
+		else
+		{
+			if (check_execute_on_functions((Node *) root->parse->targetList) != PROEXECLOCATION_ANY)
+				ereport(ERROR,
+						(errcode(ERRCODE_FEATURE_NOT_SUPPORTED),
+						 errmsg("function with EXECUTE ON restrictions cannot be used here")));
+		}
+	}
 
 	/*
 	 * Simplify constant expressions.
@@ -3663,4 +3715,40 @@ pushdown_preliminary_limit(Plan *plan, Node *limitCount, int64 count_est, Node *
 	}
 
 	return result_plan;
+}
+
+
+/*
+ * isSimplyUpdatableQuery -
+ *  determine whether a query is a simply updatable scan of a relation
+ *
+ * A query is simply updatable if, and only if, it...
+ * - has no window clauses
+ * - has no sort clauses
+ * - has no grouping, having, distinct clauses, or simple aggregates
+ * - has no subqueries
+ * - has no LIMIT/OFFSET
+ * - references only one range table (i.e. no joins, self-joins)
+ *   - this range table must itself be updatable
+ */
+static bool
+isSimplyUpdatableQuery(Query *query)
+{
+	if (query->commandType == CMD_SELECT &&
+		query->windowClause == NIL &&
+		query->sortClause == NIL &&
+		query->groupClause == NIL &&
+		query->havingQual == NULL &&
+		query->distinctClause == NIL &&
+		!query->hasAggs &&
+		!query->hasSubLinks &&
+		query->limitCount == NULL &&
+		query->limitOffset == NULL &&
+		list_length(query->rtable) == 1)
+	{
+		RangeTblEntry *rte = (RangeTblEntry *) linitial(query->rtable);
+		if (isSimplyUpdatableRelation(rte->relid, true))
+			return true;
+	}
+	return false;
 }

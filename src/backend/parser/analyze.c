@@ -112,7 +112,6 @@ static Query *transformDeclareCursorStmt(ParseState *pstate,
 						   DeclareCursorStmt *stmt);
 static Query *transformExplainStmt(ParseState *pstate,
 					 ExplainStmt *stmt);
-static bool isSimplyUpdatableQuery(Query *query);
 static void transformLockingClause(ParseState *pstate, Query *qry, LockingClause *lc);
 static bool check_parameter_resolution_walker(Node *node, ParseState *pstate);
 
@@ -391,6 +390,7 @@ transformDeleteStmt(ParseState *pstate, DeleteStmt *stmt)
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
 	qry->hasAggs = pstate->p_hasAggs;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 	if (pstate->p_hasAggs)
 		parseCheckAggregates(pstate, qry);
 	if (pstate->p_hasTblValueExpr)
@@ -757,6 +757,7 @@ transformInsertStmt(ParseState *pstate, InsertStmt *stmt)
 	qry->jointree = makeFromExpr(pstate->p_joinlist, NULL);
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 	/* aggregates not allowed (but subselects are okay) */
 	if (pstate->p_hasAggs)
 		ereport(ERROR,
@@ -1596,6 +1597,7 @@ transformSelectStmt(ParseState *pstate, SelectStmt *stmt)
 	qry->jointree = makeFromExpr(pstate->p_joinlist, qual);
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 	qry->hasAggs = pstate->p_hasAggs;
 	if (pstate->p_hasAggs || qry->groupClause || qry->havingQual)
 		parseCheckAggregates(pstate, qry);
@@ -1824,6 +1826,7 @@ transformValuesClause(ParseState *pstate, SelectStmt *stmt)
 	qry->jointree = makeFromExpr(pstate->p_joinlist, NULL);
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 	/* aggregates not allowed (but subselects are okay) */
 	if (pstate->p_hasAggs)
 		ereport(ERROR,
@@ -2071,6 +2074,7 @@ transformSetOperationStmt(ParseState *pstate, SelectStmt *stmt)
 	qry->jointree = makeFromExpr(pstate->p_joinlist, NULL);
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 	qry->hasAggs = pstate->p_hasAggs;
 	if (pstate->p_hasAggs || qry->groupClause || qry->havingQual)
 		parseCheckAggregates(pstate, qry);
@@ -2673,6 +2677,7 @@ transformUpdateStmt(ParseState *pstate, UpdateStmt *stmt)
 	qry->jointree = makeFromExpr(pstate->p_joinlist, qual);
 
 	qry->hasSubLinks = pstate->p_hasSubLinks;
+	qry->hasFuncsWithExecRestrictions = pstate->p_hasFuncsWithExecRestrictions;
 
 	/*
 	 * Top-level aggregates are simply disallowed in UPDATE, per spec. (From
@@ -2886,47 +2891,9 @@ transformDeclareCursorStmt(ParseState *pstate, DeclareCursorStmt *stmt)
 	/* We won't need the raw querytree any more */
 	stmt->query = NULL;
 
-	stmt->is_simply_updatable = isSimplyUpdatableQuery(result);
-
 	result->utilityStmt = (Node *) stmt;
 
 	return result;
-}
-
-/*
- * isSimplyUpdatableQuery -
- *  determine whether a query is a simply updatable scan of a relation
- *
- * A query is simply updatable if, and only if, it...
- * - has no window clauses
- * - has no sort clauses
- * - has no grouping, having, distinct clauses, or simple aggregates
- * - has no subqueries
- * - has no LIMIT/OFFSET
- * - references only one range table (i.e. no joins, self-joins)
- *   - this range table must itself be updatable
- *	
- */
-static bool
-isSimplyUpdatableQuery(Query *query)
-{
-	Assert(query->commandType == CMD_SELECT);
-	if (query->windowClause == NIL &&
-		query->sortClause == NIL &&
-		query->groupClause == NIL &&
-		query->havingQual == NULL &&
-		query->distinctClause == NIL &&
-		!query->hasAggs &&
-		!query->hasSubLinks &&
-		query->limitCount == NULL &&
-		query->limitOffset == NULL &&
-		list_length(query->rtable) == 1)
-	{
-		RangeTblEntry *rte = (RangeTblEntry *)linitial(query->rtable);
-		if (isSimplyUpdatableRelation(rte->relid, true))
-			return true;
-	}
-	return false;
 }
 
 /*

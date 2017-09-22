@@ -17,7 +17,7 @@
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/nodes/copyfuncs.c,v 1.406 2008/10/04 21:56:53 tgl Exp $
+ *	  $PostgreSQL: pgsql/src/backend/nodes/copyfuncs.c,v 1.390 2008/03/21 22:41:48 tgl Exp $
  *
  *-------------------------------------------------------------------------
  */
@@ -102,6 +102,7 @@ _copyPlannedStmt(PlannedStmt *from)
 	COPY_SCALAR_FIELD(canSetTag);
 	COPY_SCALAR_FIELD(transientPlan);
 	COPY_SCALAR_FIELD(oneoffPlan);
+	COPY_SCALAR_FIELD(simplyUpdatable);
 	COPY_NODE_FIELD(planTree);
 	COPY_NODE_FIELD(rtable);
 	COPY_NODE_FIELD(resultRelations);
@@ -1982,8 +1983,9 @@ _copyCurrentOfExpr(CurrentOfExpr *from)
 {
 	CurrentOfExpr *newnode = makeNode(CurrentOfExpr);
 
-	COPY_STRING_FIELD(cursor_name);
 	COPY_SCALAR_FIELD(cvarno);
+	COPY_STRING_FIELD(cursor_name);
+	COPY_SCALAR_FIELD(cursor_param);
 	COPY_SCALAR_FIELD(target_relid);
 
 	return newnode;
@@ -2534,6 +2536,7 @@ static A_ArrayExpr *
 _copyA_ArrayExpr(A_ArrayExpr *from)
 {
 	A_ArrayExpr *newnode = makeNode(A_ArrayExpr);
+
 	COPY_NODE_FIELD(elements);
 	COPY_LOCATION_FIELD(location);
 
@@ -2560,7 +2563,6 @@ _copyTypeName(TypeName *from)
 
 	COPY_NODE_FIELD(names);
 	COPY_SCALAR_FIELD(typid);
-	COPY_SCALAR_FIELD(timezone);
 	COPY_SCALAR_FIELD(setof);
 	COPY_SCALAR_FIELD(pct_type);
 	COPY_NODE_FIELD(typmods);
@@ -2829,6 +2831,7 @@ _copyQuery(Query *from)
 	COPY_SCALAR_FIELD(hasWindowFuncs);
 	COPY_SCALAR_FIELD(hasSubLinks);
 	COPY_SCALAR_FIELD(hasDynamicFunctions);
+	COPY_SCALAR_FIELD(hasFuncsWithExecRestrictions);
 	COPY_NODE_FIELD(rtable);
 	COPY_NODE_FIELD(jointree);
 	COPY_NODE_FIELD(targetList);
@@ -3090,7 +3093,6 @@ _copyDeclareCursorStmt(DeclareCursorStmt *from)
 	COPY_STRING_FIELD(portalname);
 	COPY_SCALAR_FIELD(options);
 	COPY_NODE_FIELD(query);
-	COPY_SCALAR_FIELD(is_simply_updatable);
 
 	return newnode;
 }

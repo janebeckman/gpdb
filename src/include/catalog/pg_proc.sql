@@ -31,8 +31,6 @@
 
  CREATE FUNCTION string_agg(text, text) RETURNS text LANGUAGE internal IMMUTABLE AS 'aggregate_dummy' WITH (OID=3538, DESCRIPTION="concatenate aggregate input into an string with delimiter", proisagg="t");
 
- CREATE FUNCTION current_query() RETURNS text LANGUAGE internal VOLATILE AS 'current_query' WITH (OID=820, DESCRIPTION="returns the currently executing query");
-
  CREATE FUNCTION int8dec(int8) RETURNS int8 LANGUAGE internal IMMUTABLE STRICT AS 'int8dec' WITH (OID=3546);
 
 
@@ -1539,6 +1537,10 @@
 
  CREATE FUNCTION gp_list_backend_priorities() RETURNS SETOF record LANGUAGE internal VOLATILE AS 'gp_list_backend_priorities' WITH (OID=5042, DESCRIPTION="list priorities of backends");
 
+-- Functions to deal with SREH error logs
+ CREATE FUNCTION gp_read_error_log(exttable text, OUT cmdtime timestamptz, OUT relname text, OUT filename text, OUT linenum int4, OUT bytenum int4, OUT errmsg text, OUT rawdata text, OUT rawbytes bytea) RETURNS SETOF record LANGUAGE INTERNAL STRICT VOLATILE EXECUTE ON ALL SEGMENTS AS 'gp_read_error_log' WITH (OID = 3000, DESCRIPTION="read the error log for the specified external table");
+
+ CREATE FUNCTION gp_truncate_error_log(text) RETURNS bool LANGUAGE INTERNAL STRICT VOLATILE AS 'gp_truncate_error_log' WITH (OID=3069, DESCRIPTION="truncate the error log for the specified external table");
 
 -- elog related
  CREATE FUNCTION gp_elog(text) RETURNS void LANGUAGE internal IMMUTABLE STRICT AS 'gp_elog' WITH (OID=5044, DESCRIPTION="Insert text into the error log");

@@ -10,7 +10,7 @@
  *
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/nodes/outfuncs.c,v 1.340 2008/10/04 21:56:53 tgl Exp $
+ *	  $PostgreSQL: pgsql/src/backend/nodes/outfuncs.c,v 1.324 2008/03/21 22:41:48 tgl Exp $
  *
  * NOTES
  *	  Every node type that can appear in stored rules' parsetrees *must*
@@ -294,6 +294,7 @@ _outPlannedStmt(StringInfo str, PlannedStmt *node)
 	WRITE_BOOL_FIELD(canSetTag);
 	WRITE_BOOL_FIELD(transientPlan);
 	WRITE_BOOL_FIELD(oneoffPlan);
+	WRITE_BOOL_FIELD(simplyUpdatable);
 	WRITE_NODE_FIELD(planTree);
 	WRITE_NODE_FIELD(rtable);
 	WRITE_NODE_FIELD(resultRelations);
@@ -1631,8 +1632,9 @@ _outCurrentOfExpr(StringInfo str, CurrentOfExpr *node)
 {
 	WRITE_NODE_TYPE("CURRENTOFEXPR");
 
-	WRITE_STRING_FIELD(cursor_name);
 	WRITE_INT_FIELD(cvarno);
+	WRITE_STRING_FIELD(cursor_name);
+	WRITE_INT_FIELD(cursor_param);
 	WRITE_OID_FIELD(target_relid);
 
 	/* some attributes omitted as they're bound only just before executor dispatch */
@@ -3045,7 +3047,6 @@ _outDeclareCursorStmt(StringInfo str, DeclareCursorStmt *node)
 	WRITE_STRING_FIELD(portalname);
 	WRITE_INT_FIELD(options);
 	WRITE_NODE_FIELD(query);
-	WRITE_BOOL_FIELD(is_simply_updatable);
 }
 
 static void
@@ -3353,7 +3354,6 @@ _outTypeName(StringInfo str, TypeName *node)
 
 	WRITE_NODE_FIELD(names);
 	WRITE_OID_FIELD_AS(typid, typeid);
-	WRITE_BOOL_FIELD(timezone);
 	WRITE_BOOL_FIELD(setof);
 	WRITE_BOOL_FIELD(pct_type);
 	WRITE_NODE_FIELD(typmods);
@@ -3495,6 +3495,7 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_BOOL_FIELD(hasWindowFuncs);
 	WRITE_BOOL_FIELD(hasSubLinks);
 	WRITE_BOOL_FIELD(hasDynamicFunctions);
+	WRITE_BOOL_FIELD(hasFuncsWithExecRestrictions);
 	WRITE_NODE_FIELD(rtable);
 	WRITE_NODE_FIELD(jointree);
 	WRITE_NODE_FIELD(targetList);
@@ -3880,7 +3881,7 @@ _outA_ArrayExpr(StringInfo str, A_ArrayExpr *node)
 	WRITE_NODE_TYPE("A_ARRAYEXPR");
 
 	WRITE_NODE_FIELD(elements);
-/*	WRITE_LOCATION_FIELD(location); */
+	WRITE_LOCATION_FIELD(location);
 }
 
 static void

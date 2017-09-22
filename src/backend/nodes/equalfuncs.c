@@ -24,7 +24,7 @@
  * Portions Copyright (c) 1994, Regents of the University of California
  *
  * IDENTIFICATION
- *	  $PostgreSQL: pgsql/src/backend/nodes/equalfuncs.c,v 1.332 2008/10/04 21:56:53 tgl Exp $
+ *	  $PostgreSQL: pgsql/src/backend/nodes/equalfuncs.c,v 1.320 2008/03/21 22:41:48 tgl Exp $
  *
  *-------------------------------------------------------------------------
  */
@@ -671,9 +671,9 @@ _equalSetToDefault(SetToDefault *a, SetToDefault *b)
 static bool
 _equalCurrentOfExpr(CurrentOfExpr *a, CurrentOfExpr *b)
 {
+	COMPARE_SCALAR_FIELD(cvarno);
 	COMPARE_STRING_FIELD(cursor_name);
 	COMPARE_SCALAR_FIELD(cursor_param);
-	COMPARE_SCALAR_FIELD(cvarno);
 	COMPARE_SCALAR_FIELD(target_relid);
 
 	/* some attributes omitted as they're bound only just before executor dispatch */
@@ -846,6 +846,7 @@ _equalQuery(Query *a, Query *b)
 	COMPARE_SCALAR_FIELD(hasWindowFuncs);
 	COMPARE_SCALAR_FIELD(hasSubLinks);
 	COMPARE_SCALAR_FIELD(hasDynamicFunctions);
+	COMPARE_SCALAR_FIELD(hasFuncsWithExecRestrictions);
 	COMPARE_NODE_FIELD(rtable);
 	COMPARE_NODE_FIELD(jointree);
 	COMPARE_NODE_FIELD(targetList);
@@ -1107,7 +1108,6 @@ _equalDeclareCursorStmt(DeclareCursorStmt *a, DeclareCursorStmt *b)
 	COMPARE_STRING_FIELD(portalname);
 	COMPARE_SCALAR_FIELD(options);
 	COMPARE_NODE_FIELD(query);
-	COMPARE_SCALAR_FIELD(is_simply_updatable);
 
 	return true;
 }
@@ -2120,7 +2120,6 @@ _equalTypeName(TypeName *a, TypeName *b)
 {
 	COMPARE_NODE_FIELD(names);
 	COMPARE_SCALAR_FIELD(typid);
-	COMPARE_SCALAR_FIELD(timezone);
 	COMPARE_SCALAR_FIELD(setof);
 	COMPARE_SCALAR_FIELD(pct_type);
 	COMPARE_NODE_FIELD(typmods);
