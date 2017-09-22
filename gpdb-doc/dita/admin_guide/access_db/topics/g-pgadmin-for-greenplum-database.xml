@@ -18,8 +18,8 @@
       </ul>
       <note/>
       <fig id="io149932">
-         <title>Greenplum Version of  pgAdmin 4</title>
+         <title>Greenplum Version of pgAdmin 4</title>
+         <image href="../../../graphics/pgAdmin4_ddl.png"  placement="break" width="679px" id="image_phx_vqr_hbb"/>
       </fig>
-      <image href="../../../graphics/pgAdmin4_ddl.png" id="image_c5v_5gq_hbb"/>
    </body>
 </topic>
