@@ -11,8 +11,10 @@
         <steps id="steps_q1h_kdn_vp">
             <step>
                 <cmd>With the correct database schema highlighted in the object browser in the left
-                    pane, select  <b>Tools</b> > <b>Query Tool</b> from the top menu bar.  You can
-                    open multiple query tabs by selecting the option multiple times.</cmd>
+                    pane, select <b>Tools</b> > <b>Query Tool</b> from the top menu bar. You can
+                    open multiple query tabs by selecting the option multiple times.
+                    <image  href="../../graphics/pgAdmin4_queryDropdown.png" placement="break" width="679px" id="image_mjr_lxm_3bb"
+                    /></cmd>
             </step>
             <step>
                 <cmd>Enter the query by typing in the SQL Editor, dragging objects into the

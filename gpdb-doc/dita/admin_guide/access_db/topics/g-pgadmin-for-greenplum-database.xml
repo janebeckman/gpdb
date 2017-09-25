@@ -7,19 +7,27 @@
       <p>If you prefer a graphic interface, use pgAdmin 4. This GUI client supports PostgreSQL
          databases with all standard pgAdmin 4 features, while adding support for some
          Greenplum-specific features. </p>
-      <p>Most administrative functions for Greenplum Database are not available.  pgAdmin 4 supports
-         the following Greenplum-specific features:</p>
+      <p>pgAdmin 4 supports the following Greenplum-specific features:</p>
       <ul>
          <li>Viewing Greenplum table DDL.</li>
-         <li id="io147522">Append-optimized tables, including compressed append-optimized
-            tables</li>
-         <li id="io147525">Graphical <codeph>EXPLAIN</codeph>
-            <note>Only limited functionality for Greenplum partitioned tables is available with
+         <li id="io147525">Graphical <codeph>EXPLAIN</codeph>. <note><codeph>EXPLAIN
+                  ANALYZE</codeph> is currently not available.</note>
+         </li>
+         <li id="io147522">Append-optimized tables, including compressed append-optimized tables.
+               <note>Only limited functionality for Greenplum partitioned tables is available with
                pgAdmin 4.</note></li>
+      </ul>
+      <p>The following Tree Control functions are not available for Greenplum Database.</p>
+      <ul id="ul_xkb_htm_3bb">
+         <li>Casts</li>
+         <li>Event triggers</li>
+         <li>Extensions</li>
+         <li>Foreign Data Wrappers </li>
       </ul>
       <fig id="io149932">
          <title>Greenplum Version of pgAdmin 4</title>
-         <image href="../../graphics/pgAdmin4_ddl.png"  placement="break" width="679px" id="image_phx_vqr_hbb"/>
+         <image href="../../graphics/pgAdmin4Dashbd.png" placement="break" width="679px"
+            id="image_phx_vqr_hbb"/>
       </fig>
    </body>
 </topic>
