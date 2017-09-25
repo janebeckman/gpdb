@@ -817,48 +817,37 @@ _outAgg(StringInfo str, Agg *node)
 
 #ifndef COMPILING_BINARY_FUNCS
 static void
-_outWindowKey(StringInfo str, WindowKey *node)
+_outWindowAgg(StringInfo str, WindowAgg *node)
 {
 	int			i;
 
-	WRITE_NODE_TYPE("WINDOWKEY");
-	WRITE_INT_FIELD(numSortCols);
+	WRITE_NODE_TYPE("WINDOWAGG");
 
-	appendStringInfoLiteral(str, " :sortColIdx");
-	for (i = 0; i < node->numSortCols; i++)
-		appendStringInfo(str, " %d", node->sortColIdx[i]);
+	_outPlanInfo(str, (Plan *) node);
 
-	appendStringInfoLiteral(str, " :sortOperators");
-	for (i = 0; i < node->numSortCols; i++)
-		appendStringInfo(str, " %u", node->sortOperators[i]);
+	WRITE_INT_FIELD(partNumCols);
+
+	appendStringInfoLiteral(str, " :partColIdx");
+	for (i = 0; i < node->partNumCols; i++)
+		appendStringInfo(str, " %d", node->partColIdx[i]);
+
+	appendStringInfoLiteral(str, " :partOperators");
+	for (i = 0; i < node->partNumCols; i++)
+		appendStringInfo(str, " %u", node->partOperators[i]);
+
+	WRITE_INT_FIELD(ordNumCols);
+
+	appendStringInfoString(str, " :ordColIdx");
+	for (i = 0; i < node->ordNumCols; i++)
+		appendStringInfo(str, " %d", node->ordColIdx[i]);
+
+	appendStringInfoString(str, " :ordOperations");
+	for (i = 0; i < node->ordNumCols; i++)
+		appendStringInfo(str, " %u", node->ordOperators[i]);
 
 	WRITE_INT_FIELD(frameOptions);
 	WRITE_NODE_FIELD(startOffset);
 	WRITE_NODE_FIELD(endOffset);
-}
-#endif /* COMPILING_BINARY_FUNCS */
-
-#ifndef COMPILING_BINARY_FUNCS
-static void
-_outWindow(StringInfo str, Window *node)
-{
-	int			i;
-
-	WRITE_NODE_TYPE("WINDOW");
-
-	_outPlanInfo(str, (Plan *) node);
-
-	WRITE_INT_FIELD(numPartCols);
-
-	appendStringInfoLiteral(str, " :partColIdx");
-	for (i = 0; i < node->numPartCols; i++)
-		appendStringInfo(str, " %d", node->partColIdx[i]);
-
-	appendStringInfoLiteral(str, " :partOperators");
-	for (i = 0; i < node->numPartCols; i++)
-		appendStringInfo(str, " %u", node->partOperators[i]);
-
-	WRITE_NODE_FIELD(windowKeys);
 }
 #endif /* COMPILING_BINARY_FUNCS */
 
@@ -1254,12 +1243,12 @@ _outAggOrder(StringInfo str, AggOrder *node)
 }
 
 static void
-_outWindowRef(StringInfo str, WindowRef *node)
+_outWindowFunc(StringInfo str, WindowFunc *node)
 {
-	WRITE_NODE_TYPE("WINDOWREF");
+	WRITE_NODE_TYPE("WINDOWFUNC");
 
 	WRITE_OID_FIELD(winfnoid);
-	WRITE_OID_FIELD(restype);
+	WRITE_OID_FIELD(wintype);
 	WRITE_NODE_FIELD(args);
 	WRITE_UINT_FIELD(winref);
 	WRITE_BOOL_FIELD(winstar);
@@ -1267,7 +1256,6 @@ _outWindowRef(StringInfo str, WindowRef *node)
 	WRITE_BOOL_FIELD(windistinct);
 	WRITE_UINT_FIELD(winindex);
 	WRITE_ENUM_FIELD(winstage, WinStage);
-	WRITE_UINT_FIELD(winlevel);
 	WRITE_LOCATION_FIELD(location);
 }
 
@@ -1691,12 +1679,9 @@ _outFromExpr(StringInfo str, FromExpr *node)
 	WRITE_NODE_FIELD(quals);
 }
 
-#ifndef COMPILING_BINARY_FUNCS
 static void
 _outFlow(StringInfo str, Flow *node)
 {
-	int i;
-
 	WRITE_NODE_TYPE("FLOW");
 
 	WRITE_ENUM_FIELD(flotype, FlowType);
@@ -1704,33 +1689,10 @@ _outFlow(StringInfo str, Flow *node)
 	WRITE_ENUM_FIELD(locustype, CdbLocusType);
 	WRITE_INT_FIELD(segindex);
 
-	/* This array format as in Group and Sort nodes. */
-	WRITE_INT_FIELD(numSortCols);
-	if(node->numSortCols > 0)
-	{
-		appendStringInfoLiteral(str, " :sortColIdx");
-		if(node->sortColIdx == NULL)
-			appendStringInfoString(str, " <>");
-		else {
-			for ( i = 0; i < node->numSortCols; i++ )
-				appendStringInfo(str, " %d", node->sortColIdx[i]);
-		}
-
-		appendStringInfoLiteral(str, " :sortOperators");
-		if(node->sortOperators == NULL)
-			appendStringInfoString(str, " <>");
-		else {
-			for ( i = 0; i < node->numSortCols; i++ )
-				appendStringInfo(str, " %u", node->sortOperators[i]);
-		}
-	}
-	WRITE_INT_FIELD(numOrderbyCols);
-
 	WRITE_NODE_FIELD(hashExpr);
 
 	WRITE_NODE_FIELD(flow_before_req_move);
 }
-#endif /* COMPILING_BINARY_FUNCS */
 
 /*****************************************************************************
  *
@@ -3506,6 +3468,7 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_NODE_FIELD(distinctClause);
 	WRITE_NODE_FIELD(sortClause);
 	WRITE_NODE_FIELD(scatterClause);
+	WRITE_BOOL_FIELD(isTableValueSelect);
 	WRITE_NODE_FIELD(cteList);
 	WRITE_BOOL_FIELD(hasRecursive);
 	WRITE_NODE_FIELD(limitOffset);
@@ -4455,11 +4418,8 @@ _outNode(StringInfo str, void *obj)
 			case T_Agg:
 				_outAgg(str, obj);
 				break;
-			case T_WindowKey:
-				_outWindowKey(str, obj);
-				break;
-			case T_Window:
-				_outWindow(str, obj);
+			case T_WindowAgg:
+				_outWindowAgg(str, obj);
 				break;
 			case T_TableFunctionScan:
 				_outTableFunctionScan(str, obj);
@@ -4530,8 +4490,8 @@ _outNode(StringInfo str, void *obj)
 			case T_AggOrder:
 				_outAggOrder(str, obj);
 				break;
-			case T_WindowRef:
-				_outWindowRef(str, obj);
+			case T_WindowFunc:
+				_outWindowFunc(str, obj);
 				break;
 			case T_ArrayRef:
 				_outArrayRef(str, obj);

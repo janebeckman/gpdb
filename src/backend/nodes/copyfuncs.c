@@ -983,43 +983,30 @@ _copyAgg(Agg *from)
 }
 
 /*
- * _copyWindowKey
+ * _copyWindowAgg
  */
-static WindowKey *
-_copyWindowKey(WindowKey *from)
+static WindowAgg *
+_copyWindowAgg(WindowAgg *from)
 {
-	WindowKey   *newnode = makeNode(WindowKey);
+	WindowAgg  *newnode = makeNode(WindowAgg);
 
-	COPY_SCALAR_FIELD(numSortCols);
-	if (from->numSortCols > 0)
+	CopyPlanFields((Plan *) from, (Plan *) newnode);
+
+	COPY_SCALAR_FIELD(partNumCols);
+	if (from->partNumCols > 0)
 	{
-		COPY_POINTER_FIELD(sortColIdx, from->numSortCols * sizeof(AttrNumber));
-		COPY_POINTER_FIELD(sortOperators, from->numSortCols * sizeof(Oid));
+		COPY_POINTER_FIELD(partColIdx, from->partNumCols * sizeof(AttrNumber));
+		COPY_POINTER_FIELD(partOperators, from->partNumCols * sizeof(Oid));
+	}
+	COPY_SCALAR_FIELD(ordNumCols);
+	if (from->ordNumCols > 0)
+	{
+		COPY_POINTER_FIELD(ordColIdx, from->ordNumCols * sizeof(AttrNumber));
+		COPY_POINTER_FIELD(ordOperators, from->ordNumCols * sizeof(Oid));
 	}
 	COPY_SCALAR_FIELD(frameOptions);
 	COPY_NODE_FIELD(startOffset);
 	COPY_NODE_FIELD(endOffset);
-
-	return newnode;
-}
-
-/*
- * _copyWindow
- */
-static Window *
-_copyWindow(Window *from)
-{
-	Window	*newnode = makeNode(Window);
-
-	CopyPlanFields((Plan *) from, (Plan *) newnode);
-
-	COPY_SCALAR_FIELD(numPartCols);
-	if (from->numPartCols > 0)
-	{
-		COPY_POINTER_FIELD(partColIdx, from->numPartCols * sizeof(AttrNumber));
-		COPY_POINTER_FIELD(partOperators, from->numPartCols * sizeof(Oid));
-	}
-	COPY_NODE_FIELD(windowKeys);
 
 	return newnode;
 }
@@ -1463,15 +1450,15 @@ _copyAggOrder(AggOrder *from)
 }
 
 /*
- * _copyWindowRef
+ * _copyWindowFunc
  */
-static WindowRef *
-_copyWindowRef(WindowRef *from)
+static WindowFunc *
+_copyWindowFunc(WindowFunc *from)
 {
-	WindowRef	   *newnode = makeNode(WindowRef);
+	WindowFunc *newnode = makeNode(WindowFunc);
 
 	COPY_SCALAR_FIELD(winfnoid);
-	COPY_SCALAR_FIELD(restype);
+	COPY_SCALAR_FIELD(wintype);
 	COPY_NODE_FIELD(args);
 	COPY_SCALAR_FIELD(winref);
 	COPY_SCALAR_FIELD(winstar);
@@ -1479,7 +1466,6 @@ _copyWindowRef(WindowRef *from)
 	COPY_SCALAR_FIELD(windistinct);
 	COPY_SCALAR_FIELD(winindex);
 	COPY_SCALAR_FIELD(winstage);
-	COPY_SCALAR_FIELD(winlevel);
 	COPY_LOCATION_FIELD(location);
 
 	return newnode;
@@ -2070,11 +2056,6 @@ _copyFlow(Flow *from)
 	COPY_SCALAR_FIELD(req_move);
 	COPY_SCALAR_FIELD(locustype);
 	COPY_SCALAR_FIELD(segindex);
-	COPY_SCALAR_FIELD(numSortCols);
-	COPY_POINTER_FIELD(sortColIdx, from->numSortCols*sizeof(AttrNumber));
-	COPY_POINTER_FIELD(sortOperators, from->numSortCols*sizeof(Oid));
-	COPY_POINTER_FIELD(nullsFirst, from->numSortCols*sizeof(bool));
-	COPY_SCALAR_FIELD(numOrderbyCols);
 	COPY_NODE_FIELD(hashExpr);
 	COPY_NODE_FIELD(flow_before_req_move);
 
@@ -2842,6 +2823,7 @@ _copyQuery(Query *from)
 	COPY_NODE_FIELD(distinctClause);
 	COPY_NODE_FIELD(sortClause);
 	COPY_NODE_FIELD(scatterClause);
+	COPY_SCALAR_FIELD(isTableValueSelect);
 	COPY_NODE_FIELD(cteList);
 	COPY_SCALAR_FIELD(hasRecursive);
 	COPY_NODE_FIELD(limitOffset);
@@ -4662,11 +4644,8 @@ copyObject(void *from)
 		case T_Agg:
 			retval = _copyAgg(from);
 			break;
-		case T_WindowKey:
-			retval = _copyWindowKey(from);
-			break;
-		case T_Window:
-			retval = _copyWindow(from);
+		case T_WindowAgg:
+			retval = _copyWindowAgg(from);
 			break;
 		case T_TableFunctionScan:
 			retval = _copyTableFunctionScan(from);
@@ -4732,8 +4711,8 @@ copyObject(void *from)
 		case T_AggOrder:
 			retval = _copyAggOrder(from);
 			break;
-		case T_WindowRef:
-			retval = _copyWindowRef(from);
+		case T_WindowFunc:
+			retval = _copyWindowFunc(from);
 			break;
 		case T_ArrayRef:
 			retval = _copyArrayRef(from);

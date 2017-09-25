@@ -439,31 +439,23 @@ _outAgg(StringInfo str, Agg *node)
 }
 
 static void
-_outWindowKey(StringInfo str, WindowKey *node)
+_outWindowAgg(StringInfo str, WindowAgg *node)
 {
-	WRITE_NODE_TYPE("WINDOWKEY");
-	WRITE_INT_FIELD(numSortCols);
-
-	WRITE_INT_ARRAY(sortColIdx, node->numSortCols, AttrNumber);
-	WRITE_OID_ARRAY(sortOperators, node->numSortCols);
-	WRITE_INT_FIELD(frameOptions);
-	WRITE_NODE_FIELD(startOffset);
-	WRITE_NODE_FIELD(endOffset);
-}
-
-
-static void
-_outWindow(StringInfo str, Window *node)
-{
-	WRITE_NODE_TYPE("WINDOW");
+	WRITE_NODE_TYPE("WINDOWAGG");
 
 	_outPlanInfo(str, (Plan *) node);
 
-	WRITE_INT_FIELD(numPartCols);
-	WRITE_INT_ARRAY(partColIdx, node->numPartCols, AttrNumber);
-	WRITE_OID_ARRAY(partOperators, node->numPartCols);
+	WRITE_INT_FIELD(partNumCols);
+	WRITE_INT_ARRAY(partColIdx, node->partNumCols, AttrNumber);
+	WRITE_OID_ARRAY(partOperators, node->partNumCols);
 
-	WRITE_NODE_FIELD(windowKeys);
+	WRITE_INT_FIELD(ordNumCols);
+
+	WRITE_INT_ARRAY(ordColIdx, node->ordNumCols, AttrNumber);
+	WRITE_OID_ARRAY(ordOperators, node->ordNumCols);
+	WRITE_INT_FIELD(frameOptions);
+	WRITE_NODE_FIELD(startOffset);
+	WRITE_NODE_FIELD(endOffset);
 }
 
 static void
@@ -641,31 +633,6 @@ _outJoinExpr(StringInfo str, JoinExpr *node)
 	WRITE_NODE_FIELD(quals);
 	WRITE_NODE_FIELD(alias);
 	WRITE_INT_FIELD(rtindex);
-}
-
-static void
-_outFlow(StringInfo str, Flow *node)
-{
-
-	WRITE_NODE_TYPE("FLOW");
-
-	WRITE_ENUM_FIELD(flotype, FlowType);
-	WRITE_ENUM_FIELD(req_move, Movement);
-	WRITE_ENUM_FIELD(locustype, CdbLocusType);
-	WRITE_INT_FIELD(segindex);
-
-	/* This array format as in Group and Sort nodes. */
-	WRITE_INT_FIELD(numSortCols);
-
-	WRITE_INT_ARRAY(sortColIdx, node->numSortCols, AttrNumber);
-	WRITE_OID_ARRAY(sortOperators, node->numSortCols);
-	WRITE_BOOL_ARRAY(nullsFirst, node->numSortCols);
-
-	WRITE_INT_FIELD(numOrderbyCols);
-
-	WRITE_NODE_FIELD(hashExpr);
-
-	WRITE_NODE_FIELD(flow_before_req_move);
 }
 
 /*****************************************************************************
@@ -913,6 +880,7 @@ _outQuery(StringInfo str, Query *node)
 	WRITE_NODE_FIELD(distinctClause);
 	WRITE_NODE_FIELD(sortClause);
 	WRITE_NODE_FIELD(scatterClause);
+	WRITE_BOOL_FIELD(isTableValueSelect);
 	WRITE_NODE_FIELD(cteList);
 	WRITE_BOOL_FIELD(hasRecursive);
 	WRITE_NODE_FIELD(limitOffset);
@@ -1311,11 +1279,8 @@ _outNode(StringInfo str, void *obj)
 			case T_Agg:
 				_outAgg(str, obj);
 				break;
-			case T_WindowKey:
-				_outWindowKey(str, obj);
-				break;
-			case T_Window:
-				_outWindow(str, obj);
+			case T_WindowAgg:
+				_outWindowAgg(str, obj);
 				break;
 			case T_TableFunctionScan:
 				_outTableFunctionScan(str, obj);
@@ -1383,8 +1348,8 @@ _outNode(StringInfo str, void *obj)
 			case T_AggOrder:
 				_outAggOrder(str, obj);
 				break;
-			case T_WindowRef:
-				_outWindowRef(str, obj);
+			case T_WindowFunc:
+				_outWindowFunc(str, obj);
 				break;
 			case T_ArrayRef:
 				_outArrayRef(str, obj);

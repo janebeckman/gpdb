@@ -223,10 +223,10 @@ _equalAggOrder(AggOrder *a, AggOrder *b)
 }
 
 static bool
-_equalWindowRef(WindowRef *a, WindowRef *b)
+_equalWindowFunc(WindowFunc *a, WindowFunc *b)
 {
 	COMPARE_SCALAR_FIELD(winfnoid);
-	COMPARE_SCALAR_FIELD(restype);
+	COMPARE_SCALAR_FIELD(wintype);
 	COMPARE_NODE_FIELD(args);
 	COMPARE_SCALAR_FIELD(winref);
 	COMPARE_SCALAR_FIELD(winstar);
@@ -234,7 +234,6 @@ _equalWindowRef(WindowRef *a, WindowRef *b)
 	COMPARE_SCALAR_FIELD(windistinct);
 	COMPARE_SCALAR_FIELD(winindex);
 	COMPARE_SCALAR_FIELD(winstage);
-	COMPARE_SCALAR_FIELD(winlevel);
 	COMPARE_LOCATION_FIELD(location);
 
 	return true;
@@ -734,9 +733,6 @@ _equalFlow(Flow *a, Flow *b)
 	COMPARE_SCALAR_FIELD(req_move);
 	COMPARE_SCALAR_FIELD(locustype);
 	COMPARE_SCALAR_FIELD(segindex);
-	COMPARE_SCALAR_FIELD(numSortCols);
-	COMPARE_POINTER_FIELD(sortColIdx, a->numSortCols*sizeof(AttrNumber));
-	COMPARE_POINTER_FIELD(sortOperators, a->numSortCols*sizeof(Oid));
 	COMPARE_NODE_FIELD(hashExpr);
 
 	return true;
@@ -857,6 +853,7 @@ _equalQuery(Query *a, Query *b)
 	COMPARE_NODE_FIELD(distinctClause);
 	COMPARE_NODE_FIELD(sortClause);
 	COMPARE_NODE_FIELD(scatterClause);
+	COMPARE_SCALAR_FIELD(isTableValueSelect);
 	COMPARE_NODE_FIELD(cteList);
 	COMPARE_SCALAR_FIELD(hasRecursive);
 	COMPARE_NODE_FIELD(limitOffset);
@@ -2573,8 +2570,8 @@ equal(void *a, void *b)
 		case T_AggOrder:
 			retval = _equalAggOrder(a, b);
 			break;
-		case T_WindowRef:
-			retval = _equalWindowRef(a, b);
+		case T_WindowFunc:
+			retval = _equalWindowFunc(a, b);
 			break;
 		case T_ArrayRef:
 			retval = _equalArrayRef(a, b);

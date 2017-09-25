@@ -1673,6 +1673,8 @@ transformTableValueExpr(ParseState *pstate, TableValueExpr *t)
 	/* Analyze and transform the subquery */
 	query = parse_sub_analyze(t->subquery, pstate);
 
+	query->isTableValueSelect = true;
+
 	/* 
 	 * Check that we got something reasonable.  Most of these conditions
 	 * are probably impossible given restrictions in the grammar.
@@ -2521,8 +2523,8 @@ exprType(Node *expr)
 		case T_Aggref:
 			type = ((Aggref *) expr)->aggtype;
 			break;
-		case T_WindowRef:
-			type = ((WindowRef *) expr)->restype;
+		case T_WindowFunc:
+			type = ((WindowFunc *) expr)->wintype;
 			break;
 		case T_ArrayRef:
 			{

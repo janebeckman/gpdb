@@ -336,6 +336,7 @@ _readQuery(void)
 	READ_NODE_FIELD(distinctClause);
 	READ_NODE_FIELD(sortClause);
 	READ_NODE_FIELD(scatterClause);
+	READ_BOOL_FIELD(isTableValueSelect);
 	READ_NODE_FIELD(cteList);
 	READ_BOOL_FIELD(hasRecursive);
 	READ_NODE_FIELD(limitOffset);
@@ -1313,17 +1314,16 @@ _readAggOrder(void)
     READ_DONE();
 }
 
-
 /*
- * _readWindowRef
+ * _readWindowFunc
  */
-static WindowRef *
-_readWindowRef(void)
+static WindowFunc *
+_readWindowFunc(void)
 {
-	READ_LOCALS(WindowRef);
+	READ_LOCALS(WindowFunc);
 
 	READ_OID_FIELD(winfnoid);
-	READ_OID_FIELD(restype);
+	READ_OID_FIELD(wintype);
 	READ_NODE_FIELD(args);
 	READ_UINT_FIELD(winref);
 	READ_BOOL_FIELD(winstar);
@@ -1331,7 +1331,6 @@ _readWindowRef(void)
 	READ_BOOL_FIELD(windistinct);
 	READ_UINT_FIELD(winindex);
 	READ_ENUM_FIELD(winstage, WinStage);
-	READ_UINT_FIELD(winlevel);
 	READ_LOCATION_FIELD(location);
 
 	READ_DONE();
@@ -2652,26 +2651,6 @@ _readConstraintsSetStmt(void)
 	READ_DONE();
 }
 
-#ifndef COMPILING_BINARY_FUNCS
-/*
- * _readWindowKey
- */
-static WindowKey *
-_readWindowKey(void)
-{
-	READ_LOCALS(WindowKey);
-
-	READ_INT_FIELD(numSortCols);
-	READ_INT_ARRAY_OR_NULL(sortColIdx, numSortCols, AttrNumber);
-	READ_OID_ARRAY(sortOperators, numSortCols);
-	READ_INT_FIELD(frameOptions);
-	READ_NODE_FIELD(startOffset);
-	READ_NODE_FIELD(endOffset);
-
-	READ_DONE();
-}
-#endif /* COMPILING_BINARY_FUNCS */
-
 /*
  * _readVacuumStmt
  */
@@ -2881,6 +2860,8 @@ parseNodeString(void)
 		return_value = _readParam();
 	else if (MATCH("AGGREF", 6))
 		return_value = _readAggref();
+	else if (MATCH("WINDOWFUNC", 10))
+		return_value = _readWindowFunc();
 	else if (MATCH("ARRAYREF", 8))
 		return_value = _readArrayRef();
 	else if (MATCH("FUNCEXPR", 8))
@@ -3139,10 +3120,6 @@ parseNodeString(void)
 		return_value = _readVariableSetStmt();
 	else if (MATCHX("VIEWSTMT"))
 		return_value = _readViewStmt();
-	else if (MATCHX("WINDOWKEY"))
-		return_value = _readWindowKey();
-	else if (MATCHX("WINDOWREF"))
-		return_value = _readWindowRef();
 	else if (MATCHX("WITHCLAUSE"))
 		return_value = _readWithClause();
 	else

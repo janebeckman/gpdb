@@ -851,7 +851,7 @@ transformInsertRow(ParseState *pstate, List *exprlist,
  *
  * As a result, the depth of outer references in Q'' and below
  * will increase, so we need to adjust non-zero xxxlevelsup fields
- * (Var, Aggref, and WindowRef nodes) in Q'' and below.  At the end,
+ * (Var, Aggref, and WindowFunc nodes) in Q'' and below.  At the end,
  * there will be no levelsup items referring to Q'.  Prior references
  * to Q will now refer to Q''; prior references to blocks above Q will
  * refer to the same blocks above Q'.)
@@ -1861,6 +1861,7 @@ transformSetOperationStmt(ParseState *pstate, SelectStmt *stmt)
 	SelectStmt *leftmostSelect;
 	int			leftmostRTI;
 	Query	   *leftmostQuery;
+	WithClause *withClause;
 	SetOperationStmt *sostmt;
 	List	   *intoColNames = NIL;
 	List	   *sortClause;
@@ -1910,11 +1911,13 @@ transformSetOperationStmt(ParseState *pstate, SelectStmt *stmt)
 	limitOffset = stmt->limitOffset;
 	limitCount = stmt->limitCount;
 	lockingClause = stmt->lockingClause;
+	withClause = stmt->withClause;
 
 	stmt->sortClause = NIL;
 	stmt->limitOffset = NULL;
 	stmt->limitCount = NULL;
 	stmt->lockingClause = NIL;
+	stmt->withClause = NULL;
 
 	/* We don't support FOR UPDATE/SHARE with set ops at the moment. */
 	if (lockingClause)
@@ -1923,10 +1926,10 @@ transformSetOperationStmt(ParseState *pstate, SelectStmt *stmt)
 				 errmsg("SELECT FOR UPDATE/SHARE is not allowed with UNION/INTERSECT/EXCEPT")));
 
 	/* process the WITH clause */
-	if (stmt->withClause)
+	if (withClause)
 	{
-		qry->hasRecursive = stmt->withClause->recursive;
-		qry->cteList = transformWithClause(pstate, stmt->withClause);
+		qry->hasRecursive = withClause->recursive;
+		qry->cteList = transformWithClause(pstate, withClause);
 	}
 
 	/*
@@ -2289,7 +2292,7 @@ transformSetOperationTree_internal(ParseState *pstate, SelectStmt *stmt,
 	{
 		Assert(stmt->larg != NULL && stmt->rarg != NULL);
 		if (stmt->sortClause || stmt->limitOffset || stmt->limitCount ||
-			stmt->lockingClause)
+			stmt->lockingClause || stmt->withClause)
 			isLeaf = true;
 		else
 			isLeaf = false;
