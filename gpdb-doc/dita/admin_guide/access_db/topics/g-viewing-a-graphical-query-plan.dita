@@ -10,44 +10,21 @@
             output.</context>
         <steps id="steps_q1h_kdn_vp">
             <step>
-                <cmd>With the correct database highlighted in the object browser in the left pane,
-                    select <menucascade>
-                        <uicontrol>Tools </uicontrol>
-                        <uicontrol>Query</uicontrol>
-                    </menucascade> tool. </cmd>
+                <cmd>With the correct database schema highlighted in the object browser in the left
+                    pane, select  <b>Tools</b> > <b>Query Tool</b> from the top menu bar.  You can
+                    open multiple query tabs by selecting the option multiple times.</cmd>
             </step>
             <step>
-                <cmd>Enter the query by typing in the SQL Editor, dragging objects into the Graphical
-                    Query Builder, or opening a file. </cmd>
+                <cmd>Enter the query by typing in the SQL Editor, dragging objects into the
+                    Graphical Query Builder, or opening a file. Click on the lightning bolt and go
+                    to the <b>Explain Options</b> in the dropdown to make sure the Verbose option is
+                    not selected. (Verbose must be deselected to view a graphical depiction of the
+                    query plan.) </cmd>
             </step>
             <step>
-                <cmd>Select <menucascade>
-                    <uicontrol>Query</uicontrol>
-                    <uicontrol>Explain</uicontrol>
-                </menucascade> options and verify the following options:</cmd>
-                <choicetable id="choicetable_t3s_sdn_vp">
-                    <chrow>
-                        
-                            <choption>Verbose </choption>
-                            <chdesc>this must be deselected if you want to view a graphical depiction of
-                                the query plan</chdesc>
-                        
-                    </chrow>
-                    
-                        <chrow>
-                            <choption>Analyze</choption>
-                            <chdesc>select this option if you want to run the query in addition to
-                                viewing the plan</chdesc>
-                        </chrow>
-                    
-                </choicetable>
-            </step>
-            <step>
-                <cmd>Trigger the operation by clicking the Explain query option at the top of the
-                    pane, or by selecting <menucascade>
-                        <uicontrol>Query</uicontrol>
-                        <uicontrol>Explain</uicontrol>
-                    </menucascade>.</cmd>
+                <cmd>Click on <b>Explain</b> in the the dropdown menu to trigger the operation.
+                    Note: The <b>Explain Analyze</b> function is not currently available with
+                    Greenplum Database.</cmd>
                 <stepresult>The query plan displays in the Output pane at the bottom of the screen.
                     Select the <uicontrol>Explain</uicontrol> tab to view the graphical output. For
                         example:<fig id="io149084">
