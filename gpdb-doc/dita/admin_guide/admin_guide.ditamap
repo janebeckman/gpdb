@@ -39,13 +39,11 @@
             <topicref href="roles_privs.xml" navtitle="Managing Roles and Privileges"
                 id="roles_privs"/>
         </topicref>
-        <topicref href="partIV.xml" navtitle="Working with Databases" id="partIV">
-            <topicref href="ddl/ddl.ditamap" format="ditamap"/>
-            <topicref href="dml.xml" navtitle="Managing Data" id="dml"/>
-        </topicref>
+        <topicref href="ddl/ddl.ditamap" format="ditamap"/>
+        <topicref href="dml.xml" navtitle="Managing Data" id="dml"/>
+        <topicref href="query/query.ditamap" navtitle="Querying Data" format="ditamap"/>
         <topicref href="external/external-tables.ditamap" navtitle="Working with External Data" format="ditamap"/>
         <topicref href="load/load.ditamap" navtitle="Loading and Unloading Data" format="ditamap"/>
-        <topicref href="query/query.ditamap" navtitle="Querying Data" format="ditamap"/>
         <topicref href="partV.xml">
             <topicref href="perf_intro.xml" navtitle="Defining Database Performance" id="perf_intro"/>
             <topicref href="perf_issues.xml" navtitle="Common Causes of Performance Issues"
