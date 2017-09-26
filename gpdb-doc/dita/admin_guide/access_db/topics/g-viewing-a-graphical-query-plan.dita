@@ -19,14 +19,15 @@
             <step>
                 <cmd>Enter the query by typing in the SQL Editor, dragging objects into the
                     Graphical Query Builder, or opening a file. Click on the lightning bolt and go
-                    to the <b>Explain Options</b> in the dropdown to make sure the Verbose option is
-                    not selected. (Verbose must be deselected to view a graphical depiction of the
-                    query plan.) </cmd>
+                    to the <b>Explain</b> in the dropdown. Note: The <b>Explain Analyze</b> function
+                    is not currently available with Greenplum Database.</cmd>
             </step>
             <step>
                 <cmd>Click on <b>Explain</b> in the the dropdown menu to trigger the operation.
-                    Note: The <b>Explain Analyze</b> function is not currently available with
-                    Greenplum Database.</cmd>
+                    Make sure the Verbose option is not selected. (Verbose must be deselected to
+                    view a graphical depiction of the query plan If it shows as ON in the Data
+                    Output,  go to the <b>Explain Options</b> in the dropdown and click
+                        <b>Verbose</b> to deselect it.) </cmd>
                 <stepresult>The query plan displays in the Output pane at the bottom of the screen.
                     Select the <uicontrol>Explain</uicontrol> tab to view the graphical output. For
                         example:<fig id="io149084">
