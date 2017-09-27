@@ -21,22 +21,14 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-## <a id="pxerrortbl"></a>PXF Errors
-
-The following table lists errors you may encounter using PXF:
-
-| Error   | Common Explanation |
-|---------|---------------------|
-|   XX     |          XX        |
-
-## <a id="pxflogging"></a>PXF Logging
+## <a id="pxf-logging"></a>PXF Logging
 Enabling more verbose logging may aid PXF troubleshooting efforts.
 
 PXF provides two categories of message logging - service-level and database-level.
 
 ### <a id="pxfsvclogmsg"></a>Service-Level Logging
 
-PXF utilizes `log4j` for service-level logging. PXF-service-related log messages are captured in a log file specified by PXF's `log4j` properties file, `$GPHOME/pxf/conf/pxf-log4j.properties`. The default PXF logging configuration will write `INFO` and more severe level logs to `$GPHOME/log/pxf/pxf-service.log`.
+PXF utilizes `log4j` for service-level logging. PXF-service-related log messages are captured in a log file specified by PXF's `log4j` properties file, `$GPHOME/pxf/conf/pxf-log4j.properties`. The default PXF logging configuration will write `INFO` and more severe level logs to `$GPHOME/pxf/logs/pxf-service.log`.
 
 PXF provides more detailed logging when the `DEBUG` level is enabled.  To configure PXF `DEBUG` logging, uncomment the following line in `pxf-log4j.properties`:
 
@@ -44,13 +36,14 @@ PXF provides more detailed logging when the `DEBUG` level is enabled.  To config
 #log4j.logger.org.apache.hawq.pxf=DEBUG
 ```
 
-and restart the PXF service on *each* Greenplum Database segment host:
+Copy the `pxf-log4j.properties` file to each segment host and restart the PXF service on *each* Greenplum Database segment host. For example:
 
 ``` shell
-$ $GPHOME/pxf/bin/pxf restart
+gpadmin@gpmaster$ gpscp -f seghostfile $GPHOME/pxf/conf/pxf-log4j.properties :=/usr/local/greenplum-db/pxf/conf/pxf-log4j.properties
+gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf restart"
 ```
 
-With `DEBUG` level logging now enabled, perform your PXF operations; for example, create and query an external table. (Make note of the time; this will direct you to the relevant log messages in `$GPHOME/log/pxf/pxf-service.log`.)
+With `DEBUG` level logging now enabled, perform your PXF operations; for example, create and query an external table. (Make note of the time; this will direct you to the relevant log messages in `$GPHOME/pxf/logs/pxf-service.log`.)
 
 ``` shell
 $ psql
@@ -83,14 +76,16 @@ $ psql -d <dbname>
 dbname=# SET client_min_messages=DEBUG2
 dbname=# SELECT * FROM hdfstest;
 ...
-DEBUG2:  churl http header: cell #19: X-GP-URL-HOST: localhost
-DEBUG2:  churl http header: cell #20: X-GP-URL-PORT: 51200
-DEBUG2:  churl http header: cell #21: X-GP-DATA-DIR: /data/dir/hdfsfile
-DEBUG2:  churl http header: cell #22: X-GP-profile: HdfsTextSimple
-DEBUG2:  churl http header: cell #23: X-GP-URI: pxf://namenode:51200/data/dir/hdfsfile?profile=HdfsTextSimple
-...
-DEBUG2:  pxf: set_current_fragment_headers: using profile: Hive
-...
+DEBUG2:  churl http header: cell #19: X-GP-URL-HOST: seghost1  (seg0 slice1 127.0.0.1:40000 pid=3981)
+CONTEXT:  External table hdfstest, file pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple
+DEBUG2:  churl http header: cell #20: X-GP-URL-PORT: 51200  (seg0 slice1 127.0.0.1:40000 pid=3981)
+CONTEXT:  External table hdfstest, file pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple
+DEBUG2:  churl http header: cell #21: X-GP-DATA-DIR: data/dir/hdfsfile  (seg0 slice1 127.0.0.1:40000 pid=3981)
+CONTEXT:  External table hdfstest, file pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple
+DEBUG2:  churl http header: cell #22: X-GP-PROFILE: HdfsTextSimple  (seg0 slice1 127.0.0.1:40000 pid=3981)
+CONTEXT:  External table hdfstest, file pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple
+DEBUG2:  churl http header: cell #23: X-GP-URI: pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple  (seg0 slice1 127.0.0.1:40000 pid=3981)
+CONTEXT:  External table hdfstest, file pxf://data/dir/hdfsfile?PROFILE=HdfsTextSimple
 ```
 
 Examine/collect the log messages from `stdout`.
@@ -116,7 +111,7 @@ You will need to re-apply these configuration changes after any PXF version upgr
 
 Each PXF node is configured with a default Java heap size of 512MB. If the nodes in your cluster have an ample amount of memory, increasing the amount allocated to the PXF agents is the best approach. Pivotal recommends a heap size value between 1-2GB.
 
-Perform the following steps to increase the PXF agent heap size in your Greenplum Database deployment. **You must perform the configuration changes on each PXF node in your Greenplum Database cluster.**
+Perform the following steps to increase the PXF agent heap size in your Greenplum Database deployment. You will use the `gpscp` and `gpssh` utility commands to perform the configuration changes on each segment host in your Greenplum Database cluster.
 
 1. Log in to your Greenplum Database master node and set up the environment:
 
@@ -131,7 +126,7 @@ Perform the following steps to increase the PXF agent heap size in your Greenplu
     root@pxf-node$ vi $GPHOME/pxf/pxf-service/bin/setenv.sh
     ```
 
-3. Update the `-Xmx` option to the desired value in the `JVM_OPTS` setting:
+3. Update the `-Xmx` option to the desired value in the `JVM_OPTS` setting. For example:
 
     ``` shell
     JVM_OPTS="-Xmx1024M -Xss256K"
@@ -140,7 +135,7 @@ Perform the following steps to increase the PXF agent heap size in your Greenplu
 4. Copy the `setenv.sh` file you just modified to each segment host:
 
     ``` shell
-    gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf restart"
+    gpadmin@gpmaster$ gpscp -f seghostfile $GPHOME/pxf/pxf-service/bin/setenv.sh :=/usr/local/greenplum-db/pxf/pxf-service/bin/setenv.sh
     ```
 
 3. Restart PXF on each segment host:
@@ -149,21 +144,21 @@ Perform the following steps to increase the PXF agent heap size in your Greenplu
     gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf restart"
     ```
 
-### <a id="pxf-heapcfg"></a>Decreasing the Maximum Number of  Threads
+### <a id="pxf-threadcfg"></a>Decreasing the Maximum Number of  Threads
 
 If increasing the maximum heap size is not suitable for your Greenplum Database cluster, try decreasing the number of concurrent working threads configured for the underlying Tomcat web application. A decrease in the number of running threads will prevent any PXF node from exhausting its memory, while ensuring that current queries run to completion (albeit a bit slower). As Tomcat's default behavior is to queue requests until a thread is free, decreasing this value will not result in denied requests.
 
-The Tomcat default maximum number of threads is 300. Pivotal recommends  decreasing the maximum number of threads to under 6. (If you plan to run large workloads on a large number of files using a Hive profile, Pivotal recommends you pick an even lower value.)
+The Tomcat default maximum number of threads is 300. You may consider  decreasing the maximum number of threads to under 6. (If you plan to run large workloads on a large number of files using a Hive profile, you may choose to pick an even lower value.)
 
-Perform the following steps to decrease the maximum number of Tomcat threads in your Greenplum Database PXF deployment. **You must perform the configuration changes on each PXF node in your Greenplum Database cluster.**
+Perform the following steps to decrease the maximum number of Tomcat threads in your Greenplum Database PXF deployment. You will use the `gpscp` and `gpssh` utility commands to perform the configuration changes on each segment host in your Greenplum Database cluster.
 
 1. Open the `$GPHOME/pxf/pxf-service/conf/server.xml` file in a text editor.
 
     ``` shell
-    root@pxf-node$ vi $GPHOME/pxf/pxf-service/conf/server.xml
+    gpadmin@gpmaster$ vi $GPHOME/pxf/pxf-service/conf/server.xml
     ```
 
-2. Update the `Catalina` `Executor` block to identify the desired `maxThreads` value:
+2. Update the `Catalina` `Executor` block to identify the desired `maxThreads` value. For example:
 
     ``` xml
     <Executor maxThreads="2"
@@ -172,8 +167,14 @@ Perform the following steps to decrease the maximum number of Tomcat threads in 
               namePrefix="tomcat-http--"/>
     ```
 
-3. Restart PXF:
+4. Copy the `server.xml` file you just modified to each segment host:
 
     ``` shell
-    gpadmin@pxf-node$ $GPHOME/pxf/bin/pxf restart
+    gpadmin@gpmaster$ gpscp -f seghostfile $GPHOME/pxf/pxf-service/conf/server.xml :=/usr/local/greenplum-db/pxf/pxf-service/conf/server.xml
+    ```
+
+3. Restart PXF on each segment host:
+
+    ``` shell
+    gpadmin@gpmaster$ gpssh -f seghostfile "/usr/local/greenplum-db/pxf/bin/pxf restart"
     ```

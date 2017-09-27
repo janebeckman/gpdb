@@ -20,8 +20,7 @@ KIND, either express or implied.  See the License for the
 specific language governing permissions and limitations
 under the License.
 -->
-
-The PXF Extension Framework is an extensible framework that provides Greenplum Database access to external data. PXF includes built-in connectors for accessing HDFS file system data in text and Avro file format.
+Data in many Greenplum Database deployments may already reside in external sources. The PXF Extension Framework (PXF) provides access to this external data via built-in connectors called plug-ins. PXF plug-ins facilitate mapping an external data source to a Greenplum Database external table definition. PXF is installed with HDFS and Hive connectors, enabling you to access HDFS file system and Hive data in text, Avro, RCFile, Parquet, and ORC formats.
 
 -   **[Introducing the PXF Extension Framework](intro_pxf.html)**
 
@@ -43,9 +42,13 @@ The PXF Extension Framework is an extensible framework that provides Greenplum D
 
     This topic describes important PXF concepts, including enabling PXF for use in a database and PXF protocol and external table definitions.
 
--   **[Accessing HDFS File Data](hdfs_read_pxf.html)**
+-   **[Reading HDFS File Data](hdfs_read_pxf.html)**
 
-    This topic describes how to use the PXF HDFS connector and related profiles to read HDFS file data.
+    This topic describes how to use the PXF HDFS connector and related profiles to read text and Avro format HDFS files.
+
+-   **[Accessing Hive Table Data](hive_pxf.html)**
+
+    This topic describes how to use the PXF Hive connector and related profiles to read Hive tables stored in Text, RCFile, Parquet, and ORC file formats.
 
 -   **[Troubleshooting PXF](troubleshooting_pxf.html)**
 

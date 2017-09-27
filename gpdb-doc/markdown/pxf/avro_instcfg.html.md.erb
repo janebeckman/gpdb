@@ -29,10 +29,10 @@ Perform the following procedure to install and configure PXF for Avro on each se
     gpadmin@gpmaster$ wget "http://central.maven.org/maven2/org/apache/avro/avro-mapred/1.7.1/avro-mapred-1.7.1.jar"
     ```
 
-4. Copy the Avro JAR file to each Greenplum Database segment host. You must copy the file to the XXX directory. For example:
+4. Copy the Avro JAR file to each Greenplum Database segment host. You must copy the file to the `$HADOOP_HOME/share/hadoop/common/lib` directory. For example:
 
     ``` shell
-    gpadmin@gpmaster$ gpssh -f seghostfile avro-mapred-*.jar =:/
+    gpadmin@gpmaster$ gpscp -f seghostfile avro-mapred-*.jar =:/usr/local/hadoop-2.6.0/share/hadoop/common/lib
     ```
 
 5. *If you have not yet initialized and started PXF, skip the rest of the steps in this procedure.*

@@ -43,9 +43,9 @@ The following PXF files and directories are installed in your Greenplum Database
 | `pxf/conf`                | The PXF configuration directory. This directory contains the `pxf-private.classpath` and `pxf-profiles.xml` configuration files. |
 | `pxf/conf-templates`                | XXX. |
 | `pxf/lib`                 | The PXF library directory.                                                                                                                                                                                                                       |
-| `pxf/logs` | The PXF log file directory. This directory includes `pxf-service.log` and Tomcat-related logs including `catalina.out`. Logs are owned by user:group `gpadmin`:`XXX`. Other users have read access.  
+| `pxf/logs`, `pxf/pxf-service/logs` | The PXF log file directories. Includes `pxf-service.log` and Tomcat-related logs including `catalina.out`. Logs are owned by user:group `gpadmin`:`gpadmin`. Other users have read access.  
 | `pxf/pxf-service`         | After initializing PXF, the PXF service instance directory.                                                                                                                                                                                                              |
-| `pxf/run`         | After initializing PXF, the PXF catalina process id.                                                                                                                                                                                                              |
+| `pxf/run`         | After starting PXF, the PXF run directory. Includes a PXF catalina process id file.                                                                                                                                                                                                              |
 | `pxf/tomcat-templates` | XXX.                                                                          |
 
 

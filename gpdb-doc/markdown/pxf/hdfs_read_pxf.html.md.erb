@@ -21,45 +21,47 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-HDFS is the primary distributed storage mechanism used by Apache Hadoop applications. The PXF HDFS connector reads file data stored in HDFS. The plug-in supports plain delimited and comma-separated-value format text files.  The HDFS plug-in also supports the Avro binary format.
+HDFS is the primary distributed storage mechanism used by Apache Hadoop applications. The PXF HDFS connector reads file data stored in HDFS. The connector supports plain delimited and comma-separated-value format text files.  The HDFS connector also supports the Avro binary format.
 
-This section describes how to use PXF to access HDFS data, including how to create and query an external table from files in the HDFS data store.
+This section describes how to use PXF to access HDFS data, including how to create and query an external table referencing files in the HDFS data store.
 
 ## <a id="hdfsplugin_prereq"></a>Prerequisites
 
 Before working with HDFS file data using PXF, ensure that:
 
 -  You have installed and configured a Hadoop client on each Greenplum Database segment host. Refer to [Installing and Configuring the Hadoop Client for PXF](hdfsclient_instcfg.html) for instructions.
-- You have initialized and started PXF on your Greenplum Database segment hosts. See [Configuring, Initializing, and Starting PXF](cfginitstart_pxf.html) for PXF initialization, configuration, and startup information.
-- You have granted the `gpadmin` user read permission on your HDFS file system.
+- You have initialized PXF on your Greenplum Database segment hosts, and PXF is running on each host. See [Configuring, Initializing, and Starting PXF](cfginitstart_pxf.html) for PXF initialization, configuration, and startup information.
+- You have granted the `gpadmin` user read permission on the relevant portions of your HDFS file system.
+
+If you plan to access Avro format files, make sure that you have downloaded the required JAR file as described in [Preparing to Access Avro Files](avro_instcfg.html).
 
 ## <a id="hdfsplugin_fileformats"></a>HDFS File Formats
 
 The PXF HDFS connector supports reading the following file formats:
 
-- Text File - comma-separated value (.csv) or delimited format plain text file
+- Text - comma-separated value (.csv) or delimited format plain text file
 - Avro - JSON-defined, schema-based data serialization format
 
-The PXF HDFS connector includes the following profiles to support the file formats listed above:
+The PXF HDFS connector provides the following profiles to read the file formats listed above:
 
 - `HdfsTextSimple` - text files
 - `HdfsTextMulti` - text files with embedded line feeds
 - `Avro` - Avro files
 
-## <a id="hdfsplugin_cmdline"></a>HDFS Shell Commands
-Hadoop includes command-line tools that interact directly with HDFS.  These tools support typical file system operations including copying and listing files, changing file permissions, and so forth.
+## <a id="hdfsplugin_cmdline"></a>HDFS Shell Command Primer
+Hadoop includes command-line tools that interact directly with your HDFS file system. These tools support typical file system operations including copying and listing files, changing file permissions, and so forth.
 
 The HDFS file system command syntax is `hdfs dfs <options> [<file>]`. Invoked with no options, `hdfs dfs` lists the file system options supported by the tool.
 
-The user invoking the `hdfs dfs` command must have sufficient privileges to the HDFS data store to perform HDFS file system operations. Specifically, the user must have write permission to HDFS to create directories and files.
+The user invoking the `hdfs dfs` command must have sufficient privileges to the HDFS data store to perform HDFS file system operations. Specifically, the user must have read permission to HDFS to list and view file contents, and write permission to HDFS to create directories and files.
 
-`hdfs dfs` options used in this topic are:
+The `hdfs dfs` options used in this topic are:
 
 | Option  | Description |
 |-------|-------------------------------------|
 | `-cat`    | Display file contents. |
-| `-mkdir`    | Create directory in HDFS. |
-| `-put`    | Copy file from local file system to HDFS. |
+| `-mkdir`    | Create a directory in HDFS. |
+| `-put`    | Copy a file from the local file system to HDFS. |
 
 Examples:
 
@@ -69,13 +71,13 @@ Create a directory in HDFS:
 $ hdfs dfs -mkdir -p /data/exampledir
 ```
 
-Copy a text file to HDFS:
+Copy a text file from your local file system to HDFS:
 
 ``` shell
 $ hdfs dfs -put /tmp/example.txt /data/exampledir/
 ```
 
-Display the contents of a text file in HDFS:
+Display the contents of a text file located in HDFS:
 
 ``` shell
 $ hdfs dfs -cat /data/exampledir/example.txt
@@ -83,46 +85,45 @@ $ hdfs dfs -cat /data/exampledir/example.txt
 
 
 ## <a id="hdfsplugin_queryextdata"></a>Querying External HDFS Data
-The PXF HDFS plug-in supports the `HdfsTextSimple`, `HdfsTextMulti`, and `Avro` profiles.
+The PXF HDFS connector supports the `HdfsTextSimple`, `HdfsTextMulti`, and `Avro` profiles.
 
-Use the following syntax to create a HAWQ external table representing HDFS data: 
+Use the following syntax to create a Greenplum Database external table referencing HDFS data: 
 
 ``` sql
 CREATE EXTERNAL TABLE <table_name> 
     ( <column_name> <data_type> [, ...] | LIKE <other_table> )
-LOCATION ('pxf://[alias]/<path-to-hdfs-file>
+LOCATION ('pxf://<path-to-hdfs-file>
     ?PROFILE=HdfsTextSimple|HdfsTextMulti|Avro[&<custom-option>=<value>[...]]')
 FORMAT '[TEXT|CSV|CUSTOM]' (<formatting-properties>);
 ```
 
-The specific keywords and values used by the `pxf` protocol in the [CREATE EXTERNAL TABLE](../ref_guide/sql_commands/CREATE_EXTERNAL_TABLE.html) call are described in the table below.
+The specific keywords and values used by the `pxf` protocol in the [CREATE EXTERNAL TABLE](../ref_guide/sql_commands/CREATE_EXTERNAL_TABLE.html) command are described in the table below.
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| \<alias\>    | The PXF alias. The \<alias\> must be set to `default`. |
-| \<path-to-hdfs-file\>    | The path to the file in the HDFS data store. |
+| \<path-to-hdfs-file\>    | The the full file system path to the file in the HDFS data store. |
 | PROFILE    | The `PROFILE` keyword must specify one of the values `HdfsTextSimple`, `HdfsTextMulti`, or `Avro`. |
-| \<custom-option\>  | \<custom-option\> is profile-specific. Profile-specific options are discussed in the relevant profile topic later in this section.|
+| \<custom-option\>  | \<custom-option\> is profile-specific. Profile-specific options are discussed in the relevant sections later in this topic.|
 | FORMAT 'TEXT' | Use '`TEXT`' `FORMAT` with the `HdfsTextSimple` profile when \<path-to-hdfs-file\> references a plain text delimited file.  |
-| FORMAT 'CSV' | Use '`CSV`' `FORMAT` with `HdfsTextSimple` and `HdfsTextMulti` profiles when \<path-to-hdfs-file\> references a comma-separated value file.  |
-| FORMAT 'CUSTOM' | Use the`CUSTOM` `FORMAT` with  the `Avro` profile. The `Avro` '`CUSTOM`' `FORMAT` supports only the built-in `(formatter='pxfwritable_import')` \<formatting-property\> |
- \<formatting-properties\>    | \<formatting-properties\> are profile-specific. Profile-specific formatting options are discussed in the relevant profile topic later in this section. |
+| FORMAT 'CSV' | Use '`CSV`' `FORMAT` with the `HdfsTextSimple` or `HdfsTextMulti` profile when \<path-to-hdfs-file\> references a comma-separated value file.  |
+| FORMAT 'CUSTOM' | Use the '`CUSTOM`' `FORMAT` with  the `Avro` profile. The `Avro` '`CUSTOM`' `FORMAT` supports only the built-in `(formatter='pxfwritable_import')` \<formatting-property\> |
+ \<formatting-properties\>    | \<formatting-properties\> are profile-specific. Profile-specific formatting options are identified in the relevant sections later in this topic. |
 
-*Note*: When creating PXF external tables, you cannot use the `HEADER` option in your `FORMAT` specification.
+**Note**: When creating PXF external tables, you cannot use the `HEADER` option in your `FORMAT` specification.
 
-## <a id="profile_hdfstextsimple"></a>HdfsTextSimple Profile
+## <a id="profile_hdfstextsimple"></a>Reading Text Files
 
-Use the `HdfsTextSimple` profile when reading plain text delimited or .csv files where each row is a single record.
+Use the `HdfsTextSimple` profile when you read a plain text delimited or .csv file where each row is a single record.
 
 \<formatting-properties\> supported by the `HdfsTextSimple` profile include:
 
 | Keyword  | Value |
 |-------|-------------------------------------|
-| delimiter    | The delimiter character in the file. Default value is a comma `,`.|
+| delimiter    | The delimiter character in the file. The default value is a comma `,`.|
 
 ### <a id="profile_hdfstextsimple_query"></a>Example: Using the HdfsTextSimple Profile
 
-Perform the following steps to create a sample data file, copy the file to HDFS, and use the `HdfsTextSimple` profile to create PXF external tables to query the data:
+Perform the following procedure to create a sample text file, copy the file to HDFS, and use the `HdfsTextSimple` profile to create PXF external tables to query the data:
 
 1. Create an HDFS directory for PXF example data files:
 
@@ -153,7 +154,7 @@ Beijing,Jul,411,11600.67' > /tmp/pxf_hdfs_simple.txt
     $ hdfs dfs -cat /data/pxf_examples/pxf_hdfs_simple.txt
     ```
 
-1. Use the `HdfsTextSimple` profile to create a queryable HAWQ external table from the `pxf_hdfs_simple.txt` file you previously created and added to HDFS:
+1. Use the PXF `HdfsTextSimple` profile to create a Greenplum Database external table referencing the `pxf_hdfs_simple.txt` file you previously created and added to HDFS:
 
     ``` sql
     gpadmin=# CREATE EXTERNAL TABLE pxf_hdfs_textsimple(location text, month text, num_orders int, total_sales float8)
@@ -172,7 +173,7 @@ Beijing,Jul,411,11600.67' > /tmp/pxf_hdfs_simple.txt
     (4 rows)
     ```
 
-2. Create a second external table from `pxf_hdfs_simple.txt`, this time using the `CSV` `FORMAT`:
+2. Create a second external table referencing `pxf_hdfs_simple.txt`, this time specifying the `CSV` `FORMAT`:
 
     ``` sql
     gpadmin=# CREATE EXTERNAL TABLE pxf_hdfs_textsimple_csv(location text, month text, num_orders int, total_sales float8)
@@ -181,11 +182,11 @@ Beijing,Jul,411,11600.67' > /tmp/pxf_hdfs_simple.txt
     gpadmin=# SELECT * FROM pxf_hdfs_textsimple_csv;          
     ```
 
-    When specifying `FORMAT 'CSV'` for a comma-separated value file, no `delimiter` formatter option is required, as comma is the default.
+    When specifying `FORMAT 'CSV'` for a comma-separated value file, no `delimiter` formatter option is required because comma is the default delimiter value.
 
-## <a id="profile_hdfstextmulti"></a>HdfsTextMulti Profile
+## <a id="profile_hdfstextmulti"></a>Reading Text Files with Quoted Linefeeds
 
-Use the `HdfsTextMulti` profile when reading plain text files with delimited single- or multi- line records that include embedded (quoted) linefeed characters.
+Use the `HdfsTextMulti` profile to read plain text files with delimited single- or multi- line records that include embedded (quoted) linefeed characters.
 
 \<formatting-properties\> supported by the `HdfsTextMulti` profile include:
 
@@ -195,7 +196,7 @@ Use the `HdfsTextMulti` profile when reading plain text files with delimited sin
 
 ### <a id="profile_hdfstextmulti_query"></a>Example: Using the HdfsTextMulti Profile
 
-Perform the following steps to create a sample data file, copy the file to HDFS, and use the `HdfsTextMulti` profile to create a PXF external table to query the data:
+Perform the following steps to create a sample text file, copy the file to HDFS, and use the PXF `HdfsTextMulti` profile to create a Greenplum Database external table to query the data:
 
 1. Create a second delimited plain text file:
 
@@ -220,17 +221,17 @@ Perform the following steps to create a sample data file, copy the file to HDFS,
 
     Notice the use of the colon `:` to separate the three fields. Also notice the quotes around the first (address) field. This field includes an embedded line feed separating the street address from the city and state.
 
-3. Add the data file to HDFS:
+3. Copy the text file to HDFS:
 
     ``` shell
     $ hdfs dfs -put /tmp/pxf_hdfs_multi.txt /data/pxf_examples/
     ```
 
-4. Use the `HdfsTextMulti` profile to create a queryable external table from the `pxf_hdfs_multi.txt` HDFS file, making sure to identify the `:` (colon) as the field separator:
+4. Use the `HdfsTextMulti` profile to create an external table referencing the `pxf_hdfs_multi.txt` HDFS file, making sure to identify the `:` (colon) as the field separator:
 
     ``` sql
     gpadmin=# CREATE EXTERNAL TABLE pxf_hdfs_textmulti(address text, month text, year int)
-                LOCATION ('pxf://alias/data/pxf_examples/pxf_hdfs_multi.txt?PROFILE=HdfsTextMulti')
+                LOCATION ('pxf://data/pxf_examples/pxf_hdfs_multi.txt?PROFILE=HdfsTextMulti')
               FORMAT 'CSV' (delimiter=E':');
     ```
     
@@ -256,17 +257,17 @@ Perform the following steps to create a sample data file, copy the file to HDFS,
     (5 rows)
     ```
 
-## <a id="profile_hdfsavro"></a>Avro Profile
+## <a id="profile_hdfsavro"></a>Reading Avro Files
 
-Apache Avro is a data serialization framework where the data is serialized in a compact binary format. 
+Apache Avro is a data serialization framework where the data is serialized in a compact binary format. Avro specifies that data types be defined in JSON. Avro format files have an independent schema, also defined in JSON. An Avro schema, together with its data, is fully self-describing.
 
-Avro specifies that data types be defined in JSON. Avro format files have an independent schema, also defined in JSON. An Avro schema, together with its data, is fully self-describing.
+Before reading Avro files with PXF, ensure that you have downloaded and configured the Avro JAR file on which PXF depends. See [Preparing to Access Avro Files](avro_instcfg.html) for download instructions.
 
 ### <a id="profile_hdfsavrodatamap"></a>Data Type Mapping
 
 Avro supports both primitive and complex data types. 
 
-To represent Avro primitive data types in Greenplum Databae, map data values to Greenplum Database columns of the same type. 
+To represent Avro primitive data types in Greenplum Database, map data values to Greenplum Database columns of the same type. 
 
 Avro supports complex data types including arrays, maps, records, enumerations, and fixed types. Map top-level fields of these complex data types to the Greenplum Database `TEXT` type. While Greenplum Database does not natively support these types, you can create Greenplum Database functions or application code to extract or further process subcomponents of these complex data types.
 
@@ -283,7 +284,7 @@ The following table summarizes external mapping rules for Avro data.
 
 ### <a id="profile_hdfsavroptipns"></a>Avro-Specific Custom Options
 
-For complex types, the PXF `Avro` profile inserts default delimiters between collection items and values. You can use non-default delimiter characters by identifying values for specific `Avro` custom options in the `CREATE EXTERNAL TABLE` call. 
+For complex types, the PXF `Avro` profile inserts default delimiters between collection items and values. You can use non-default delimiter characters by identifying values for specific `Avro` custom options in the `CREATE EXTERNAL TABLE` command. 
 
 The `Avro` profile supports the following \<custom-options\>:
 
@@ -303,7 +304,7 @@ Fields in an Avro schema file are defined via an array of objects, each of which
 
 ### <a id="topic_tr3_dpg_ts_example"></a>Example: Using the Avro Profile
 
-The examples in this section will operate on Avro data with the following record schema:
+The examples in this section will operate on Avro data with the following field name and data type record schema:
 
 - id - long
 - username - string
@@ -414,7 +415,7 @@ Perform the following steps to create and query an external table accessing the 
 
     ``` sql
     gpadmin=# CREATE EXTERNAL TABLE pxf_hdfs_avro(id bigint, username text, followers text, fmap text, relationship text, address text)
-                LOCATION ('pxf://default/data/pxf_examples/pxf_hdfs_avro.avro?PROFILE=Avro&COLLECTION_DELIM=,&MAPKEY_DELIM=:&RECORDKEY_DELIM=:')
+                LOCATION ('pxf://data/pxf_examples/pxf_hdfs_avro.avro?PROFILE=Avro&COLLECTION_DELIM=,&MAPKEY_DELIM=:&RECORDKEY_DELIM=:')
               FORMAT 'CUSTOM' (FORMATTER='pxfwritable_import');
     ```
 
@@ -432,7 +433,7 @@ Perform the following steps to create and query an external table accessing the 
     (2 rows)
     ```
 
-    The simple query of the external table shows the components of the complex type data separated with the delimiters identified in the `CREATE EXTERNAL TABLE` call.
+    The simple query of the external table shows the components of the complex type data separated with the delimiters specified in the `CREATE EXTERNAL TABLE` call.
 
 
 3. Process the delimited components in the text columns as necessary for your application. For example, the following command uses the Greenplum Database internal `string_to_array` function to convert entries in the `followers` field to a text array column in a new view.
