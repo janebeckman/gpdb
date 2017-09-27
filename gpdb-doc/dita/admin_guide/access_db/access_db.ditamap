@@ -11,7 +11,6 @@
  <topicref href="topics/g-pgadmin-for-greenplum-database.xml">
   <topicref href="topics/g-installing-pgadmin-for-greenplum-database.xml"/>
   <topicref href="topics/g-viewing-ddl.xml"/>
-  <topicref href="topics/g-viewing-a-graphical-query-plan.dita"/>
  </topicref>
   <topicref href="topics/pgbouncer.xml"/>
  <topicref href="topics/g-database-application-interfaces.xml"/>
