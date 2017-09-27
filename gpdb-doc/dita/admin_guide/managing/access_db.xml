@@ -239,9 +239,6 @@
         <p>pgAdmin 4 supports the following Greenplum-specific features:</p>
         <ul id="ul_dc4_g15_3bb">
           <li>Viewing Greenplum table DDL.</li>
-          <li id="io147525">Graphical <codeph>EXPLAIN</codeph>. <note><codeph>EXPLAIN
-                ANALYZE</codeph> is currently not available.</note>
-          </li>
           <li id="io147522">Append-optimized tables, including compressed append-optimized tables.
               <note>Only limited functionality for Greenplum partitioned tables is available with
               pgAdmin 4.</note></li>
@@ -259,47 +256,16 @@
       <topic id="topic8" xml:lang="en">
         <title>Documentation for pgAdmin 4</title>
         <body>
-          <p>For general help on the features of the graphical interface or PostgreSQL, select one
-            of the entries from the <b>Help</b> dropdown menu.</p>
+          <p>For general help on the features of the pgAdmin graphical interface or PostgreSQL,
+            select one of the entries from the <b>Help</b> dropdown menu.</p>
         </body>
       </topic>
       <topic id="topic9" xml:lang="en">
-        <title>Viewing a Graphical Query Plan</title>
+        <title>Viewing DDL Data with pgAdmin 4</title>
         <body>
-          <p>This topic highlights a Greenplum Database task you can perform with pgAdmin 4:
-            viewing a graphical representation of a query plan.</p>
+          <p>This topic highlights a Greenplum Database task you can perform with pgAdmin 4: viewing
+            Greenplum Database table DDL.</p>
         </body>
-        <topic id="topic11" xml:lang="en">
-          <title>Viewing a Graphical Query Plan</title>
-          <body>
-            <p>Using the pgAdmin 4 query tool, you can run a query with EXPLAIN to view the details
-              of the query plan. The output includes details about operations unique to Greenplum
-              distributed query processing such as plan slices and motions between segments. You can
-              view a graphical depiction of the plan as well as the text-based data output.</p>
-            <section id="io148973">
-              <title>To view a graphical query plan</title>
-              <ol>
-                <li id="io148977">With the correct database schema highlighted in the object browser
-                  in the left pane, select <b>Tools</b> > <b>Query Tool</b> from the top menu bar.
-                  You can open multiple query tabs by selecting the option multiple times.  </li>
-                <li>Enter the query by typing in the SQL Editor, dragging objects into the Graphical
-                  Query Builder, or opening a file. Click on the lightning bolt and go to the
-                    <b>Explain</b> in the dropdown. Note: The <b>Explain Analyze</b> function is not
-                  currently available with Greenplum Database</li>
-                <li id="io149004">Click on <b>Explain</b> in the the dropdown menu to trigger the
-                  operation.  Make sure the Verbose option is not selected. (Verbose must be
-                  deselected to view a graphical depiction of the query plan If it shows as ON in
-                  the Data Output,  go to the <b>Explain Options</b> in the dropdown and click
-                    <b>Verbose</b> to deselect it.) . <p>The query plan displays in the Output pane
-                    at the bottom of the screen. Select the <b>Explain</b> tab to view the graphical
-                    output. For example:</p><fig id="io149084">
-                    <title>Graphical Query Plan in pgAdmin 4</title>
-                    <image href="../../graphics/queryscreen.png" placement="break" width="499px" id="image_ek5_jd5_3bb"/>
-                  </fig></li>
-              </ol>
-            </section>
-          </body>
-        </topic>
       </topic>
     </topic>
     <topic id="topic12" xml:lang="en">

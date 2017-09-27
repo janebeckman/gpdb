@@ -10,23 +10,15 @@
       <p>pgAdmin 4 supports the following Greenplum-specific features:</p>
       <ul>
          <li>Viewing Greenplum table DDL.</li>
-         <li id="io147525">Graphical <codeph>EXPLAIN</codeph>. <note><codeph>EXPLAIN
-                  ANALYZE</codeph> is currently not available.</note>
-         </li>
          <li id="io147522">Append-optimized tables, including compressed append-optimized tables.
                <note>Only limited functionality for Greenplum partitioned tables is available with
                pgAdmin 4.</note>
          </li>
       </ul>
+      <note>Graphical <codeph>EXPLAIN</codeph> features are currently not available with Greenplum
+         Database.</note>
       <note>For limitations on using pgAdmin4 with Greenplum Database, refer to the <i>Greenplum
             Database Release Notes</i>.</note>
-      <p>The following Tree Control functions are not available for Greenplum Database.</p>
-      <ul id="ul_xkb_htm_3bb">
-         <li>Casts</li>
-         <li>Event triggers</li>
-         <li>Extensions</li>
-         <li>Foreign Data Wrappers </li>
-      </ul>
       <fig id="io149932">
          <title>pgAdmin 4 Dashboard View</title>
          <image href="../../graphics/pgAdmin4Dashbd.png" placement="break" width="679px"
