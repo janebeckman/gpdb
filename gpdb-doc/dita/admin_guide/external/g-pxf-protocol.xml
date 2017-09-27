@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE topic PUBLIC "-//OASIS//DTD DITA Topic//EN" "topic.dtd">
+<topic id="topic_z5g_l5h_kr1313">
+  <title>pxf:// Protocol</title>
+  <shortdesc>You can use the <codeph>pxf://</codeph> protocol to access data on external systems.</shortdesc>
+  <body>
+    <p>For additional information about using the PXF Extension Framework and the <codeph>pxf://</codeph> protocol, refer to the <xref href="../../pxf/overview_pxf.html" type="topic" format="markdown">PXF Extension Framework</xref> documentation.</p>
+  </body>
+</topic>

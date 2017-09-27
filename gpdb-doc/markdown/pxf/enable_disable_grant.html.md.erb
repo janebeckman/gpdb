@@ -1,0 +1,52 @@
+## <a id="start_pxf"></a>Enabling/Disabling PXF
+
+You must explicitly enable the PXF extension in each Greenplum Database in which you plan to use the extension.
+ 
+### <a id="enable-pxf-steps"></a>Enable Procedure
+
+Perform the following procedure for **_each_** database in which you want to use the PXF extension:
+
+1. Connect to the database as the `gpadmin` user:
+
+    ``` shell
+    gpadmin@gpmaster$ psql -d <database-name> -U gpadmin
+    ```
+
+2. Create the PXF extension. You must have Greenplum Database administrator privileges to create an extension. For example:
+
+    ``` sql
+    database-name=# CREATE EXTENSION pxf;
+    ```
+    
+    Creating the `pxf` extension registers the call handlers required for PXF to access external data.
+
+### <a id="disable-pxf-steps"></a>Disable Procedure
+  
+When you no longer want to use PXF on a specific database, you must explicitly disable the PXF extension for that database:
+
+1. Connect to the database as the `gpadmin` user:
+
+    ``` shell
+    gpadmin@gpmaster$ psql -d <database-name>
+    ```
+    
+2. Drop the PXF extension:
+
+    ``` sql
+    database-name=# DROP EXTENSION pxf;
+    ```
+    
+    The `DROP` command fails if there are any external tables using the `pxf` protocol. Add the `CASCADE` option to forcibly remove these tables.
+
+
+## <a id="access_pxf"></a>Granting Access to PXF
+
+To use PXF to access external data, you will create external tables that use the `pxf` protocol. You must specifically grant access to the `pxf` protocol to all Greenplum Database non-`SUPERUSER` roles that require such access. 
+
+To grant a specific role access to the `pxf` protocol, use the `GRANT` command. For example, to grant the role named `bill` read access to the `pxf` protocol:
+
+``` sql
+GRANT SELECT ON PROTOCOL pxf TO bill; 
+```
+
+**Note**: The `pxf` protocol supports only read access at this time.
