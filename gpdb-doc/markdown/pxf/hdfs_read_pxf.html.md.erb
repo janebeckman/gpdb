@@ -33,7 +33,7 @@ Before working with HDFS file data using PXF, ensure that:
 - You have initialized PXF on your Greenplum Database segment hosts, and PXF is running on each host. See [Configuring, Initializing, and Starting PXF](cfginitstart_pxf.html) for PXF initialization, configuration, and startup information.
 - You have granted the `gpadmin` user read permission on the relevant portions of your HDFS file system.
 
-If you plan to access Avro format files, make sure that you have downloaded the required JAR file as described in [Preparing to Access Avro Files](avro_instcfg.html).
+If you plan to access Avro format files, make sure that you have downloaded the required JAR file as described in [Installing and Configuring the Hadoop Client for PXF](hdfsclient_instcfg.html). You must restart PXF if you download this file while PXF is running.
 
 ## <a id="hdfsplugin_fileformats"></a>HDFS File Formats
 
@@ -260,8 +260,6 @@ Perform the following steps to create a sample text file, copy the file to HDFS,
 ## <a id="profile_hdfsavro"></a>Reading Avro Files
 
 Apache Avro is a data serialization framework where the data is serialized in a compact binary format. Avro specifies that data types be defined in JSON. Avro format files have an independent schema, also defined in JSON. An Avro schema, together with its data, is fully self-describing.
-
-Before reading Avro files with PXF, ensure that you have downloaded and configured the Avro JAR file on which PXF depends. See [Preparing to Access Avro Files](avro_instcfg.html) for download instructions.
 
 ### <a id="profile_hdfsavrodatamap"></a>Data Type Mapping
 

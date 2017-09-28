@@ -17,7 +17,14 @@ Ensure that you:
 ## <a id="hadoop-pxf-config-steps"></a>Procedure
 Perform the following procedure to configure Hadoop and PXF on each segment node in your Greenplum Database cluster. You will use the `gpssh` command where possible to run a command on multiple hosts.
 
-1. Create a text file that lists your Greenplum Database segment hosts, one host name per line. Ensure that there are no blank lines or extra spaces in the file. For example, a file named `seghostfile` may include:
+1. Log in to your Greenplum Database master node and set up the environment:
+
+    ``` shell
+    $ ssh gpadmin@<gpmaster>
+    gpadmin@gpmaster$ . /usr/local/greenplum-db/greenplum_path.sh
+    ```
+
+2. Create a text file that lists your Greenplum Database segment hosts, one host name per line. Ensure that there are no blank lines or extra spaces in the file. For example, a file named `seghostfile` may include:
 
     ``` pre
     seghost1
@@ -28,21 +35,21 @@ Perform the following procedure to configure Hadoop and PXF on each segment node
 2. Install Java 1.8 on each Greenplum Database segment host.
 
     ``` shell
-    root@node$ gpssh -f seghostfile sudo yum -y install java-1.8.0-openjdk-1.8.0*
+    gpadmin@gpmaster$ gpssh -f seghostfile sudo yum -y install java-1.8.0-openjdk-1.8.0*
     ```
 
 3. Identify the Java base install directory. Update the `gpadmin` user's `.bash_profile` file on each segment host to include this `$JAVA_HOME` setting. For example:
 
     ``` shell
-    root@node$ gpssh -f seghostfile “echo ‘export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.144-0.b01.el7_4.x86_64/jre’ >> /home/gpadmin/.bash_profile”
+    gpadmin@gpmaster$ gpssh -f seghostfile “echo ‘export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.144-0.b01.el7_4.x86_64/jre’ >> /home/gpadmin/.bash_profile”
     ```
 
-4. Install a compatible Hadoop client on each Greenplum Database segment host. Refer to the [Cloudera Installation Guide](https://www.cloudera.com/documentation/cdh/5-0-x/CDH5-Installation-Guide/CDH5-Installation-Guide.html) or the Hortonworks [Install the Hadoop Packages](https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.5.5/bk_command-line-installation/content/install_the_hadoop_packages.html) documentation for instructions.
+4. If not already present, install a compatible Hadoop client on each Greenplum Database segment host. Refer to the [Cloudera Installation Guide](https://www.cloudera.com/documentation/cdh/5-0-x/CDH5-Installation-Guide/CDH5-Installation-Guide.html) or the Hortonworks [Install the Hadoop Packages](https://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.5.5/bk_command-line-installation/content/install_the_hadoop_packages.html) documentation for instructions.
 
 5. Locate the base install directory of the Hadoop client. Edit the `gpadmin` user's `.bash_profile` file on each segment host to include this `$HADOOP_HOME` setting. For example: 
 
     ``` shell
-    root@node$ gpssh -f seghostfile “echo ‘export HADOOP_HOME=/usr/local/hadoop-2.6.0’ >> /home/gpadmin/.bash_profile”
+    gpadmin@gpmaster$ gpssh -f seghostfile “echo ‘export HADOOP_HOME=/usr/local/hadoop-2.6.0’ >> /home/gpadmin/.bash_profile”
     ```
 
 6. Manually configure the HDFS NameNode URI on **each** segment host:
@@ -56,15 +63,29 @@ Perform the following procedure to configure Hadoop and PXF on each segment node
 
     2. Edit the `$HADOOP_HOME/etc/hadoop/core-site.xml` Hadoop configuration file:
 
-        ``` pre
+        ``` shell
         gpadmin@seg-host$ vi $HADOOP_HOME/etc/hadoop/core-site.xml
         ```
     
     3. Add or update the `fs.defaultFS` property in `core-site.xml`. The `ds.defaultFS` property value must identify the URI location of your HDFS NameNode. For example:
 
-        ``` pre
+        ``` xml
         <property>
         <name>fs.defaultFS</name>
         <value>hdfs://namenode.domain:8020</value>
         </property>
+        ```
+
+7. The PXF HDFS connector supports the Avro file format. If you plan to access Avro format files, you must download a required JAR file and copy the JAR to each Greenplum Database segment host.
+
+    1. Download the Avro JAR file required by PXF:
+
+        ``` shell
+        gpadmin@gpmaster$ wget "http://central.maven.org/maven2/org/apache/avro/avro-mapred/1.7.1/avro-mapred-1.7.1.jar"
+        ```
+
+    2. Copy the Avro JAR file to each Greenplum Database segment host. You must copy the file to the `$HADOOP_HOME/share/hadoop/common/lib` directory. For example:
+
+        ``` shell
+        gpadmin@gpmaster$ gpscp -f seghostfile avro-mapred-*.jar =:/usr/local/hadoop-2.6.0/share/hadoop/common/lib
         ```
