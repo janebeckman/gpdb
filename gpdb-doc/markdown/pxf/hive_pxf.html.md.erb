@@ -21,33 +21,313 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-Apache Hive is a distributed data warehousing infrastructure. Hive facilitates managing large data sets supporting multiple data formats, including comma-separated value (.csv), RC, ORC, and parquet. 
+Apache Hive is a distributed data warehousing infrastructure. Hive facilitates managing large data sets supporting multiple data formats, including comma-separated value (.csv) TextFile, RCFile, ORC, and Parquet. 
 
-The PXF Hive connector reads data stored in Hive. This section describes how to use the PXF Hive connector. 
+The PXF Hive connector reads data stored in a Hive table. This section describes how to use the PXF Hive connector. 
 
 ## <a id="hive_prereq"></a>Prerequisites
 
+Before working with Hive table data using PXF, ensure that:
+
+- You have installed and configured a Hive client on each Greenplum Database segment host. Refer to [Installing and Configuring the Hive Client for PXF](XXX) for instructions.
+- You have initialized PXF on your Greenplum Database segment hosts, and PXF is running on each host. See [Configuring, Initializing, and Starting PXF](cfginitstart_pxf.html) for PXF initialization, configuration, and startup information.
+
+
 ## <a id="hive_fileformats"></a>Hive File Formats
 
+The PXF Hive connector supports several file formats, and has defined the following profiles for accessing these formats:
+
+| File Format  | Description | Profile |
+|-------|---------------------------|-------|
+| TextFile | Flat file with data in comma-, tab-, or space-separated value format or JSON notation. | Hive, HiveText |
+| SequenceFile | Flat file consisting of binary key/value pairs. | Hive |
+| RCFile | Record columnar data consisting of binary key/value pairs; high row compression rate. | Hive, HiveRC |
+| ORC | Optimized row columnar data with stripe, footer, and postscript sections; reduces data size. | Hive, HiveORC, HiveVectorizedORC |
+| Parquet | Compressed columnar data representation. | Hive |
+
+**Note**: The `Hive` profile supports all file storage formats. It will use the optimal `Hive*` profile for the underlying file format type.
+
 ## <a id="hive_datatypemap"></a>Data Type Mapping
+
+The PXF Hive connector supports primitive and complex data types.
+
 ### <a id="hive_datatypemap_prim"></a>Primitive Data Types
+To represent Hive data in Greenplum Database, map data values that use a primitive data type to Greenplum Database columns of the same type.
+
+The following table summarizes external mapping rules for Hive primitive types.
+
+| Hive Data Type  | Greenplum Data Type |
+|-------|---------------------------|
+| boolean    | bool |
+| int   | int4 |
+| smallint   | int2 |
+| tinyint   | int2 |
+| bigint   | int8 |
+| float   | float4 |
+| double   | float8 |
+| string   | text |
+| binary   | bytea |
+| timestamp   | timestamp |
+
+
+**Note**: The `HiveVectorizedORC` profile does not support the timestamp data type.
+
 ### <a id="hive_datatypemap_complex"></a>Complex Data Types
+
+Hive supports complex data types including array, struct, map, and union. PXF maps each of these complex types to `text`. You can create Greenplum Database functions or application code to extract subcomponents of these complex data types.
+
+Examples using complex data types with the `Hive` and `HiveORC` profiles are provided later in this topic.
+
+**Note**: The `HiveVectorizedORC` profile does not support complex types.
 
 ## <a id="hive_sampledset"></a>Sample Data Set
 
+Examples presented in this topic operate on a common data set. This simple data set models a retail sales operation and includes fields with the following names and data types:
+
+| Field Name  | Data Type |
+|-------|---------------------------|
+| location | text |
+| month | text |
+| number\_of\_orders | integer |
+| total\_sales | double |
+
+Prepare the sample data set for use:
+
+1. First, create a text file:
+
+    ```
+    $ vi /tmp/pxf_hive_datafile.txt
+    ```
+
+2. Add the following data to `pxf_hive_datafile.txt`; notice the use of the comma `,` to separate the four field values:
+
+    ```
+    Prague,Jan,101,4875.33
+    Rome,Mar,87,1557.39
+    Bangalore,May,317,8936.99
+    Beijing,Jul,411,11600.67
+    San Francisco,Sept,156,6846.34
+    Paris,Nov,159,7134.56
+    San Francisco,Jan,113,5397.89
+    Prague,Dec,333,9894.77
+    Bangalore,Jul,271,8320.55
+    Beijing,Dec,100,4248.41
+    ```
+
+Make note of the path to `pxf_hive_datafile.txt`; you will use it in later exercises.
+
+
 ## <a id="hive_cmdline"></a>Hive Command Line
+
+The Hive command line is a subsystem similar to that of `psql`. To start the Hive command line:
+
+``` shell
+$ HADOOP_USER_NAME=hdfs hive
+```
+
+The default Hive database is named `default`. 
+
 ### <a id="hive_cmdline_example"></a>Example: Creating a Hive Table
+
+Create a Hive table to expose the sample data set.
+
+1. Create a Hive table named `sales_info` in the `default` database:
+
+    ``` sql
+    hive> CREATE TABLE sales_info (location string, month string,
+            number_of_orders int, total_sales double)
+            ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+            STORED AS textfile;
+    ```
+
+    Notice that:
+    - The `STORED AS textfile` subclause instructs Hive to create the table in Textfile (the default) format.  Hive Textfile format supports comma-, tab-, and space-separated values, as well as data specified in JSON notation.
+    - The `DELIMITED FIELDS TERMINATED BY` subclause identifies the field delimiter within a data record (line). The `sales_info` table field delimiter is a comma (`,`).
+
+2. Load the `pxf_hive_datafile.txt` sample data file into the `sales_info` table you just created:
+
+    ``` sql
+    hive> LOAD DATA LOCAL INPATH '/tmp/pxf_hive_datafile.txt'
+            INTO TABLE sales_info;
+    ```
+    
+    In examples later in this section, you will access the `sales_info` Hive table directly via PXF. You will also insert `sales_info` data into tables of other Hive file format types, and use PXF to access those directly as well.
+
+3. Perform a query on `sales_info` to verify that you loaded the data successfully:
+
+    ``` sql
+    hive> SELECT * FROM sales_info;
+    ```
+
 ### <a id="hive_cmdline_fileloc"></a>Determining the HDFS Location of a Hive Table
+
+Should you need to identify the HDFS file location of a Hive managed table, reference it using its HDFS file path. You can determine a Hive table's location in HDFS using the `DESCRIBE` command. For example:
+
+``` sql
+hive> DESCRIBE EXTENDED sales_info;
+Detailed Table Information
+...
+location:hdfs://<namenode>:<port>/apps/hive/warehouse/sales_info
+...
+```
+
 
 ## <a id="hive_queryextdata"></a>Querying External Hive Data
 
+You can create a Greenplum Database external table to access Hive table data.   As described previously, the PXF Hive connector defines specific profiles to support different file formats. These profiles are named `Hive`, `HiveText`, and `HiveRC`, `HiveORC`, and `HiveVectorizedORC`. 
 
-## <a id="hive_hive"></a>Accessing TextFile-Format Hive Tables
+The `HiveText` and `HiveRC` profiles are specifically optimized for text and RCFile formats, respectively. The `HiveORC` and `HiveVectorizedORC` profiles are optimized for ORC file formats. The `Hive` profile is optimized for all file storage types; you can use the `Hive` profile when the underlying Hive table is composed of multiple partitions with differing file formats.
+
+Use the following syntax to create a Greenplum Database external table referencing a Hive table:
+
+``` sql
+CREATE EXTERNAL TABLE <table_name>
+    ( <column_name> <data_type> [, ...] | LIKE <other_table> )
+LOCATION ('pxf://<hive-db-name>.<hive-table-name>
+    ?PROFILE=Hive|HiveText|HiveRC|HiveORC|HiveVectorizedORC[&DELIMITER=<delim>'])
+FORMAT 'CUSTOM|TEXT' (formatter='pxfwritable_import' | delimiter='<delim>')
+```
+
+Hive connector-specific keywords and values used in the [CREATE EXTERNAL TABLE](../../ref_guide/sql_command/CREATE_EXTERNAL_TABLE.html) call are described below.
+
+| Keyword  | Value |
+|-------|-------------------------------------|
+| \<hive-db-name\>    | The name of the Hive database. If omitted, defaults to the Hive database named `default`. |
+| \<hive-table-name\>    | The name of the Hive table. |
+| PROFILE    | The `PROFILE` keyword must specify one of the values `Hive`, `HiveText`, `HiveRC`, `HiveORC`, or `HiveVectorizedORC`. |
+| DELIMITER    | The `DELIMITER` clause is required for both the `HiveText` and `HiveRC` profiles and identifies the field delimiter used in the Hive data set.  \<delim\> must be a single ascii character or specified in hexadecimal representation. |
+| FORMAT (`Hive`, `HiveORC`, and `HiveVectorizedORC` profiles)   | The `FORMAT` clause must specify `CUSTOM`. The `CUSTOM` format supports only the built-in `pxfwritable_import` `formatter`.   |
+| FORMAT (`HiveText` and `HiveRC` profiles) | The `FORMAT` clause must specify `TEXT`. The `delimiter` must be specified a second time in '\<delim\>'. |
+
+
+## <a id="hive_text"></a>Accessing TextFile-Format Hive Tables
+
+You can use the `Hive` and `HiveText` profiles to access Hive table data stored in TextFile format.
+
+**Note**: When you use the `HiveText` profile, you **must** specify a delimiter option in both the `LOCATION` and `FORMAT` clauses.
+
 ### <a id="hive_hive_example"></a>Example: Using the Hive Profile
+
+Use the `Hive` profile to create a readable Greenplum Database external table referencing the Hive `sales_info` textfile format table you created earlier.
+
+1. Create the external table:
+
+    ``` sql
+    postgres=# CREATE EXTERNAL TABLE salesinfo_hiveprofile(location text, month text, num_orders int, total_sales float8)
+                LOCATION ('pxf://default.sales_info?PROFILE=Hive')
+              FORMAT 'custom' (formatter='pxfwritable_import');
+    ```
+
+2. Query the table:
+
+    ``` sql
+    postgres=# SELECT * FROM salesinfo_hiveprofile;
+    ```
+
+    ``` shell
+       location    | month | num_orders | total_sales
+    ---------------+-------+------------+-------------
+     Prague        | Jan   |        101 |     4875.33
+     Rome          | Mar   |         87 |     1557.39
+     Bangalore     | May   |        317 |     8936.99
+     ...
+    ```
+
 ### <a id="hive_hivetext_example"></a>Example: Using the HiveText Profile
 
+Use the PXF `HiveText` profile to create a readable Greenplum Database external table from the Hive `sales_info` textfile format table you created earlier.
+
+1. Create the external table:
+
+    ``` sql
+    postgres=# CREATE EXTERNAL TABLE salesinfo_hivetextprofile(location text, month text, num_orders int, total_sales float8)
+                 LOCATION ('pxf://default.sales_info?PROFILE=HiveText&DELIMITER=\x2c')
+               FORMAT 'TEXT' (delimiter=E',');
+    ```
+
+    (You can safely ignore the "nonstandard use of escape in a string literal" warning and related messages.)
+
+    Notice that:
+    - The `LOCATION` subclause `DELIMITER` value is specified in hexadecimal format. The `\x` prefix instructs PXF to interpret the following characters as hexadecimal. `2c` is the hex value for the comma character.
+    - The `FORMAT` subclause `delimiter` value is specified as the single ascii comma character `','`. `E` escapes the character.
+
+2. Query the external table:
+
+    ``` sql
+    postgres=# SELECT * FROM salesinfo_hivetextprofile WHERE location='Beijing';
+    ```
+
+    ``` shell
+     location | month | num_orders | total_sales
+    ----------+-------+------------+-------------
+     Beijing  | Jul   |        411 |    11600.67
+     Beijing  | Dec   |        100 |     4248.41
+    (2 rows)
+    ```
+
+
 ## <a id="hive_hiverc"></a>Accessing RCFile-Format Hive Tables 
+
+The RCFile Hive table format is used for row columnar formatted data. The PXF `HiveRC` profile provides access to RCFile data.
+
+**Note**: When you use the `HiveRC` profile, you **must** specify a delimiter option in both the `LOCATION` and `FORMAT` clauses.
+
 ### <a id="hive_hiverc_example"></a>Example: Using the HiveRC Profile
+
+Use the `HiveRC` profile to query RCFile-formatted data in a Hive table.
+
+1. Start the `hive` command line and create a Hive table stored in RCFile format:
+
+    ``` shell
+    $ HADOOP_USER_NAME=hdfs hive
+    ```
+
+    ``` sql
+    hive> CREATE TABLE sales_info_rcfile (location string, month string,
+            number_of_orders int, total_sales double)
+          ROW FORMAT DELIMITED FIELDS TERMINATED BY ','
+          STORED AS rcfile;
+    ```
+
+2. Insert the data from the `sales_info` table into `sales_info_rcfile`:
+
+    ``` sql
+    hive> INSERT INTO TABLE sales_info_rcfile SELECT * FROM sales_info;
+    ```
+
+    A copy of the sample data set is now stored in RCFile format in the Hive `sales_info_rcfile` table. 
+    
+3. Query the `sales_info_rcfile` Hive table to verify that the data was loaded correctly:
+
+    ``` sql
+    hive> SELECT * FROM sales_info_rcfile;
+    ```
+
+4. Use the PXF `HiveRC` profile to create a readable Greenplum Database external table referencing the Hive `sales_info_rcfile` table you created in the previous steps. You *must* specify a delimiter option in both the `LOCATION` and `FORMAT` clauses.:
+
+    ``` sql
+    postgres=# CREATE EXTERNAL TABLE salesinfo_hivercprofile(location text, month text, num_orders int, total_sales float8)
+                 LOCATION ('pxf://default.sales_info_rcfile?PROFILE=HiveRC&DELIMITER=\x2c')
+               FORMAT 'TEXT' (delimiter=E',');
+    ```
+
+    (Again, you can safely ignore the "nonstandard use of escape in a string literal" warning and related messages.)
+
+5. Query the external table:
+
+    ``` sql
+    postgres=# SELECT location, total_sales FROM salesinfo_hivercprofile;
+    ```
+
+    ``` shell
+       location    | total_sales
+    ---------------+-------------
+     Prague        |     4875.33
+     Rome          |     1557.39
+     Bangalore     |     8936.99
+     Beijing       |    11600.67
+     ...
+    ```
 
 ## <a id="hive_orc"></a>Accessing ORC-Format Hive Tables
 ### <a id="hive_hiveorc_example"></a>Example: Using the HiveORC Profile
