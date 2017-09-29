@@ -12,7 +12,7 @@
         Greenplum Database. </li>
 <!--
       <li id="io155276">
-        <xref href="g-pgadmin-for-greenplum-database.xml#topic6"/> is a the
+        <xref href="g-pgadmin-for-greenplum-database.xml#topic6"/> is a 
         popular management tool pgAdmin 4. Since version 1.10.0, the pgAdmin client available
         from PostgreSQL Tools includes support for Greenplum-specific
         features. Installation packages are available for download from the <xref
