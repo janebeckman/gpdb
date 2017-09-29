@@ -21,9 +21,14 @@ specific language governing permissions and limitations
 under the License.
 -->
 
-The PXF Extension Framework enables Greenplum Database to access external data sources in a unified manner. Integrated at the protocol level, you can use PXF to create an external table to access HDFS and Hive data stores. 
+You can use the Greenplum Database PXF Extension Framework to access external data sources as though they were local to your Greenplum Database deployment. 
 
 ## <a id="intro_pxf_overview"></a>Overview
 
+Data managed by your organization may already reside in external sources. The Greenplum Database PXF Extension Framework (PXF) provides you access to this external data via built-in connectors that map a Greenplum Database external table definition to an external data source. 
+
+PXF is installed with HDFS and Hive connectors. These connectors enable you to read external HDFS file system and Hive data in text, Avro, RCFile, Parquet, and ORC formats.
+
 ## <a id="intro_pxf_arch"></a>Architecture
     
+The PXF Extension Framework is a Java service that runs on each Greenplum Database segment host. 
