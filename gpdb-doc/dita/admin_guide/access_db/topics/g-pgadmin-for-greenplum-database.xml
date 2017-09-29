@@ -6,7 +6,8 @@
    <body>
       <p>If you prefer a graphic interface, use pgAdmin 4. This GUI client supports PostgreSQL
          databases with all standard pgAdmin 4 features, while adding support for some
-         Greenplum-specific features. </p>
+         Greenplum-specific features. pgAdmin 4 is available for download at <xref
+            href="https://www.pgadmin.org/docs/pgadmin4/1.x/" format="html" scope="external"/>.</p>
       <p>pgAdmin 4 supports the following Greenplum-specific features:</p>
       <ul>
          <li>Viewing Greenplum table DDL.</li>
