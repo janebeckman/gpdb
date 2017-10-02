@@ -26,4 +26,31 @@
             id="image_phx_vqr_hbb"/>
       </fig>
    </body>
+   <topic id="topic7">
+      <title>Installing pgAdmin 4</title>
+      <body>
+         <p>The installation package for pgAdmin 4 is available for download from the official
+            pgAdmin 4 download site (<xref href="https://www.pgadmin.org" scope="external"
+               format="html"/>). Installation instructions are included in the installation
+            package.</p>
+         <p>When configuring the server connection for Greenplum Database, retain the default
+            Maintenance database of postgres, but specify gpadmin for the Username. When connected,
+            Greenplum Database connections will be indicated by the Greenplum logo.</p>
+      </body>
+   </topic>
+   <topic id="topic9">
+      <title>Viewing DDL Data with pgAdmin 4</title>
+      <body>
+         <p>You can use pgAdmin 4 to view Greenplum Database table DDL. </p>
+         <p>To view the table DDL, simply drill down through the database information in the left
+            navigation and select the desired table. Click on the <uicontrol>SQL</uicontrol> tab.
+            The DDL will be displayed. You can also display DDL information for individual
+            columns.</p>
+         <fig id="io149084">
+            <title>Graphical Query Plan in pgAdmin 4</title>
+            <image href="../../graphics/pgAdmin4_showddl.png" placement="break" width="679px"
+               id="image_wj1_4bm_3bb"/>
+         </fig>
+      </body>
+   </topic>
 </topic>
