@@ -9,7 +9,7 @@
          performing an XML transform.</p>
       <fig id="du185408">
          <title>External Tables using XML Transformations</title>
-         <image placement="break" href="../../graphics/ext-tables-xml.png" id="image_kc5_bny_mbb"/>
+         <image placement="break" href="../graphics/ext-tables-xml.png" id="image_kc5_bny_mbb"/>
       </fig>
       <p>Use these steps to load or extract XML data. Keep in mind that the first three steps
          comprise most of the development effort. The last two steps are straightforward and
@@ -172,7 +172,7 @@ java \
       <p>The <codeph>input_transform.sh</codeph> file uses the Joost STX engine with the AWK
          interpreter. The following diagram shows the process flow as <cmdname>gpfdist</cmdname>
          runs the transformation.</p>
-      <image placement="break" href="../../graphics/02-pipeline.png"  id="image_ew5_mny_mbb"/>
+      <image placement="break" href="../graphics/02-pipeline.png"  id="image_ew5_mny_mbb"/>
       <section>Load the Data</section>
       <p>Create the tables with SQL statements based on the appropriate schema.</p>
       <p>There are no special requirements for the Greenplum Database tables that hold loaded data.
